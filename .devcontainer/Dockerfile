@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
 ENV PYTHONUNBUFFERED 1
 
 # Name of the python package, overwitten in docker-compose.yaml
-ARG USER_UID=my_microservice
+ARG USER_UID=data_steward_scripts
 
 # Update args in docker-compose.yaml to set the UID/GID of the "vscode" user.
 ARG USER_UID=1000

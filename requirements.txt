@@ -1,5 +1,5 @@
 # All your requirements go here. Please adapt as needed:
-pydantic==1.8.2
+pydantic==1.10.2
 PyYAML==5.4.1
 pytest==7.1.1
 pytest-asyncio==0.18.3
@@ -21,3 +21,7 @@ mkdocstrings==0.18.1
 mkdocstrings-python-legacy==0.2.2
 testcontainers[kafka,rabbitmq,mongo,postgresql]==3.4.2
 typer==0.4.1
+crypt4gh==1.5
+ghga-connector==0.1.4
+ghga-service-chassis-lib==0.14.3
+hexkit==0.3.2
