@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cd /workspace
+
+# install python dependencies:
+pip install -r /workspace/requirements.txt
+
+# install pre-commit hooks to git:
+pre-commit install

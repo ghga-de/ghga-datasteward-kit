@@ -1,0 +1,50 @@
+name: Static Code Analysis
+
+on: push
+
+jobs:
+  static-code-analysis:
+    runs-on: ubuntu-latest
+    name: Static Code Analysis
+    env:
+      REL_SRC_DIR_PATH: ./src
+    steps:
+      - uses: actions/checkout@v2.4.2
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3.1.2
+        with:
+          python-version: 3.9
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - uses: pre-commit/action@v2.0.3
+
+      - name: black
+        run: |
+          black --check .
+
+      - name: isort
+        run: |
+          isort --check --profile black .
+
+      - name: mypy
+        run: |
+          mypy \
+            --show-error-codes \
+            --disable-error-code import \
+            "${REL_SRC_DIR_PATH}"
+
+      - name: pylint
+        run: |
+          pylint "${REL_SRC_DIR_PATH}"
+
+      - name: flake8
+        run: |
+          flake8 --config .flake8
+
+      - name: bandit
+        run: |
+          bandit -r "${REL_SRC_DIR_PATH}"

@@ -1,0 +1,27 @@
+name: Unit and Integration Tests
+
+on: push
+
+jobs:
+  unit_and_int_tests:
+    runs-on: ubuntu-latest
+    name: Unit and Integration Tests
+    env:
+      REL_SRC_DIR_PATH: ./src
+    steps:
+      - uses: actions/checkout@v2.4.2
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3.1.2
+        with:
+          python-version: 3.9
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run pytest
+        run: |
+          pytest \
+            --cov="${REL_SRC_DIR_PATH}" \
+            --cov-report=xml
