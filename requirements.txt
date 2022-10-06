@@ -21,6 +21,7 @@ mkdocstrings==0.18.1
 mkdocstrings-python-legacy==0.2.2
 testcontainers[kafka,rabbitmq,mongo,postgresql]==3.4.2
 typer==0.4.1
+boto3==1.24.86
 crypt4gh==1.5
 ghga-connector==0.1.4
 ghga-service-chassis-lib==0.14.3
