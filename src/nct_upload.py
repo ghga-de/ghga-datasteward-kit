@@ -73,6 +73,199 @@ class Keypair:
     private_key: bytes
 
 
+class Upload:
+    """Handler class dealing with most of the upload functionality"""
+
+    def __init__(self, input_path: Path, alias: str) -> None:
+        self.file_id = str(uuid4())
+        self.alias = alias
+        self.input_path = input_path
+        self.checksum = get_checksum_unencrypted(input_path)
+        self.keypair = generate_crypt4gh_keypair()
+
+    def process_file(self):
+        """Run upload/download/validation flow"""
+        encrypted_file_loc = self._encrypt_file()
+        file_size = encrypted_file_loc.stat().st_size
+        file_secret, offset = self._read_envelope(encrypted_file_loc=encrypted_file_loc)
+        enc_md5sums, enc_sha256sums = self._upload_file(
+            encrypted_file_loc=encrypted_file_loc,
+            file_size=file_size,
+            offset=offset,
+        )
+        self._download(
+            file_size=file_size, destination=encrypted_file_loc, file_secret=file_secret
+        )
+        # only calculate the checksum after we have the complete file
+        self._validate_checksum(destination=encrypted_file_loc)
+        self._write_metadata(
+            enc_md5sums=enc_md5sums,
+            enc_sha256sums=enc_sha256sums,
+            file_secret=file_secret,
+        )
+
+    def _encrypt_file(self):
+        """Encrypt file using Crypt4GH"""
+        LOGGER.info("(2/7) Encrypting file %s", self.input_path.resolve())
+        tmp_dir = CONFIG.tmp_dir / self.alias
+        if not tmp_dir.exists():
+            tmp_dir.mkdir(parents=True)
+        output_path = tmp_dir / self.file_id
+
+        keys = [(0, self.keypair.private_key, self.keypair.public_key)]
+
+        with self.input_path.open("rb") as infile:
+            with output_path.open("wb") as outfile:
+                crypt4gh.lib.encrypt(keys=keys, infile=infile, outfile=outfile)
+        return output_path
+
+    def _read_envelope(self, *, encrypted_file_loc: Path):
+        """Get file encryption/decryption secret and file content offset"""
+        LOGGER.info("(3/7) Extracting file secret and content offset")
+        with encrypted_file_loc.open("rb") as file:
+            keys = [(0, self.keypair.private_key, None)]
+            session_keys, _ = crypt4gh.header.deconstruct(infile=file, keys=keys)
+
+            file_secret = session_keys[0]
+            offset = file.tell()
+
+        return file_secret, offset
+
+    def _upload_file(self, *, encrypted_file_loc: Path, file_size: int, offset: int):
+        """Perform multipart upload and compute encrypted part checksums"""
+        with objectstorage() as storage:
+            if storage.does_object_exist(
+                bucket_id=CONFIG.bucket_id, object_id=self.file_id
+            ):
+                storage.delete_object(
+                    bucket_id=CONFIG.bucket_id, object_id=self.file_id
+                )
+
+            upload_id = storage.init_multipart_upload(
+                bucket_id=CONFIG.bucket_id, object_id=self.file_id
+            )
+
+            enc_md5sums = []
+            enc_sha256sums = []
+
+            sum_bytes = 0
+
+            with encrypted_file_loc.open("rb") as file:
+                file.seek(offset)
+                part = file.read(PART_SIZE)
+                part_number = 1
+                while part:
+                    sum_bytes += len(part)
+                    LOGGER.info(
+                        "(4/7) Uploading part no. %i (%.2f%%)",
+                        part_number,
+                        sum_bytes / file_size * 100,
+                    )
+                    enc_md5sums.append(
+                        hashlib.md5(part, usedforsecurity=False).hexdigest()
+                    )
+                    enc_sha256sums.append(hashlib.sha256(part).hexdigest())
+                    upload_url = storage.get_part_upload_url(
+                        upload_id=upload_id,
+                        bucket_id=CONFIG.bucket_id,
+                        object_id=self.file_id,
+                        part_number=part_number,
+                    )
+                    requests.put(upload_url, data=part, timeout=60)
+                    part_number += 1
+                    part = file.read(PART_SIZE)
+
+            storage.complete_multipart_upload(
+                upload_id=upload_id,
+                bucket_id=CONFIG.bucket_id,
+                object_id=self.file_id,
+            )
+            encrypted_file_loc.unlink()
+
+        return enc_md5sums, enc_sha256sums
+
+    def _download(
+        self,
+        *,
+        file_size: int,
+        destination: Path,
+        file_secret: bytes,
+    ):  # pylint: disable=too-many-arguments
+        """Download uploaded file, decrypt and verify checksum"""
+
+        with objectstorage() as storage:
+            download_url = storage.get_object_download_url(
+                bucket_id=CONFIG.bucket_id, object_id=self.file_id
+            )
+            sum_bytes = 0
+            with requests.get(download_url, stream=True, timeout=60) as dl_stream:
+                with destination.open("wb") as local_file:
+                    envelope = prepare_envelope(
+                        keypair=self.keypair, file_secret=file_secret
+                    )
+                    local_file.write(envelope)
+                    for part in dl_stream.iter_content(chunk_size=PART_SIZE):
+                        sum_bytes += len(part)
+                        LOGGER.info(
+                            "(5/7) Downloading file for validation (%.2f%%)",
+                            sum_bytes / file_size * 100,
+                        )
+                        local_file.write(part)
+
+    def _validate_checksum(self, destination: Path):
+        """Decrypt downloaded file and compare checksum with original"""
+
+        LOGGER.info("(6/7) Decrypting and validating checksum")
+        keys = [(0, self.keypair.private_key, None)]
+        name = destination.name
+        decrypted = destination.with_name(name + "_decrypted")
+        with destination.open("rb") as infile:
+            with decrypted.open("wb") as outfile:
+                crypt4gh.lib.decrypt(
+                    keys=keys,
+                    infile=infile,
+                    outfile=outfile,
+                    sender_pubkey=self.keypair.public_key,
+                )
+        dl_checksum = get_checksum_unencrypted(decrypted)
+        # remove temporary files
+        destination.unlink()
+        decrypted.unlink()
+        if dl_checksum != self.checksum:
+            raise ValueError(
+                f"Checksum mismatch:\nExpected: {self.checksum}\nActual: {dl_checksum}"
+            )
+
+    def _write_metadata(
+        self,
+        *,
+        enc_md5sums: list[str],
+        enc_sha256sums: list[str],
+        file_secret: bytes,
+    ):  # pylint: disable=too-many-arguments
+        """Write all necessary data about the uploaded file"""
+        output = {}
+        output["Alias"] = self.alias
+        output["File UUID"] = self.file_id
+        output["Original filesystem path"] = str(self.input_path.resolve())
+        output["Unencrpted file checksum"] = self.checksum
+        output["Encrypted file part checksums (MD5)"] = json.dumps(enc_md5sums)
+        output["Encrypted file part checksums (SHA256)"] = json.dumps(enc_sha256sums)
+        output["Symmetric file encryption secret"] = codecs.decode(
+            base64.b64encode(file_secret), encoding="utf-8"
+        )
+
+        if not CONFIG.output_dir.exists():
+            CONFIG.output_dir.mkdir(parents=True)
+
+        output_path = CONFIG.output_dir / f"{self.alias}.json"
+        LOGGER.info("(7/7) Writing file metadata to %s", output_path)
+        # owner read-only
+        with output_path.open("w") as file:
+            json.dump(output, file, indent=2)
+        os.chmod(path=output_path, mode=0o400)
+
+
 def main(
     input_path: Path = typer.Argument(..., help="Local path of the input file"),
     alias: str = typer.Argument(..., help="A human readable file alias"),
@@ -85,59 +278,19 @@ def main(
         raise ValueError(f"No such file: {input_path.resolve()}")
     if input_path.is_dir():
         raise ValueError(f"File location points to a directory: {input_path.resolve()}")
-    file_checksum = get_checksum_unencrypted(input_path=input_path)
-    file_id = str(uuid4())
 
-    keypair = generate_crypt4gh_keypair()
-    encrypted_file_loc = encrypt_file(
-        input_path=input_path, file_alias=alias, file_id=file_id, keypair=keypair
-    )
-    file_size = encrypted_file_loc.stat().st_size
-    file_secret, offset = read_envelope(
-        encrypted_file_loc=encrypted_file_loc, keypair=keypair
-    )
-    enc_md5sums, enc_sha256sums = upload_file(
-        encrypted_file_loc=encrypted_file_loc,
-        file_id=file_id,
-        file_size=file_size,
-        offset=offset,
-    )
-    # delete local file
-    encrypted_file_loc.unlink()
-    download_and_validate(
-        file_id=file_id,
-        file_size=file_size,
-        destination=encrypted_file_loc,
-        checksum=file_checksum,
-        file_secret=file_secret,
-        keypair=keypair,
-    )
-    write_metadata(
-        alias=alias,
-        file_id=file_id,
-        local_path=input_path,
-        file_checksum=file_checksum,
-        enc_md5sums=enc_md5sums,
-        enc_sha256sums=enc_sha256sums,
-        file_secret=file_secret,
-    )
+    check_output_path(alias=alias)
+    upload = Upload(input_path=input_path, alias=alias)
+    upload.process_file()
 
 
-def get_checksum_unencrypted(input_path: Path) -> str:
-    """Compute SHA256 checksum over unencrypted file content"""
-    LOGGER.info("Computing checksum...\tThis might take a moment")
-    chunk_size = 256 * 1024**2
-    sha256sum = hashlib.sha256()
-    file_size = input_path.stat().st_size
-    sum_bytes = 0
-    with input_path.open("rb") as file:
-        data = file.read(chunk_size)
-        while data:
-            sum_bytes += len(data)
-            LOGGER.info("Processing (%.2f%%)", sum_bytes / file_size * 100)
-            sha256sum.update(data)
-            data = file.read(chunk_size)
-    return sha256sum.hexdigest()
+def check_output_path(alias: str):
+    """Check if we accidentally try to overwrite an alread existing metadata file"""
+    output_path = CONFIG.output_dir / f"{alias}.json"
+    if output_path.exists():
+        raise FileExistsError(
+            f"Output file {output_path.resolve()} already exists and cannot be overwritten."
+        )
 
 
 def generate_crypt4gh_keypair() -> Keypair:
@@ -160,36 +313,25 @@ def generate_crypt4gh_keypair() -> Keypair:
     return Keypair(public_key=public_key, private_key=private_key)
 
 
-def encrypt_file(input_path: Path, file_alias: str, file_id: str, keypair: Keypair):
-    """Encrypt file using Crypt4GH"""
-    LOGGER.info("(2/7) Encrypting file %s", input_path.resolve())
-    tmp_dir = CONFIG.tmp_dir / file_alias
-    if not tmp_dir.exists():
-        tmp_dir.mkdir(parents=True)
-    output_path = tmp_dir / file_id
+def get_checksum_unencrypted(file_location: Path) -> str:
+    """Compute SHA256 checksum over unencrypted file content"""
 
-    keys = [(0, keypair.private_key, keypair.public_key)]
-
-    with input_path.open("rb") as infile:
-        with output_path.open("wb") as outfile:
-            crypt4gh.lib.encrypt(keys=keys, infile=infile, outfile=outfile)
-    return output_path
-
-
-def read_envelope(encrypted_file_loc: Path, keypair: Keypair):
-    """Get file encryption/decryption secret and file content offset"""
-    LOGGER.info("(3/7) Extracting file secret and content offset")
-    with encrypted_file_loc.open("rb") as file:
-        keys = [(0, keypair.private_key, None)]
-        session_keys, _ = crypt4gh.header.deconstruct(infile=file, keys=keys)
-
-        file_secret = session_keys[0]
-        offset = file.tell()
-
-    return file_secret, offset
+    LOGGER.info("Computing checksum...\tThis might take a moment")
+    chunk_size = 256 * 1024**2
+    sha256sum = hashlib.sha256()
+    file_size = file_location.stat().st_size
+    sum_bytes = 0
+    with file_location.open("rb") as file:
+        data = file.read(chunk_size)
+        while data:
+            sum_bytes += len(data)
+            LOGGER.info("Processing (%.2f%%)", sum_bytes / file_size * 100)
+            sha256sum.update(data)
+            data = file.read(chunk_size)
+    return sha256sum.hexdigest()
 
 
-def get_s3():
+def objectstorage():
     """Configure S3 and return S3 DAO"""
     s3_config = S3ConfigBase(
         s3_endpoint_url=CONFIG.s3_endpoint_url.get_secret_value(),
@@ -197,82 +339,6 @@ def get_s3():
         s3_secret_access_key=CONFIG.s3_secret_access_key.get_secret_value(),
     )
     return ObjectStorageS3(config=s3_config)
-
-
-def upload_file(encrypted_file_loc: Path, file_id: str, file_size: int, offset: int):
-    """Perform multipart upload and compute encrypted part checksums"""
-    with get_s3() as storage:
-        if storage.does_object_exist(bucket_id=CONFIG.bucket_id, object_id=file_id):
-            storage.delete_object(bucket_id=CONFIG.bucket_id, object_id=file_id)
-
-        upload_id = storage.init_multipart_upload(
-            bucket_id=CONFIG.bucket_id, object_id=file_id
-        )
-
-    enc_md5sums = []
-    enc_sha256sums = []
-
-    sum_bytes = 0
-
-    with encrypted_file_loc.open("rb") as file:
-        file.seek(offset)
-        part = file.read(PART_SIZE)
-        part_number = 1
-        while part:
-            sum_bytes += len(part)
-            LOGGER.info(
-                "(4/7) Uploading part no. %i (%.2f%%)",
-                part_number,
-                sum_bytes / file_size * 100,
-            )
-            enc_md5sums.append(hashlib.md5(part, usedforsecurity=False).hexdigest())
-            enc_sha256sums.append(hashlib.sha256(part).hexdigest())
-            with get_s3() as storage:
-                upload_url = storage.get_part_upload_url(
-                    upload_id=upload_id,
-                    bucket_id=CONFIG.bucket_id,
-                    object_id=file_id,
-                    part_number=part_number,
-                )
-            requests.put(upload_url, data=part, timeout=60)
-            part_number += 1
-            part = file.read(PART_SIZE)
-        with get_s3() as storage:
-            storage.complete_multipart_upload(
-                upload_id=upload_id, bucket_id=CONFIG.bucket_id, object_id=file_id
-            )
-
-    return enc_md5sums, enc_sha256sums
-
-
-def download_and_validate(
-    file_id: str,
-    file_size: int,
-    destination: Path,
-    checksum: str,
-    file_secret: bytes,
-    keypair: Keypair,
-):  # pylint: disable=too-many-arguments
-    """Download uploaded file, decrypt and verify checksum"""
-
-    with get_s3() as storage:
-        download_url = storage.get_object_download_url(
-            bucket_id=CONFIG.bucket_id, object_id=file_id
-        )
-    sum_bytes = 0
-    with requests.get(download_url, stream=True, timeout=60) as dl_stream:
-        with destination.open("wb") as local_file:
-            envelope = prepare_envelope(keypair=keypair, file_secret=file_secret)
-            local_file.write(envelope)
-            for part in dl_stream.iter_content(chunk_size=PART_SIZE):
-                sum_bytes += len(part)
-                LOGGER.info(
-                    "(5/7) Downloading file for validation (%.2f%%)",
-                    sum_bytes / file_size * 100,
-                )
-                local_file.write(part)
-    # only calculate the checksum after we have the complete file
-    validate_checksum(destination=destination, checksum=checksum, keypair=keypair)
 
 
 def prepare_envelope(keypair: Keypair, file_secret: bytes):
@@ -284,62 +350,6 @@ def prepare_envelope(keypair: Keypair, file_secret: bytes):
     header_packets = crypt4gh.header.encrypt(header_content, keys)
     header_bytes = crypt4gh.header.serialize(header_packets)
     return header_bytes
-
-
-def validate_checksum(destination: Path, checksum: str, keypair: Keypair):
-    """Decrypt downloaded file and compare checksum with original"""
-    LOGGER.info("(6/7) Decrypting and validating checksum")
-    keys = [(0, keypair.private_key, None)]
-    name = destination.name
-    decrypted = destination.with_name(name + "_decrypted")
-    with destination.open("rb") as infile:
-        with decrypted.open("wb") as outfile:
-            crypt4gh.lib.decrypt(
-                keys=keys,
-                infile=infile,
-                outfile=outfile,
-                sender_pubkey=keypair.public_key,
-            )
-    dl_checksum = get_checksum_unencrypted(decrypted)
-    # remove temporary files
-    destination.unlink()
-    decrypted.unlink()
-    if not dl_checksum == checksum:
-        raise ValueError(
-            f"Checksum mismatch:\nExpected: {checksum}\nActual: {dl_checksum}"
-        )
-
-
-def write_metadata(
-    alias: str,
-    file_id: str,
-    local_path: Path,
-    file_checksum: str,
-    enc_md5sums: list[str],
-    enc_sha256sums: list[str],
-    file_secret: bytes,
-):  # pylint: disable=too-many-arguments
-    """Write all necessary data about the uploaded file"""
-    output = {}
-    output["Alias"] = alias
-    output["File UUID"] = file_id
-    output["Original filesystem path"] = str(local_path.resolve())
-    output["Unencrpted file checksum"] = file_checksum
-    output["Encrypted file part checksums (MD5)"] = json.dumps(enc_md5sums)
-    output["Encrypted file part checksums (SHA256)"] = json.dumps(enc_sha256sums)
-    output["Symmetric file encryption secret"] = codecs.decode(
-        base64.b64encode(file_secret), encoding="utf-8"
-    )
-
-    if not CONFIG.output_dir.exists():
-        CONFIG.output_dir.mkdir(parents=True)
-
-    output_path = CONFIG.output_dir / f"{alias}.json"
-    LOGGER.info("(7/7) Writing file metadata to %s", output_path)
-    # owner read-only
-    with output_path.open("w") as file:
-        json.dump(output, file, indent=2)
-    os.chmod(path=output_path, mode=0o400)
 
 
 if __name__ == "__main__":
