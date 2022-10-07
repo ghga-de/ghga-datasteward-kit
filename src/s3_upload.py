@@ -39,7 +39,7 @@ from pydantic import BaseSettings, Field, SecretStr  # type: ignore
 from requests.adapters import HTTPAdapter, Retry  # type: ignore
 
 
-@config_from_yaml(prefix="nct")
+@config_from_yaml(prefix="upload")
 class Config(BaseSettings):
     """
     Required options from a config file named .nct.yaml placed next to this script file
