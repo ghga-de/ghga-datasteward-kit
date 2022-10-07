@@ -25,6 +25,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import mkstemp
+from typing import Any
 from uuid import uuid4
 
 import crypt4gh.header  # type: ignore
@@ -35,6 +36,7 @@ import typer  # type: ignore
 from ghga_service_chassis_lib.config import config_from_yaml  # type: ignore
 from ghga_service_chassis_lib.s3 import ObjectStorageS3, S3ConfigBase  # type: ignore
 from pydantic import BaseSettings, Field, SecretStr  # type: ignore
+from requests.adapters import HTTPAdapter, Retry  # type: ignore
 
 
 @config_from_yaml(prefix="nct")
@@ -60,9 +62,22 @@ class Config(BaseSettings):
     )
 
 
+def configure_session() -> requests.Session:
+    """Configure session with exponential backoff retry"""
+    session = requests.session()
+    retries = Retry(total=7, backoff_factor=1)
+    adapter = HTTPAdapter(max_retries=retries)
+
+    session.mount("http://", adapter=adapter)
+    session.mount("https://", adapter=adapter)
+
+    return session
+
+
 CONFIG = Config()
 LOGGER = logging.getLogger("nct_upload")
 PART_SIZE = 16 * 1024**2
+SESSION = configure_session()
 
 
 @dataclass
@@ -171,7 +186,7 @@ class Upload:
                         object_id=self.file_id,
                         part_number=part_number,
                     )
-                    requests.put(upload_url, data=part, timeout=60)
+                    SESSION.put(upload_url, data=part, timeout=60)
                     part_number += 1
                     part = file.read(PART_SIZE)
 
@@ -191,14 +206,13 @@ class Upload:
         destination: Path,
         file_secret: bytes,
     ):  # pylint: disable=too-many-arguments
-        """Download uploaded file, decrypt and verify checksum"""
-
+        """Download uploaded file"""
         with objectstorage() as storage:
             download_url = storage.get_object_download_url(
                 bucket_id=CONFIG.bucket_id, object_id=self.file_id
             )
             sum_bytes = 0
-            with requests.get(download_url, stream=True, timeout=60) as dl_stream:
+            with SESSION.get(download_url, stream=True, timeout=60) as dl_stream:
                 with destination.open("wb") as local_file:
                     envelope = prepare_envelope(
                         keypair=self.keypair, file_secret=file_secret
@@ -244,13 +258,13 @@ class Upload:
         file_secret: bytes,
     ):  # pylint: disable=too-many-arguments
         """Write all necessary data about the uploaded file"""
-        output = {}
+        output: dict[str, Any] = {}
         output["Alias"] = self.alias
         output["File UUID"] = self.file_id
         output["Original filesystem path"] = str(self.input_path.resolve())
         output["Unencrpted file checksum"] = self.checksum
-        output["Encrypted file part checksums (MD5)"] = json.dumps(enc_md5sums)
-        output["Encrypted file part checksums (SHA256)"] = json.dumps(enc_sha256sums)
+        output["Encrypted file part checksums (MD5)"] = enc_md5sums
+        output["Encrypted file part checksums (SHA256)"] = enc_sha256sums
         output["Symmetric file encryption secret"] = codecs.decode(
             base64.b64encode(file_secret), encoding="utf-8"
         )
@@ -264,24 +278,6 @@ class Upload:
         with output_path.open("w") as file:
             json.dump(output, file, indent=2)
         os.chmod(path=output_path, mode=0o400)
-
-
-def main(
-    input_path: Path = typer.Argument(..., help="Local path of the input file"),
-    alias: str = typer.Argument(..., help="A human readable file alias"),
-):
-    """
-    Run encryption, upload and validation.
-    Prints metadata to <alias>.json in the specified output directory
-    """
-    if not input_path.exists():
-        raise ValueError(f"No such file: {input_path.resolve()}")
-    if input_path.is_dir():
-        raise ValueError(f"File location points to a directory: {input_path.resolve()}")
-
-    check_output_path(alias=alias)
-    upload = Upload(input_path=input_path, alias=alias)
-    upload.process_file()
 
 
 def check_output_path(alias: str):
@@ -317,17 +313,17 @@ def get_checksum_unencrypted(file_location: Path) -> str:
     """Compute SHA256 checksum over unencrypted file content"""
 
     LOGGER.info("Computing checksum...\tThis might take a moment")
-    chunk_size = 256 * 1024**2
     sha256sum = hashlib.sha256()
     file_size = file_location.stat().st_size
     sum_bytes = 0
     with file_location.open("rb") as file:
-        data = file.read(chunk_size)
+        data = file.read(PART_SIZE)
         while data:
             sum_bytes += len(data)
-            LOGGER.info("Processing (%.2f%%)", sum_bytes / file_size * 100)
+            LOGGER.info("Computing checksum (%.2f%%)", sum_bytes / file_size * 100)
             sha256sum.update(data)
-            data = file.read(chunk_size)
+            data = file.read(PART_SIZE)
+
     return sha256sum.hexdigest()
 
 
@@ -350,6 +346,24 @@ def prepare_envelope(keypair: Keypair, file_secret: bytes):
     header_packets = crypt4gh.header.encrypt(header_content, keys)
     header_bytes = crypt4gh.header.serialize(header_packets)
     return header_bytes
+
+
+def main(
+    input_path: Path = typer.Argument(..., help="Local path of the input file"),
+    alias: str = typer.Argument(..., help="A human readable file alias"),
+):
+    """
+    Run encryption, upload and validation.
+    Prints metadata to <alias>.json in the specified output directory
+    """
+    if not input_path.exists():
+        raise ValueError(f"No such file: {input_path.resolve()}")
+    if input_path.is_dir():
+        raise ValueError(f"File location points to a directory: {input_path.resolve()}")
+
+    check_output_path(alias=alias)
+    upload = Upload(input_path=input_path, alias=alias)
+    upload.process_file()
 
 
 if __name__ == "__main__":
