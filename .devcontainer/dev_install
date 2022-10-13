@@ -3,7 +3,6 @@
 cd /workspace
 
 # install python dependencies:
-sudo apt -y install --no-install-recommends libcurl4-openssl-dev libssl-dev
 pip install -r /workspace/requirements.txt
 
 # install pre-commit hooks to git:

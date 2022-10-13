@@ -21,7 +21,9 @@ import codecs
 import hashlib
 import json
 import logging
+import math
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import mkstemp
@@ -101,8 +103,8 @@ class Upload:
     def process_file(self):
         """Run upload/download/validation flow"""
         encrypted_file_loc = self._encrypt_file()
-        file_size = encrypted_file_loc.stat().st_size
         file_secret, offset = self._read_envelope(encrypted_file_loc=encrypted_file_loc)
+        file_size = encrypted_file_loc.stat().st_size - offset
         enc_md5sums, enc_sha256sums = self._upload_file(
             encrypted_file_loc=encrypted_file_loc,
             file_size=file_size,
@@ -211,20 +213,21 @@ class Upload:
             download_url = storage.get_object_download_url(
                 bucket_id=CONFIG.bucket_id, object_id=self.file_id
             )
-            sum_bytes = 0
-            with SESSION.get(download_url, stream=True, timeout=60) as dl_stream:
-                with destination.open("wb") as local_file:
-                    envelope = prepare_envelope(
-                        keypair=self.keypair, file_secret=file_secret
+            with destination.open("wb") as local_file:
+                envelope = prepare_envelope(
+                    keypair=self.keypair, file_secret=file_secret
+                )
+                local_file.write(envelope)
+
+                for start, stop in get_ranges(file_size=file_size):
+                    headers = {"Range": f"bytes={start}-{stop}"}
+                    response = SESSION.get(download_url, timeout=60, headers=headers)
+                    chunk = response.content
+                    LOGGER.info(
+                        "(5/7) Downloading file for validation (%.2f%%)",
+                        stop / file_size * 100,
                     )
-                    local_file.write(envelope)
-                    for part in dl_stream.iter_content(chunk_size=PART_SIZE):
-                        sum_bytes += len(part)
-                        LOGGER.info(
-                            "(5/7) Downloading file for validation (%.2f%%)",
-                            sum_bytes / file_size * 100,
-                        )
-                        local_file.write(part)
+                    local_file.write(chunk)
 
     def _validate_checksum(self, destination: Path):
         """Decrypt downloaded file and compare checksum with original"""
@@ -284,9 +287,8 @@ def check_output_path(alias: str):
     """Check if we accidentally try to overwrite an alread existing metadata file"""
     output_path = CONFIG.output_dir / f"{alias}.json"
     if output_path.exists():
-        raise FileExistsError(
-            f"Output file {output_path.resolve()} already exists and cannot be overwritten."
-        )
+        msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
+        handle_superficial_error(msg=msg)
 
 
 def generate_crypt4gh_keypair() -> Keypair:
@@ -303,7 +305,6 @@ def generate_crypt4gh_keypair() -> Keypair:
     public_key = crypt4gh.keys.get_public_key(pk_path)
     private_key = crypt4gh.keys.get_private_key(sk_path, lambda: None)
     os.umask(original_umask)
-
     Path(pk_path).unlink()
     Path(sk_path).unlink()
     return Keypair(public_key=public_key, private_key=private_key)
@@ -348,6 +349,25 @@ def prepare_envelope(keypair: Keypair, file_secret: bytes):
     return header_bytes
 
 
+def get_ranges(file_size: int):
+    """Calculate part ranges"""
+    num_parts = file_size / PART_SIZE
+    byte_ranges = [
+        (PART_SIZE * part_no, PART_SIZE * (part_no + 1) - 1)
+        for part_no in range(int(num_parts))
+    ]
+    if math.ceil(num_parts) != int(num_parts):
+        byte_ranges.append((PART_SIZE * int(num_parts), file_size - 1))
+
+    return byte_ranges
+
+
+def handle_superficial_error(msg: str):
+    """Don't want user dealing with stacktrace on simple input/output issues, log instead"""
+    LOGGER.critical(msg)
+    sys.exit(-1)
+
+
 def main(
     input_path: Path = typer.Argument(..., help="Local path of the input file"),
     alias: str = typer.Argument(..., help="A human readable file alias"),
@@ -357,9 +377,12 @@ def main(
     Prints metadata to <alias>.json in the specified output directory
     """
     if not input_path.exists():
-        raise ValueError(f"No such file: {input_path.resolve()}")
+        msg = f"No such file: {input_path.resolve()}"
+        handle_superficial_error(msg=msg)
+
     if input_path.is_dir():
-        raise ValueError(f"File location points to a directory: {input_path.resolve()}")
+        msg = f"File location points to a directory: {input_path.resolve()}"
+        handle_superficial_error(msg=msg)
 
     check_output_path(alias=alias)
     upload = Upload(input_path=input_path, alias=alias)
