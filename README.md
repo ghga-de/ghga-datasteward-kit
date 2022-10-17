@@ -24,7 +24,7 @@ The user needs to provide a config file containing the following information:
 - Path to a local directory that can be used for temporary output files
 - Path to a local directory for actual output
 
-Please adapt the example_data/template.upload.yaml, rename it to .upload.yaml and move it next to the s3_upload.py script.
+Please adapt the example_data/template.upload.yaml, rename it to .upload.yaml and move it next to the s3_upload.py script in your current working directory or place it in your home directory.
 In addition to these general configuration options, each invocation of this script needs 2 additional arguments in the following order:
 1. The path to the file on the local file system
 2. A human readable alias for the file (choose a unique one)
@@ -40,6 +40,9 @@ The resulting file is owner read-only and contains the following information:
 5. MD5 checksums over all encrypted file parts
 6. SHA256 checksums over all encrypted file parts
 7. The file encryption/decryption secret
+
+Attention: Keep this output file in safe, private location.
+If this file is lost, the uploaded file content becomes inaccessible.
 
 ## Quick Start
 For setting up the development environment, we rely on the
