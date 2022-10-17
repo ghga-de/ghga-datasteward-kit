@@ -167,15 +167,18 @@ class Upload:
             for part_number, part in enumerate(
                 read_file(file=file, part_size=PART_SIZE, offset=offset), start=1
             ):
-                sum_bytes += len(part)
-                LOGGER.info(
-                    "(4/7) Uploading part no. %i (%.2f%%)",
-                    part_number,
-                    sum_bytes / file_size * 100,
-                )
-                enc_md5sums.append(hashlib.md5(part, usedforsecurity=False).hexdigest())
-                enc_sha256sums.append(hashlib.sha256(part).hexdigest())
                 try:
+                    sum_bytes += len(part)
+                    LOGGER.info(
+                        "(4/7) Uploading part no. %i (%.2f%%)",
+                        part_number,
+                        sum_bytes / file_size * 100,
+                    )
+                    enc_md5sums.append(
+                        hashlib.md5(part, usedforsecurity=False).hexdigest()
+                    )
+                    enc_sha256sums.append(hashlib.sha256(part).hexdigest())
+
                     upload_url = await storage.get_part_upload_url(
                         upload_id=upload_id,
                         bucket_id=CONFIG.bucket_id,
@@ -188,7 +191,7 @@ class Upload:
                     KeyboardInterrupt,
                 ) as exc:
                     LOGGER.error(
-                        "Error occured during uplpload: %s\nCleaning up. Please retry.",
+                        "Error occured during upload: %s\nCleaning up. Please retry.",
                         str(exc),
                     )
                     await storage.abort_multipart_upload(
@@ -209,7 +212,7 @@ class Upload:
             )
         except (Exception, KeyboardInterrupt) as exc:  # pylint: disable=broad-except
             LOGGER.error(
-                "Error occured during uplpload: %s\nCleaning up. Please retry.",
+                "Error occured during upload: %s\nCleaning up. Please retry.",
                 str(exc),
             )
             await storage.abort_multipart_upload(
