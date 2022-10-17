@@ -16,6 +16,7 @@
 Custom script to encrypt data using Crypt4GH and directly uploading it to S3 objectstorage
 """
 
+import asyncio
 import base64
 import codecs
 import hashlib
@@ -25,6 +26,7 @@ import math
 import os
 import sys
 from dataclasses import dataclass
+from io import BufferedReader
 from pathlib import Path
 from tempfile import mkstemp
 from typing import Any
@@ -36,7 +38,7 @@ import crypt4gh.lib  # type: ignore
 import requests  # type: ignore
 import typer  # type: ignore
 from ghga_service_chassis_lib.config import config_from_yaml  # type: ignore
-from ghga_service_chassis_lib.s3 import ObjectStorageS3, S3ConfigBase  # type: ignore
+from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from pydantic import BaseSettings, Field, SecretStr  # type: ignore
 from requests.adapters import HTTPAdapter, Retry  # type: ignore
 
@@ -100,17 +102,17 @@ class Upload:
         self.checksum = get_checksum_unencrypted(input_path)
         self.keypair = generate_crypt4gh_keypair()
 
-    def process_file(self):
+    async def process_file(self):
         """Run upload/download/validation flow"""
         encrypted_file_loc = self._encrypt_file()
         file_secret, offset = self._read_envelope(encrypted_file_loc=encrypted_file_loc)
         file_size = encrypted_file_loc.stat().st_size - offset
-        enc_md5sums, enc_sha256sums = self._upload_file(
+        enc_md5sums, enc_sha256sums = await self._upload_file(
             encrypted_file_loc=encrypted_file_loc,
             file_size=file_size,
             offset=offset,
         )
-        self._download(
+        await self._download(
             file_size=file_size, destination=encrypted_file_loc, file_secret=file_secret
         )
         # only calculate the checksum after we have the complete file
@@ -148,60 +150,78 @@ class Upload:
 
         return file_secret, offset
 
-    def _upload_file(self, *, encrypted_file_loc: Path, file_size: int, offset: int):
+    async def _upload_file(
+        self, *, encrypted_file_loc: Path, file_size: int, offset: int
+    ):
         """Perform multipart upload and compute encrypted part checksums"""
-        with objectstorage() as storage:
-            if storage.does_object_exist(
-                bucket_id=CONFIG.bucket_id, object_id=self.file_id
+        storage = objectstorage()
+        upload_id = await storage.init_multipart_upload(
+            bucket_id=CONFIG.bucket_id, object_id=self.file_id
+        )
+
+        enc_md5sums = []
+        enc_sha256sums = []
+        sum_bytes = 0
+
+        with encrypted_file_loc.open("rb") as file:
+            for part_number, part in enumerate(
+                read_file(file=file, part_size=PART_SIZE, offset=offset), start=1
             ):
-                storage.delete_object(
-                    bucket_id=CONFIG.bucket_id, object_id=self.file_id
+                sum_bytes += len(part)
+                LOGGER.info(
+                    "(4/7) Uploading part no. %i (%.2f%%)",
+                    part_number,
+                    sum_bytes / file_size * 100,
                 )
-
-            upload_id = storage.init_multipart_upload(
-                bucket_id=CONFIG.bucket_id, object_id=self.file_id
-            )
-
-            enc_md5sums = []
-            enc_sha256sums = []
-
-            sum_bytes = 0
-
-            with encrypted_file_loc.open("rb") as file:
-                file.seek(offset)
-                part = file.read(PART_SIZE)
-                part_number = 1
-                while part:
-                    sum_bytes += len(part)
-                    LOGGER.info(
-                        "(4/7) Uploading part no. %i (%.2f%%)",
-                        part_number,
-                        sum_bytes / file_size * 100,
-                    )
-                    enc_md5sums.append(
-                        hashlib.md5(part, usedforsecurity=False).hexdigest()
-                    )
-                    enc_sha256sums.append(hashlib.sha256(part).hexdigest())
-                    upload_url = storage.get_part_upload_url(
+                enc_md5sums.append(hashlib.md5(part, usedforsecurity=False).hexdigest())
+                enc_sha256sums.append(hashlib.sha256(part).hexdigest())
+                try:
+                    upload_url = await storage.get_part_upload_url(
                         upload_id=upload_id,
                         bucket_id=CONFIG.bucket_id,
                         object_id=self.file_id,
                         part_number=part_number,
                     )
-                    SESSION.put(upload_url, data=part, timeout=60)
-                    part_number += 1
-                    part = file.read(PART_SIZE)
+                    SESSION.put(url=upload_url, data=part)
+                except (  # pylint: disable=broad-except
+                    Exception,
+                    KeyboardInterrupt,
+                ) as exc:
+                    LOGGER.error(
+                        "Error occured during uplpload: %s\nCleaning up. Please retry.",
+                        str(exc),
+                    )
+                    await storage.abort_multipart_upload(
+                        upload_id=upload_id,
+                        bucket_id=CONFIG.bucket_id,
+                        object_id=self.file_id,
+                    )
+                    encrypted_file_loc.unlink()
+                    sys.exit()
 
-            storage.complete_multipart_upload(
+        try:
+            await storage.complete_multipart_upload(
                 upload_id=upload_id,
                 bucket_id=CONFIG.bucket_id,
                 object_id=self.file_id,
+                anticipated_part_quantity=math.ceil(file_size / PART_SIZE),
+                anticipated_part_size=PART_SIZE,
+            )
+        except (Exception, KeyboardInterrupt) as exc:  # pylint: disable=broad-except
+            LOGGER.error(
+                "Error occured during uplpload: %s\nCleaning up. Please retry.",
+                str(exc),
+            )
+            await storage.abort_multipart_upload(
+                upload_id=upload_id, bucket_id=CONFIG.bucket_id, object_id=self.file_id
             )
             encrypted_file_loc.unlink()
+            sys.exit()
 
+        encrypted_file_loc.unlink()
         return enc_md5sums, enc_sha256sums
 
-    def _download(
+    async def _download(
         self,
         *,
         file_size: int,
@@ -209,25 +229,23 @@ class Upload:
         file_secret: bytes,
     ):  # pylint: disable=too-many-arguments
         """Download uploaded file"""
-        with objectstorage() as storage:
-            download_url = storage.get_object_download_url(
-                bucket_id=CONFIG.bucket_id, object_id=self.file_id
-            )
-            with destination.open("wb") as local_file:
-                envelope = prepare_envelope(
-                    keypair=self.keypair, file_secret=file_secret
-                )
-                local_file.write(envelope)
+        storage = objectstorage()
+        download_url = await storage.get_object_download_url(
+            bucket_id=CONFIG.bucket_id, object_id=self.file_id
+        )
+        with destination.open("wb") as local_file:
+            envelope = prepare_envelope(keypair=self.keypair, file_secret=file_secret)
+            local_file.write(envelope)
 
-                for start, stop in get_ranges(file_size=file_size):
-                    headers = {"Range": f"bytes={start}-{stop}"}
-                    response = SESSION.get(download_url, timeout=60, headers=headers)
-                    chunk = response.content
-                    LOGGER.info(
-                        "(5/7) Downloading file for validation (%.2f%%)",
-                        stop / file_size * 100,
-                    )
-                    local_file.write(chunk)
+            for start, stop in get_ranges(file_size=file_size):
+                headers = {"Range": f"bytes={start}-{stop}"}
+                response = SESSION.get(download_url, timeout=60, headers=headers)
+                chunk = response.content
+                LOGGER.info(
+                    "(5/7) Downloading file for validation (%.2f%%)",
+                    stop / file_size * 100,
+                )
+                local_file.write(chunk)
 
     def _validate_checksum(self, destination: Path):
         """Decrypt downloaded file and compare checksum with original"""
@@ -318,24 +336,34 @@ def get_checksum_unencrypted(file_location: Path) -> str:
     file_size = file_location.stat().st_size
     sum_bytes = 0
     with file_location.open("rb") as file:
-        data = file.read(PART_SIZE)
-        while data:
-            sum_bytes += len(data)
+        for part in read_file(file=file, part_size=PART_SIZE):
+            sum_bytes += len(part)
             LOGGER.info("Computing checksum (%.2f%%)", sum_bytes / file_size * 100)
-            sha256sum.update(data)
-            data = file.read(PART_SIZE)
+            sha256sum.update(part)
 
     return sha256sum.hexdigest()
 
 
 def objectstorage():
     """Configure S3 and return S3 DAO"""
-    s3_config = S3ConfigBase(
+    s3_config = S3Config(
         s3_endpoint_url=CONFIG.s3_endpoint_url.get_secret_value(),
         s3_access_key_id=CONFIG.s3_access_key_id.get_secret_value(),
         s3_secret_access_key=CONFIG.s3_secret_access_key.get_secret_value(),
     )
-    return ObjectStorageS3(config=s3_config)
+    return S3ObjectStorage(config=s3_config)
+
+
+def read_file(*, file: BufferedReader, part_size: int, offset: int = 0):
+    """Read file content from offset in chunks"""
+    file.seek(offset)
+    while True:
+        file_part = file.read(part_size)
+
+        if len(file_part) == 0:
+            return
+
+        yield file_part
 
 
 def prepare_envelope(keypair: Keypair, file_secret: bytes):
@@ -372,6 +400,11 @@ def main(
     input_path: Path = typer.Argument(..., help="Local path of the input file"),
     alias: str = typer.Argument(..., help="A human readable file alias"),
 ):
+    """Delegate to async_main. typer.run is not async (yet)"""
+    asyncio.run(async_main(input_path=input_path, alias=alias))
+
+
+async def async_main(input_path: Path, alias: str):
     """
     Run encryption, upload and validation.
     Prints metadata to <alias>.json in the specified output directory
@@ -386,7 +419,7 @@ def main(
 
     check_output_path(alias=alias)
     upload = Upload(input_path=input_path, alias=alias)
-    upload.process_file()
+    await upload.process_file()
 
 
 if __name__ == "__main__":
