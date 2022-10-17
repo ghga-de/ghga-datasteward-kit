@@ -79,7 +79,7 @@ def configure_session() -> requests.Session:
 
 
 CONFIG = Config()
-LOGGER = logging.getLogger("nct_upload")
+LOGGER = logging.getLogger("s3_upload")
 PART_SIZE = 16 * 1024**2
 SESSION = configure_session()
 
