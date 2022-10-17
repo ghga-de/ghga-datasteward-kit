@@ -104,19 +104,51 @@ class Upload:
 
     async def process_file(self):
         """Run upload/download/validation flow"""
-        encrypted_file_loc = self._encrypt_file()
-        file_secret, offset = self._read_envelope(encrypted_file_loc=encrypted_file_loc)
-        file_size = encrypted_file_loc.stat().st_size - offset
-        enc_md5sums, enc_sha256sums = await self._upload_file(
-            encrypted_file_loc=encrypted_file_loc,
-            file_size=file_size,
-            offset=offset,
-        )
-        await self._download(
-            file_size=file_size, destination=encrypted_file_loc, file_secret=file_secret
-        )
-        # only calculate the checksum after we have the complete file
-        self._validate_checksum(destination=encrypted_file_loc)
+        # upload related, clean up encrypted file on exception
+        try:
+            encrypted_file_loc = self._encrypt_file()
+            file_secret, offset = self._read_envelope(
+                encrypted_file_loc=encrypted_file_loc
+            )
+            file_size = encrypted_file_loc.stat().st_size - offset
+            enc_md5sums, enc_sha256sums = await self._upload_file(
+                encrypted_file_loc=encrypted_file_loc,
+                file_size=file_size,
+                offset=offset,
+            )
+        except (Exception, KeyboardInterrupt) as exc:
+            raise exc
+        finally:
+            # cleanup local encrypted file. _upload_file takes care of
+            encrypted_file_loc.unlink(missing_ok=True)
+
+        # upload related, clean redwonloaded, encrypted file on exception, clean up
+        # object in bucket, remove temporary unencrypted file
+        try:
+            destination = encrypted_file_loc
+            await self._download(
+                file_size=file_size,
+                destination=destination,
+                file_secret=file_secret,
+            )
+            destination_decrypted = destination.with_name(
+                destination.name + "_decrypted"
+            )
+            # only calculate the checksum after we have the complete file
+            self._validate_checksum(
+                destination=destination, destination_decrypted=destination_decrypted
+            )
+        except (Exception, KeyboardInterrupt) as exc:
+            storage = objectstorage()
+            await storage.delete_object(
+                bucket_id=CONFIG.bucket_id, object_id=self.file_id
+            )
+            raise exc
+        finally:
+            # cleanup downloaded and unencrypted
+            destination.unlink(missing_ok=True)
+            destination_decrypted.unlink(missing_ok=True)
+
         self._write_metadata(
             enc_md5sums=enc_md5sums,
             enc_sha256sums=enc_sha256sums,
@@ -190,17 +222,12 @@ class Upload:
                     Exception,
                     KeyboardInterrupt,
                 ) as exc:
-                    LOGGER.error(
-                        "Error occured during upload: %s\nCleaning up. Please retry.",
-                        str(exc),
-                    )
                     await storage.abort_multipart_upload(
                         upload_id=upload_id,
                         bucket_id=CONFIG.bucket_id,
                         object_id=self.file_id,
                     )
-                    encrypted_file_loc.unlink()
-                    sys.exit()
+                    raise exc
 
         try:
             await storage.complete_multipart_upload(
@@ -211,17 +238,11 @@ class Upload:
                 anticipated_part_size=PART_SIZE,
             )
         except (Exception, KeyboardInterrupt) as exc:  # pylint: disable=broad-except
-            LOGGER.error(
-                "Error occured during upload: %s\nCleaning up. Please retry.",
-                str(exc),
-            )
             await storage.abort_multipart_upload(
                 upload_id=upload_id, bucket_id=CONFIG.bucket_id, object_id=self.file_id
             )
-            encrypted_file_loc.unlink()
-            sys.exit()
+            raise exc
 
-        encrypted_file_loc.unlink()
         return enc_md5sums, enc_sha256sums
 
     async def _download(
@@ -250,25 +271,21 @@ class Upload:
                 )
                 local_file.write(chunk)
 
-    def _validate_checksum(self, destination: Path):
+    def _validate_checksum(self, destination: Path, destination_decrypted: Path):
         """Decrypt downloaded file and compare checksum with original"""
 
         LOGGER.info("(6/7) Decrypting and validating checksum")
         keys = [(0, self.keypair.private_key, None)]
-        name = destination.name
-        decrypted = destination.with_name(name + "_decrypted")
+
         with destination.open("rb") as infile:
-            with decrypted.open("wb") as outfile:
+            with destination_decrypted.open("wb") as outfile:
                 crypt4gh.lib.decrypt(
                     keys=keys,
                     infile=infile,
                     outfile=outfile,
                     sender_pubkey=self.keypair.public_key,
                 )
-        dl_checksum = get_checksum_unencrypted(decrypted)
-        # remove temporary files
-        destination.unlink()
-        decrypted.unlink()
+        dl_checksum = get_checksum_unencrypted(destination_decrypted)
         if dl_checksum != self.checksum:
             raise ValueError(
                 f"Checksum mismatch:\nExpected: {self.checksum}\nActual: {dl_checksum}"
