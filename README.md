@@ -41,7 +41,7 @@ The resulting file is owner read-only and contains the following information:
 6. SHA256 checksums over all encrypted file parts
 7. The file encryption/decryption secret
 
-Attention: Keep this output file in safe, private location.
+Attention: Keep this output file in a safe, private location.
 If this file is lost, the uploaded file content becomes inaccessible.
 
 ## Quick Start
