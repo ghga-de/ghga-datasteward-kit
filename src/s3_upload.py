@@ -35,10 +35,12 @@ from uuid import uuid4
 import crypt4gh.header  # type: ignore
 import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
+import pycurl  # type: ignore
 import requests  # type: ignore
 import typer  # type: ignore
 from ghga_service_chassis_lib.config import config_from_yaml  # type: ignore
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
+from pycurl_requests.adapters import PyCurlHttpAdapter  # type: ignore
 from pydantic import BaseSettings, Field, SecretStr  # type: ignore
 from requests.adapters import HTTPAdapter, Retry  # type: ignore
 
@@ -66,22 +68,35 @@ class Config(BaseSettings):
     )
 
 
+def configure_pycurl_session() -> requests.Session:
+    """Configure session with pycurl requests adapter"""
+    with requests.session() as session:
+        curl = pycurl.Curl()
+
+        adapter = PyCurlHttpAdapter(curl)
+
+        session.mount("http://", adapter=adapter)
+        session.mount("https://", adapter=adapter)
+
+        return session
+
+
 def configure_session() -> requests.Session:
     """Configure session with exponential backoff retry"""
-    session = requests.session()
-    retries = Retry(total=7, backoff_factor=1)
-    adapter = HTTPAdapter(max_retries=retries)
+    with requests.session() as session:
 
-    session.mount("http://", adapter=adapter)
-    session.mount("https://", adapter=adapter)
+        retries = Retry(total=7, backoff_factor=1)
+        adapter = HTTPAdapter(max_retries=retries)
 
-    return session
+        session.mount("http://", adapter=adapter)
+        session.mount("https://", adapter=adapter)
+
+        return session
 
 
 CONFIG = Config()
 LOGGER = logging.getLogger("s3_upload")
 PART_SIZE = 16 * 1024**2
-SESSION = configure_session()
 
 
 @dataclass
@@ -124,15 +139,13 @@ class Upload:
 
         # upload related, clean redwonloaded, encrypted file on exception, clean up
         # object in bucket, remove temporary unencrypted file
+        destination = encrypted_file_loc
+        destination_decrypted = destination.with_name(destination.name + "_decrypted")
         try:
-            destination = encrypted_file_loc
             await self._download(
                 file_size=file_size,
                 destination=destination,
                 file_secret=file_secret,
-            )
-            destination_decrypted = destination.with_name(
-                destination.name + "_decrypted"
             )
             # only calculate the checksum after we have the complete file
             self._validate_checksum(
@@ -217,7 +230,8 @@ class Upload:
                         object_id=self.file_id,
                         part_number=part_number,
                     )
-                    SESSION.put(url=upload_url, data=part)
+                    session = configure_session()
+                    session.put(url=upload_url, data=part)
                 except (  # pylint: disable=broad-except
                     Exception,
                     KeyboardInterrupt,
@@ -263,7 +277,8 @@ class Upload:
 
             for start, stop in get_ranges(file_size=file_size):
                 headers = {"Range": f"bytes={start}-{stop}"}
-                response = SESSION.get(download_url, timeout=60, headers=headers)
+                session = configure_session()
+                response = session.get(download_url, timeout=60, headers=headers)
                 chunk = response.content
                 LOGGER.info(
                     "(5/7) Downloading file for validation (%.2f%%)",
