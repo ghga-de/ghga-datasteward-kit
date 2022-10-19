@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A test dummy just to make the CI pass."""
+"""Testing the whole encryption, upload, validation flow"""
 
 import shutil
 import sys
