@@ -45,8 +45,36 @@ from pycurl_requests.adapters import PyCurlHttpAdapter  # type: ignore
 from pydantic import BaseSettings, Field, SecretStr  # type: ignore
 from requests.adapters import HTTPAdapter, Retry  # type: ignore
 
+
+def configure_pycurl_session() -> requests.Session:
+    """Configure session with pycurl requests adapter"""
+    with requests.session() as session:
+        curl = pycurl.Curl()
+
+        adapter = PyCurlHttpAdapter(curl)
+
+        session.mount("http://", adapter=adapter)
+        session.mount("https://", adapter=adapter)
+
+        return session
+
+
+def configure_session() -> requests.Session:
+    """Configure session with exponential backoff retry"""
+    with requests.session() as session:
+
+        retries = Retry(total=7, backoff_factor=1)
+        adapter = HTTPAdapter(max_retries=retries)
+
+        session.mount("http://", adapter=adapter)
+        session.mount("https://", adapter=adapter)
+
+        return session
+
+
 LOGGER = logging.getLogger("s3_upload")
 PART_SIZE = 16 * 1024**2
+SESSION = configure_session()
 
 
 @config_from_yaml(prefix="upload")
@@ -207,8 +235,7 @@ class Upload:
                         object_id=self.file_id,
                         part_number=part_number,
                     )
-                    session = configure_session()
-                    session.put(url=upload_url, data=part)
+                    SESSION.put(url=upload_url, data=part)
                 except (  # pylint: disable=broad-except
                     Exception,
                     KeyboardInterrupt,
@@ -256,8 +283,7 @@ class Upload:
 
             for start, stop in get_ranges(file_size=file_size):
                 headers = {"Range": f"bytes={start}-{stop}"}
-                session = configure_session()
-                response = session.get(download_url, timeout=60, headers=headers)
+                response = SESSION.get(download_url, timeout=60, headers=headers)
                 chunk = response.content
                 LOGGER.info(
                     "(5/7) Downloading file for validation (%.2f%%)",
@@ -313,32 +339,6 @@ class Upload:
         with output_path.open("w") as file:
             json.dump(output, file, indent=2)
         os.chmod(path=output_path, mode=0o400)
-
-
-def configure_pycurl_session() -> requests.Session:
-    """Configure session with pycurl requests adapter"""
-    with requests.session() as session:
-        curl = pycurl.Curl()
-
-        adapter = PyCurlHttpAdapter(curl)
-
-        session.mount("http://", adapter=adapter)
-        session.mount("https://", adapter=adapter)
-
-        return session
-
-
-def configure_session() -> requests.Session:
-    """Configure session with exponential backoff retry"""
-    with requests.session() as session:
-
-        retries = Retry(total=7, backoff_factor=1)
-        adapter = HTTPAdapter(max_retries=retries)
-
-        session.mount("http://", adapter=adapter)
-        session.mount("https://", adapter=adapter)
-
-        return session
 
 
 def check_output_path(alias: str, output_dir: Path):
@@ -437,11 +437,11 @@ def handle_superficial_error(msg: str):
 
 
 def main(
-    config: Config,
     input_path: Path = typer.Argument(..., help="Local path of the input file"),
     alias: str = typer.Argument(..., help="A human readable file alias"),
 ):
     """Delegate to async_main. typer.run is not async (yet)"""
+    config = Config()
     asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
 
 
@@ -465,4 +465,4 @@ async def async_main(input_path: Path, alias: str, config: Config):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    typer.run(main(config=Config()))
+    typer.run(main)
