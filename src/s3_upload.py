@@ -24,6 +24,7 @@ import json
 import logging
 import math
 import os
+import shutil
 import sys
 from dataclasses import dataclass
 from io import BufferedReader
@@ -44,11 +45,14 @@ from pycurl_requests.adapters import PyCurlHttpAdapter  # type: ignore
 from pydantic import BaseSettings, Field, SecretStr  # type: ignore
 from requests.adapters import HTTPAdapter, Retry  # type: ignore
 
+LOGGER = logging.getLogger("s3_upload")
+PART_SIZE = 16 * 1024**2
+
 
 @config_from_yaml(prefix="upload")
 class Config(BaseSettings):
     """
-    Required options from a config file named .nct.yaml placed next to this script file
+    Required options from a config file named .upload.yaml placed next to this script file
     """
 
     s3_endpoint_url: SecretStr = Field(..., description=("URL of the S3 server"))
@@ -68,37 +72,6 @@ class Config(BaseSettings):
     )
 
 
-def configure_pycurl_session() -> requests.Session:
-    """Configure session with pycurl requests adapter"""
-    with requests.session() as session:
-        curl = pycurl.Curl()
-
-        adapter = PyCurlHttpAdapter(curl)
-
-        session.mount("http://", adapter=adapter)
-        session.mount("https://", adapter=adapter)
-
-        return session
-
-
-def configure_session() -> requests.Session:
-    """Configure session with exponential backoff retry"""
-    with requests.session() as session:
-
-        retries = Retry(total=7, backoff_factor=1)
-        adapter = HTTPAdapter(max_retries=retries)
-
-        session.mount("http://", adapter=adapter)
-        session.mount("https://", adapter=adapter)
-
-        return session
-
-
-CONFIG = Config()
-LOGGER = logging.getLogger("s3_upload")
-PART_SIZE = 16 * 1024**2
-
-
 @dataclass
 class Keypair:
     """Crypt4GH keypair"""
@@ -110,7 +83,8 @@ class Keypair:
 class Upload:
     """Handler class dealing with most of the upload functionality"""
 
-    def __init__(self, input_path: Path, alias: str) -> None:
+    def __init__(self, input_path: Path, alias: str, config: Config) -> None:
+        self.config = config
         self.file_id = str(uuid4())
         self.alias = alias
         self.input_path = input_path
@@ -132,9 +106,11 @@ class Upload:
                 offset=offset,
             )
         except (Exception, KeyboardInterrupt) as exc:
+            # cleanup tmp dir in case of failure
+            shutil.rmtree(self.config.tmp_dir / self.alias)
             raise exc
         finally:
-            # cleanup local encrypted file. _upload_file takes care of
+            # cleanup local encrypted file. _upload_file takes care of multipart upload
             encrypted_file_loc.unlink(missing_ok=True)
 
         # upload related, clean redwonloaded, encrypted file on exception, clean up
@@ -152,15 +128,16 @@ class Upload:
                 destination=destination, destination_decrypted=destination_decrypted
             )
         except (Exception, KeyboardInterrupt) as exc:
-            storage = objectstorage()
+            storage = objectstorage(config=self.config)
             await storage.delete_object(
-                bucket_id=CONFIG.bucket_id, object_id=self.file_id
+                bucket_id=self.config.bucket_id, object_id=self.file_id
             )
             raise exc
         finally:
-            # cleanup downloaded and unencrypted
+            # cleanup downloaded and unencrypted file and tmp subdir
             destination.unlink(missing_ok=True)
             destination_decrypted.unlink(missing_ok=True)
+            shutil.rmtree(self.config.tmp_dir / self.alias)
 
         self._write_metadata(
             enc_md5sums=enc_md5sums,
@@ -171,7 +148,7 @@ class Upload:
     def _encrypt_file(self):
         """Encrypt file using Crypt4GH"""
         LOGGER.info("(2/7) Encrypting file %s", self.input_path.resolve())
-        tmp_dir = CONFIG.tmp_dir / self.alias
+        tmp_dir = self.config.tmp_dir / self.alias
         if not tmp_dir.exists():
             tmp_dir.mkdir(parents=True)
         output_path = tmp_dir / self.file_id
@@ -199,9 +176,9 @@ class Upload:
         self, *, encrypted_file_loc: Path, file_size: int, offset: int
     ):
         """Perform multipart upload and compute encrypted part checksums"""
-        storage = objectstorage()
+        storage = objectstorage(config=self.config)
         upload_id = await storage.init_multipart_upload(
-            bucket_id=CONFIG.bucket_id, object_id=self.file_id
+            bucket_id=self.config.bucket_id, object_id=self.file_id
         )
 
         enc_md5sums = []
@@ -226,7 +203,7 @@ class Upload:
 
                     upload_url = await storage.get_part_upload_url(
                         upload_id=upload_id,
-                        bucket_id=CONFIG.bucket_id,
+                        bucket_id=self.config.bucket_id,
                         object_id=self.file_id,
                         part_number=part_number,
                     )
@@ -238,7 +215,7 @@ class Upload:
                 ) as exc:
                     await storage.abort_multipart_upload(
                         upload_id=upload_id,
-                        bucket_id=CONFIG.bucket_id,
+                        bucket_id=self.config.bucket_id,
                         object_id=self.file_id,
                     )
                     raise exc
@@ -246,14 +223,16 @@ class Upload:
         try:
             await storage.complete_multipart_upload(
                 upload_id=upload_id,
-                bucket_id=CONFIG.bucket_id,
+                bucket_id=self.config.bucket_id,
                 object_id=self.file_id,
                 anticipated_part_quantity=math.ceil(file_size / PART_SIZE),
                 anticipated_part_size=PART_SIZE,
             )
         except (Exception, KeyboardInterrupt) as exc:  # pylint: disable=broad-except
             await storage.abort_multipart_upload(
-                upload_id=upload_id, bucket_id=CONFIG.bucket_id, object_id=self.file_id
+                upload_id=upload_id,
+                bucket_id=self.config.bucket_id,
+                object_id=self.file_id,
             )
             raise exc
 
@@ -267,9 +246,9 @@ class Upload:
         file_secret: bytes,
     ):  # pylint: disable=too-many-arguments
         """Download uploaded file"""
-        storage = objectstorage()
+        storage = objectstorage(config=self.config)
         download_url = await storage.get_object_download_url(
-            bucket_id=CONFIG.bucket_id, object_id=self.file_id
+            bucket_id=self.config.bucket_id, object_id=self.file_id
         )
         with destination.open("wb") as local_file:
             envelope = prepare_envelope(keypair=self.keypair, file_secret=file_secret)
@@ -325,10 +304,10 @@ class Upload:
             base64.b64encode(file_secret), encoding="utf-8"
         )
 
-        if not CONFIG.output_dir.exists():
-            CONFIG.output_dir.mkdir(parents=True)
+        if not self.config.output_dir.exists():
+            self.config.output_dir.mkdir(parents=True)
 
-        output_path = CONFIG.output_dir / f"{self.alias}.json"
+        output_path = self.config.output_dir / f"{self.alias}.json"
         LOGGER.info("(7/7) Writing file metadata to %s", output_path)
         # owner read-only
         with output_path.open("w") as file:
@@ -336,9 +315,35 @@ class Upload:
         os.chmod(path=output_path, mode=0o400)
 
 
-def check_output_path(alias: str):
+def configure_pycurl_session() -> requests.Session:
+    """Configure session with pycurl requests adapter"""
+    with requests.session() as session:
+        curl = pycurl.Curl()
+
+        adapter = PyCurlHttpAdapter(curl)
+
+        session.mount("http://", adapter=adapter)
+        session.mount("https://", adapter=adapter)
+
+        return session
+
+
+def configure_session() -> requests.Session:
+    """Configure session with exponential backoff retry"""
+    with requests.session() as session:
+
+        retries = Retry(total=7, backoff_factor=1)
+        adapter = HTTPAdapter(max_retries=retries)
+
+        session.mount("http://", adapter=adapter)
+        session.mount("https://", adapter=adapter)
+
+        return session
+
+
+def check_output_path(alias: str, output_dir: Path):
     """Check if we accidentally try to overwrite an alread existing metadata file"""
-    output_path = CONFIG.output_dir / f"{alias}.json"
+    output_path = output_dir / f"{alias}.json"
     if output_path.exists():
         msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
         handle_superficial_error(msg=msg)
@@ -379,12 +384,12 @@ def get_checksum_unencrypted(file_location: Path) -> str:
     return sha256sum.hexdigest()
 
 
-def objectstorage():
+def objectstorage(config: Config):
     """Configure S3 and return S3 DAO"""
     s3_config = S3Config(
-        s3_endpoint_url=CONFIG.s3_endpoint_url.get_secret_value(),
-        s3_access_key_id=CONFIG.s3_access_key_id.get_secret_value(),
-        s3_secret_access_key=CONFIG.s3_secret_access_key.get_secret_value(),
+        s3_endpoint_url=config.s3_endpoint_url.get_secret_value(),
+        s3_access_key_id=config.s3_access_key_id.get_secret_value(),
+        s3_secret_access_key=config.s3_secret_access_key.get_secret_value(),
     )
     return S3ObjectStorage(config=s3_config)
 
@@ -432,14 +437,15 @@ def handle_superficial_error(msg: str):
 
 
 def main(
+    config: Config,
     input_path: Path = typer.Argument(..., help="Local path of the input file"),
     alias: str = typer.Argument(..., help="A human readable file alias"),
 ):
     """Delegate to async_main. typer.run is not async (yet)"""
-    asyncio.run(async_main(input_path=input_path, alias=alias))
+    asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
 
 
-async def async_main(input_path: Path, alias: str):
+async def async_main(input_path: Path, alias: str, config: Config):
     """
     Run encryption, upload and validation.
     Prints metadata to <alias>.json in the specified output directory
@@ -452,11 +458,11 @@ async def async_main(input_path: Path, alias: str):
         msg = f"File location points to a directory: {input_path.resolve()}"
         handle_superficial_error(msg=msg)
 
-    check_output_path(alias=alias)
-    upload = Upload(input_path=input_path, alias=alias)
+    check_output_path(alias=alias, output_dir=config.output_dir)
+    upload = Upload(input_path=input_path, alias=alias, config=config)
     await upload.process_file()
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    typer.run(main)
+    typer.run(main(config=Config()))
