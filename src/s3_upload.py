@@ -80,7 +80,7 @@ SESSION = configure_session()
 @config_from_yaml(prefix="upload")
 class Config(BaseSettings):
     """
-    Required options from a config file named .upload.yaml placed next to this script file
+    Required options from a config file named .upload.yaml placed in the current working dir or the home dir.
     """
 
     s3_endpoint_url: SecretStr = Field(..., description=("URL of the S3 server"))
