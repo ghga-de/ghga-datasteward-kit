@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
 ENV PYTHONUNBUFFERED 1
 
 # Name of the python package, overwitten in docker-compose.yaml
-ARG USER_UID=my_microservice
+ARG USER_UID=data_steward_scripts
 
 # Update args in docker-compose.yaml to set the UID/GID of the "vscode" user.
 ARG USER_UID=1000
@@ -20,7 +20,8 @@ RUN if [ "${INSTALL_NODE}" = "true" ]; then su vscode -c "umask 0002 && . /usr/l
 # Install additional OS packages.
 RUN apt update \
     && export DEBIAN_FRONTEND=noninteractive \
-    && apt -y install --no-install-recommends postgresql-client-common
+    && apt -y install --no-install-recommends postgresql-client-common \
+    && apt-get install --fix-missing libcurl4-openssl-dev libssl-dev
 
 # Copy install and launcher script to bin:
 COPY ./dev_install /bin

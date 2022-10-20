@@ -1,35 +1,48 @@
+# Scripts for Data Stewards
 
-
-
-# Template Repo for Experiments
-
-This repo can be used as a template when you would like to perform "informal" code
-experiments and explorations.
-
-## Adapting and Using the Template:
-The main code of your experiments should go into the [`./src`](./src) directory.
-This can happen either as a python package or as individual python scripts -
-whatever seems more appropriate.
-
-You may use the the [`./tests`](./tests) directory for describing any tests and
-the [`./example_data`](./example_data) directory for storing any example data your
-code might need.
-
-Please add your dependencies to the [`./requirements.txt`](./requirements.txt).
-
-Please remove or add service dependencies in the
-[`./.devcontainer/docker-compose.yml`](./.devcontainer/docker-compose.yml) as needed.
-
-Please remember, in exploration or experiment tasks, it's not expected to present a
-very polished and elegant implementation but only to find out the principle solution
-to a problem. So it is fine here to cut some corners and leave some rough edges in the
-code base as long as it doesn't impact the underlying architecture of the solution.
-
-Please use the following section to document your experiments and your findings:
-
+This repository contains useful scripts for data stewards interacting with GHGA infrastructure.
 ## Documentation:
 
-Please A longer description of your experiments and findings can go here.
+The following scripts are currently implemented:
+### s3_upload.py
+
+This script facilitates encrypting files using Crypt4GH and uploading the encrypted content to a (remote) S3-compatible object storage.
+This process consists of multiple steps:
+1. Generate a unique file id
+2. Create unencrypted file checksum
+3. Encrypt file
+4. Extract file secret and remove Crypt4GH envelope
+5. Upload encrypted file content
+6. Download encrypted file content, decrypt and verify checksum
+7. Write file/upload information to output file
+
+The user needs to provide a config file containing the following information:
+- S3 endpoint URL
+- S3 access key ID
+- S3 secret access key
+- ID of the bucket where the encrypted file content is to be stored
+- Path to a local directory that can be used for temporary output files
+- Path to a local directory for actual output
+
+Please adapt the example_data/template.upload.yaml, rename it to .upload.yaml and move it next to the s3_upload.py script in your current working directory or place it in your home directory.
+In addition to these general configuration options, each invocation of this script needs 2 additional arguments in the following order:
+1. The path to the file on the local file system
+2. A human readable alias for the file (choose a unique one)
+
+The output file is written to the specified output directory under \<alias\>.json.
+If such a file already exists, an error is thrown.
+
+The resulting file is owner read-only and contains the following information:
+1. The file alias
+2. A unique identifier for the file
+3. The local file path
+4. A SHA256 checksum over the unencrypted content
+5. MD5 checksums over all encrypted file parts
+6. SHA256 checksums over all encrypted file parts
+7. The file encryption/decryption secret
+
+Attention: Keep this output file in a safe, private location.
+If this file is lost, the uploaded file content becomes inaccessible.
 
 ## Quick Start
 For setting up the development environment, we rely on the
