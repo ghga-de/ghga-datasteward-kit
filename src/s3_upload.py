@@ -327,7 +327,7 @@ class Upload:
         output["Alias"] = self.alias
         output["File UUID"] = self.file_id
         output["Original filesystem path"] = str(self.input_path.resolve())
-        output["Part Size"] = f"{self.config.part_size / 1024**2} MiB"
+        output["Part Size"] = f"{self.config.part_size // 1024**2} MiB"
         output["Symmetric file encryption secret"] = codecs.decode(
             base64.b64encode(file_secret), encoding="utf-8"
         )
