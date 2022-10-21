@@ -94,6 +94,9 @@ class Config(BaseSettings):
     bucket_id: str = Field(
         ..., description=("Bucket id where the encrypted, uploaded file is stored")
     )
+    part_size: int = Field(
+        16, description=("Upload part size in MiB. Has to be between 5MiB and 5GiB.")
+    )
     tmp_dir: Path = Field(..., description=("Directory for temporary output files"))
     output_dir: Path = Field(
         ...,
@@ -324,12 +327,13 @@ class Upload:
         output["Alias"] = self.alias
         output["File UUID"] = self.file_id
         output["Original filesystem path"] = str(self.input_path.resolve())
-        output["Unencrpted file checksum"] = self.checksum
-        output["Encrypted file part checksums (MD5)"] = enc_md5sums
-        output["Encrypted file part checksums (SHA256)"] = enc_sha256sums
+        output["Part Size"] = f"{self.config.part_size / 1024**2} MiB"
         output["Symmetric file encryption secret"] = codecs.decode(
             base64.b64encode(file_secret), encoding="utf-8"
         )
+        output["Unencrypted file checksum"] = self.checksum
+        output["Encrypted file part checksums (MD5)"] = enc_md5sums
+        output["Encrypted file part checksums (SHA256)"] = enc_sha256sums
 
         if not self.config.output_dir.exists():
             self.config.output_dir.mkdir(parents=True)
@@ -459,9 +463,52 @@ async def async_main(input_path: Path, alias: str, config: Config):
         msg = f"File location points to a directory: {input_path.resolve()}"
         handle_superficial_error(msg=msg)
 
+    check_adjust_part_size(config=config, file_size=input_path.stat().st_size)
     check_output_path(alias=alias, output_dir=config.output_dir)
     upload = Upload(input_path=input_path, alias=alias, config=config)
     await upload.process_file()
+
+
+def check_adjust_part_size(config: Config, file_size: int):
+    """
+    Convert specified part size from MiB to bytes, check if it needs adjustment and
+    adjust accordingly
+    """
+    lower_bound = 5 * 1024**2
+    upper_bound = 5 * 1024**3
+    part_size = config.part_size * 1024**2
+
+    # clamp user input part sizes
+    if part_size < lower_bound:
+        part_size = lower_bound
+    elif part_size > upper_bound:
+        part_size = upper_bound
+
+    # fixed list for now, maybe change to somthing more meaningful
+    sizes_mib = [2**x for x in range(3, 13)]
+    sizes = [size * 1024**2 for size in sizes_mib]
+
+    # for smaller sizes, encryption might cause growth over limit, so assume we might
+    # need one more part for this check
+    if file_size / part_size > 9_999:
+        for candidate_size in sizes:
+            if candidate_size > part_size and file_size / candidate_size <= 10_000:
+                part_size = candidate_size
+                break
+        else:
+            raise ValueError(
+                "Could not find a valid part size that would allow to upload all file parts"
+            )
+
+    if part_size != config.part_size:
+        LOGGER.info(
+            "Part size was adjusted from %iMiB to %iMiB.",
+            config.part_size,
+            part_size / 1024**2,
+        )
+
+    # need to set this either way as we convert MiB to bytes
+    config.part_size = part_size
 
 
 if __name__ == "__main__":
