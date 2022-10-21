@@ -34,7 +34,7 @@ def test_check_adjust_part_size():
     file_size = 16 * 80_000 * 1024**2
     check_adjust_part_size(config=CONFIG, file_size=file_size)
     adjusted_part_size = CONFIG.part_size / 1024**2
-    assert adjusted_part_size == 128
+    assert adjusted_part_size == 256
 
 
 def test_check_adjust_part_size_lower_bound():
