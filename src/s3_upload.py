@@ -488,9 +488,9 @@ def check_adjust_part_size(config: Config, file_size: int):
     sizes_mib = [2**x for x in range(3, 13)]
     sizes = [size * 1024**2 for size in sizes_mib]
 
-    # for smaller sizes, encryption might cause growth over limit, so assume we might
-    # need one more part for this check
-    if file_size / part_size > 9_999:
+    # encryption will cause growth of ~ 0.0427%, so assume we might
+    # need five more parts for this check
+    if file_size / part_size > 9_995:
         for candidate_size in sizes:
             if candidate_size > part_size and file_size / candidate_size <= 10_000:
                 part_size = candidate_size
