@@ -95,7 +95,7 @@ class Config(BaseSettings):
         ..., description=("Bucket id where the encrypted, uploaded file is stored")
     )
     part_size: int = Field(
-        16, description=("Upload part size in MiB. Has to be between 5MiB and 5GiB.")
+        16, description=("Upload part size in MiB. Has to be between 5 and 5120.")
     )
     tmp_dir: Path = Field(..., description=("Directory for temporary output files"))
     output_dir: Path = Field(
@@ -492,7 +492,7 @@ def check_adjust_part_size(config: Config, file_size: int):
     # need five more parts for this check
     if file_size / part_size > 9_995:
         for candidate_size in sizes:
-            if candidate_size > part_size and file_size / candidate_size <= 10_000:
+            if candidate_size > part_size and file_size / candidate_size <= 9_995:
                 part_size = candidate_size
                 break
         else:
