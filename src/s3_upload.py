@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright 2022 Universität Tübingen, DKFZ and EMBL
 # for the German Human Genome-Phenome Archive (GHGA)
 #
@@ -12,8 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
-Custom script to encrypt data using Crypt4GH and directly uploading it to S3 objectstorage
+Custom script to encrypt data using Crypt4GH and directly uploading it to S3
+objectstorage.
 """
 
 import asyncio
@@ -21,6 +24,7 @@ import base64
 import codecs
 import hashlib
 import json
+import yaml
 import logging
 import math
 import os
@@ -77,7 +81,6 @@ PART_SIZE = 16 * 1024**2
 SESSION = configure_session()
 
 
-@config_from_yaml(prefix="upload")
 class Config(BaseSettings):
     """
     Required options from a config file named .upload.yaml placed in
@@ -441,34 +444,6 @@ def handle_superficial_error(msg: str):
     sys.exit(-1)
 
 
-def main(
-    input_path: Path = typer.Argument(..., help="Local path of the input file"),
-    alias: str = typer.Argument(..., help="A human readable file alias"),
-):
-    """Delegate to async_main. typer.run is not async (yet)"""
-    config = Config()
-    asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
-
-
-async def async_main(input_path: Path, alias: str, config: Config):
-    """
-    Run encryption, upload and validation.
-    Prints metadata to <alias>.json in the specified output directory
-    """
-    if not input_path.exists():
-        msg = f"No such file: {input_path.resolve()}"
-        handle_superficial_error(msg=msg)
-
-    if input_path.is_dir():
-        msg = f"File location points to a directory: {input_path.resolve()}"
-        handle_superficial_error(msg=msg)
-
-    check_adjust_part_size(config=config, file_size=input_path.stat().st_size)
-    check_output_path(alias=alias, output_dir=config.output_dir)
-    upload = Upload(input_path=input_path, alias=alias, config=config)
-    await upload.process_file()
-
-
 def check_adjust_part_size(config: Config, file_size: int):
     """
     Convert specified part size from MiB to bytes, check if it needs adjustment and
@@ -509,6 +484,48 @@ def check_adjust_part_size(config: Config, file_size: int):
 
     # need to set this either way as we convert MiB to bytes
     config.part_size = part_size
+
+
+async def async_main(input_path: Path, alias: str, config: Config):
+    """
+    Run encryption, upload and validation.
+    Prints metadata to <alias>.json in the specified output directory
+    """
+    if not input_path.exists():
+        msg = f"No such file: {input_path.resolve()}"
+        handle_superficial_error(msg=msg)
+
+    if input_path.is_dir():
+        msg = f"File location points to a directory: {input_path.resolve()}"
+        handle_superficial_error(msg=msg)
+
+    check_adjust_part_size(config=config, file_size=input_path.stat().st_size)
+    check_output_path(alias=alias, output_dir=config.output_dir)
+    upload = Upload(input_path=input_path, alias=alias, config=config)
+    await upload.process_file()
+
+
+def load_config_yaml(path: Path) -> Config:
+    """Load config parameters from the specified YAML file."""
+
+    with open(path, "r", encoding="utf-8") as config_file:
+        config_dict = yaml.safe_load(config_file)
+    return Config(**config_dict)
+
+
+def main(
+    input_path: Path = typer.Argument(..., help="Local path of the input file"),
+    alias: str = typer.Argument(..., help="A human readable file alias"),
+    config: Path = typer.Argument(..., help=("Path to a config YAML.")),
+):
+    """
+    Custom script to encrypt data using Crypt4GH and directly uploading it to S3
+    objectstorage.
+    """
+
+    config_obj = load_config_yaml(config)
+
+    asyncio.run(async_main(input_path=input_path, alias=alias, config=config_obj))
 
 
 if __name__ == "__main__":
