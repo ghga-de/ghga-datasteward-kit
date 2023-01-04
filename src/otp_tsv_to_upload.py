@@ -15,14 +15,20 @@
 # limitations under the License.
 
 """A script to translate a OTP tsv into upload jobs."""
-
 import logging
+import subprocess
+import sys
+from copy import copy
 from pathlib import Path
+from time import sleep
+from typing import Optional
 
 import typer
 from pydantic import BaseModel
 
-from .s3_upload import load_config_yaml
+from s3_upload import load_config_yaml
+
+HERE = Path(__file__).parent
 
 
 class FileMetadata(BaseModel):
@@ -31,24 +37,174 @@ class FileMetadata(BaseModel):
     path: Path
     alias: str
 
+    class Config:
+        """Pydantic-specific configuration."""
+
+        frozen = True
+
 
 def load_file_metadata(otp_tsv: Path) -> list[FileMetadata]:
     """Load file metadata from a tsv."""
 
     with open(otp_tsv, "r", encoding="utf-8") as tsv_file:
-        lines = [line for line in tsv_file.readlines()]
+        file_paths = [
+            Path(line.split("\t")[0].strip()) for line in tsv_file.readlines()
+        ]
+
+    return [
+        FileMetadata(path=file_path, alias=file_path.name)
+        for file_path in file_paths
+        if file_path != ""
+    ]
+
+
+def check_file_upload(file: FileMetadata, output_dir: Path) -> bool:
+    """Returns true if the file was already uploaded. Returns falls otherwise."""
+
+    output_yaml = output_dir / f"{file.alias}.json"
+    return output_yaml.exists()
+
+
+def prepare_upload_command_line(
+    file: FileMetadata, output_dir: Path, config_path: Path
+) -> str:
+    """Returns a command line for uploading the specified file."""
+
+    log_file_path = output_dir / f"{file.alias}.log"
+    python_interpreter_path = Path(sys.executable)
+    upload_script_path = HERE / "s3_upload.py"
+
+    return (
+        f"{python_interpreter_path} {upload_script_path} --input-path {file.path}"
+        + f" --alias {file.alias} --config-path {config_path}"
+        + f" > {log_file_path} 2>&1"
+    )
+
+
+def trigger_file_upload(
+    file: FileMetadata, output_dir: Path, config_path: Path, dry_run: bool
+) -> Optional[subprocess.Popen]:
+    """
+    Checks whether the file was already uploaded, if not, the upload is triggered
+    in a separate process and the corresponding subprocess.Popen object is returned.
+    """
+
+    if check_file_upload(file=file, output_dir=output_dir):
+        logging.info("File '%s' has already been uploaded: skipping.", file.alias)
+        return
+
+    command_line = prepare_upload_command_line(
+        file=file, output_dir=output_dir, config_path=config_path
+    )
+
+    if dry_run:
+        logging.info("Would execute: %s", command_line)
+        return
+
+    # nosec
+    return subprocess.Popen(command_line, shell=True)
+
+
+def handle_file_uploads(
+    files: list[FileMetadata],
+    output_dir: Path,
+    config_path: Path,
+    parallel_processes: int,
+    dry_run: bool,
+):
+    """Handles the upload of multiple files in parallel."""
+
+    files_to_do = copy(files)
+    in_progress: dict[FileMetadata, subprocess.Popen] = {}
+    files_failed: list[FileMetadata] = []
+    files_succeeded: list[FileMetadata] = []
+    files_skipped: list[FileMetadata] = []
+
+    try:
+        while files_to_do or in_progress:
+
+            # start new processes:
+            while len(in_progress) < parallel_processes and files_to_do:
+                next_file = files_to_do.pop()
+                process = trigger_file_upload(
+                    file=next_file,
+                    output_dir=output_dir,
+                    config_path=config_path,
+                    dry_run=dry_run,
+                )
+
+                if process:
+                    in_progress[next_file] = process
+                else:
+                    files_skipped.append(next_file)
+
+            # check status of uploads in progress:
+            for file, process in in_progress.items():
+                status = process.poll()
+
+                if status is None:
+                    continue
+                else:
+                    if status == 0 and check_file_upload(
+                        file=file, output_dir=output_dir
+                    ):
+                        logging.info(
+                            "Successfully uploaded file with alias '%s'.", file.alias
+                        )
+                        files_succeeded.append(file)
+                    else:
+                        logging.error(
+                            "Failed to upload file with alias '%s'.", file.alias
+                        )
+                        files_failed.append(file)
+                    del in_progress[file]
+
+            if not dry_run:
+                sleep(10)
+    except:
+        for _, process in in_progress.items():
+            process.terminate()
+        raise
+    finally:
+        logging.info(
+            "Finished with %s successful and %s failed uploads. %s were skipped.",
+            str(len(files_succeeded)),
+            str(len(files_failed)),
+            str(len(files_skipped)),
+        )
+        logging.info(  # pylint: disable=logging-not-lazy
+            "The files with following aliases failed: "
+            + ", ".join([file.alias for file in files_failed])
+        )
 
 
 def main(
-    otp_tsv: Path = typer.Argument(..., help="Path to OTP tsv file."),
-    config: Path = typer.Argument(..., help=("Path to a config YAML.")),
+    otp_tsv: Path = typer.Option(..., help="Path to OTP tsv file."),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+    parallel_processes: int = typer.Option(..., help="Number of parallel uploads."),
+    dry_run: bool = typer.Option(
+        False,
+        help=(
+            "Only show the command lines that would be used."
+            + " No uploads are performed."
+        ),
+    ),
 ):
     """
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     objectstorage.
     """
 
-    config_obj = load_config_yaml(config)
+    config = load_config_yaml(config_path)
+    files = load_file_metadata(otp_tsv=otp_tsv)
+
+    handle_file_uploads(
+        files=files,
+        output_dir=config.output_dir,
+        config_path=config_path,
+        parallel_processes=parallel_processes,
+        dry_run=dry_run,
+    )
 
 
 if __name__ == "__main__":

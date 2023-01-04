@@ -24,7 +24,6 @@ import base64
 import codecs
 import hashlib
 import json
-import yaml
 import logging
 import math
 import os
@@ -43,6 +42,7 @@ import crypt4gh.lib  # type: ignore
 import pycurl  # type: ignore
 import requests  # type: ignore
 import typer  # type: ignore
+import yaml
 from ghga_service_chassis_lib.config import config_from_yaml  # type: ignore
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from pycurl_requests.adapters import PyCurlHttpAdapter  # type: ignore
@@ -514,18 +514,18 @@ def load_config_yaml(path: Path) -> Config:
 
 
 def main(
-    input_path: Path = typer.Argument(..., help="Local path of the input file"),
-    alias: str = typer.Argument(..., help="A human readable file alias"),
-    config: Path = typer.Argument(..., help=("Path to a config YAML.")),
+    input_path: Path = typer.Option(..., help="Local path of the input file"),
+    alias: str = typer.Option(..., help="A human readable file alias"),
+    config_path: Path = typer.Option(..., help=("Path to a config YAML.")),
 ):
     """
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     objectstorage.
     """
 
-    config_obj = load_config_yaml(config)
+    config = load_config_yaml(config_path)
 
-    asyncio.run(async_main(input_path=input_path, alias=alias, config=config_obj))
+    asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
 
 
 if __name__ == "__main__":
