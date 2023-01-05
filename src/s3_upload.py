@@ -43,7 +43,6 @@ import pycurl  # type: ignore
 import requests  # type: ignore
 import typer  # type: ignore
 import yaml
-from ghga_service_chassis_lib.config import config_from_yaml  # type: ignore
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from pycurl_requests.adapters import PyCurlHttpAdapter  # type: ignore
 from pydantic import BaseSettings, Field, SecretStr  # type: ignore

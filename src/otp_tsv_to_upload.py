@@ -15,8 +15,9 @@
 # limitations under the License.
 
 """A script to translate a OTP tsv into upload jobs."""
+
 import logging
-import subprocess
+import subprocess  # nosec
 import sys
 from copy import copy
 from pathlib import Path
@@ -91,7 +92,7 @@ def trigger_file_upload(
 
     if check_file_upload(file=file, output_dir=output_dir):
         logging.info("File '%s' has already been uploaded: skipping.", file.alias)
-        return
+        return None
 
     command_line = prepare_upload_command_line(
         file=file, output_dir=output_dir, config_path=config_path
@@ -99,13 +100,14 @@ def trigger_file_upload(
 
     if dry_run:
         logging.info("Would execute: %s", command_line)
-        return
+        return None
 
-    # nosec
-    return subprocess.Popen(command_line, shell=True)
+    logging.info("The upload of the file with alias '%s' has started.", file.alias)
+    return subprocess.Popen(command_line, shell=True, executable="/bin/bash")  # nosec
 
 
-def handle_file_uploads(
+# pylint: disable=too-many-nested-blocks,too-many-branches
+def handle_file_uploads(  # noqa: C901
     files: list[FileMetadata],
     output_dir: Path,
     config_path: Path,
@@ -115,6 +117,7 @@ def handle_file_uploads(
     """Handles the upload of multiple files in parallel."""
 
     files_to_do = copy(files)
+    files_to_do.reverse()
     in_progress: dict[FileMetadata, subprocess.Popen] = {}
     files_failed: list[FileMetadata] = []
     files_succeeded: list[FileMetadata] = []
@@ -139,25 +142,22 @@ def handle_file_uploads(
                     files_skipped.append(next_file)
 
             # check status of uploads in progress:
-            for file, process in in_progress.items():
+            for file, process in copy(in_progress).items():
                 status = process.poll()
 
                 if status is None:
                     continue
+
+                if status == 0 and check_file_upload(file=file, output_dir=output_dir):
+                    logging.info(
+                        "Successfully uploaded file with alias '%s'.", file.alias
+                    )
+                    files_succeeded.append(file)
                 else:
-                    if status == 0 and check_file_upload(
-                        file=file, output_dir=output_dir
-                    ):
-                        logging.info(
-                            "Successfully uploaded file with alias '%s'.", file.alias
-                        )
-                        files_succeeded.append(file)
-                    else:
-                        logging.error(
-                            "Failed to upload file with alias '%s'.", file.alias
-                        )
-                        files_failed.append(file)
-                    del in_progress[file]
+                    logging.error("Failed to upload file with alias '%s'.", file.alias)
+                    files_failed.append(file)
+
+                del in_progress[file]
 
             if not dry_run:
                 sleep(10)
