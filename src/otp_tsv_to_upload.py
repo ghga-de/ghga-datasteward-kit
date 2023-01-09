@@ -49,13 +49,19 @@ def load_file_metadata(otp_tsv: Path) -> list[FileMetadata]:
 
     with open(otp_tsv, "r", encoding="utf-8") as tsv_file:
         file_paths = [
-            Path(line.split("\t")[0].strip()) for line in tsv_file.readlines()
+            file_path
+            for line in tsv_file.readlines()
+            if (file_path := Path(line.split("\t")[0].strip())) != ""
         ]
 
+    for file_path in file_paths:
+        if not file_path.exists():
+            raise RuntimeError(
+                f"The file at the following path does not exist: {file_path}"
+            )
+
     return [
-        FileMetadata(path=file_path, alias=file_path.name)
-        for file_path in file_paths
-        if file_path != ""
+        FileMetadata(path=file_path, alias=file_path.name) for file_path in file_paths
     ]
 
 
