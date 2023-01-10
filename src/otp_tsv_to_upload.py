@@ -167,7 +167,7 @@ def handle_file_uploads(  # noqa: C901
                 del in_progress[file]
 
             if not dry_run:
-                sleep(10)
+                sleep(2)
     except:
         for _, process in in_progress.items():
             process.terminate()
