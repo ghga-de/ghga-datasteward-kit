@@ -41,11 +41,11 @@ import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
 import pycurl  # type: ignore
 import requests  # type: ignore
-import typer  # type: ignore
+import typer
 import yaml
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from pycurl_requests.adapters import PyCurlHttpAdapter  # type: ignore
-from pydantic import BaseSettings, Field, SecretStr  # type: ignore
+from pydantic import BaseSettings, Field, SecretStr
 from requests.adapters import HTTPAdapter, Retry  # type: ignore
 
 
