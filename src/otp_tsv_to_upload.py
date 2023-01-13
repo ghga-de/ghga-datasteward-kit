@@ -192,7 +192,7 @@ def main(
     dry_run: bool = typer.Option(
         False,
         help=(
-            "Only show the command lines that would be used."
+            "Only print commands for each file."
             + " No uploads are performed."
         ),
     ),
