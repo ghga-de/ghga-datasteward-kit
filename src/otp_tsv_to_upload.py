@@ -191,10 +191,7 @@ def main(
     parallel_processes: int = typer.Option(..., help="Number of parallel uploads."),
     dry_run: bool = typer.Option(
         False,
-        help=(
-            "Only print commands for each file."
-            + " No uploads are performed."
-        ),
+        help=("Only print commands for each file." + " No uploads are performed."),
     ),
 ):
     """
