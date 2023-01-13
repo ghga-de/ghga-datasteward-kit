@@ -67,7 +67,7 @@ def load_file_metadata(otp_tsv: Path) -> list[FileMetadata]:
 
 
 def check_file_upload(file: FileMetadata, output_dir: Path) -> bool:
-    """Returns true if the file was already uploaded. Returns falls otherwise."""
+    """Returns true if the file was already uploaded. Returns false otherwise."""
 
     output_yaml = output_dir / f"{file.alias}.json"
     return output_yaml.exists()
@@ -192,7 +192,7 @@ def main(
     dry_run: bool = typer.Option(
         False,
         help=(
-            "Only show the command lines that would be used."
+            "Only print commands for each file."
             + " No uploads are performed."
         ),
     ),
