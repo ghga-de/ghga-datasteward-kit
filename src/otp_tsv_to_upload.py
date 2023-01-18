@@ -57,11 +57,11 @@ def load_file_metadata(otp_tsv: Path) -> list[FileMetadata]:
             if line != ""
         ]
 
-    for file in files:
-        if not file.path.exists():
-            raise RuntimeError(
-                f"The file at the following path does not exist: {file.path}"
-            )
+    non_existing_files = [file for file in files if file.path.exists()]
+    if non_existing_files:
+        raise RuntimeError(
+            "The following paths do not exist:\n - " + "\n - ".join(non_existing_files)
+        )
 
     return files
 
