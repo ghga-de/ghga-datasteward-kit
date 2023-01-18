@@ -50,7 +50,7 @@ def load_file_metadata(otp_tsv: Path) -> list[FileMetadata]:
     with open(otp_tsv, "r", encoding="utf-8") as tsv_file:
         files = [
             FileMetadata(
-                path=Path(line.split("\t")[0].strip()).resolve(),
+                path=Path(line.split("\t")[0].strip()).absolute(),
                 alias=line.split("\t")[1].strip(),
             )
             for line in tsv_file.readlines()
