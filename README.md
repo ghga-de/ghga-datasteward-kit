@@ -24,10 +24,12 @@ The user needs to provide a config file containing the following information:
 - Path to a local directory that can be used for temporary output files
 - Path to a local directory for actual output
 
-Please adapt the example_data/template.upload.yaml, rename it to .upload.yaml and move it next to the s3_upload.py script in your current working directory or place it in your home directory.
-In addition to these general configuration options, each invocation of this script needs 2 additional arguments in the following order:
+Please adapt the example_data/template.upload.yaml.
+In addition to these general configuration options, each invocation of this script needs
+2 additional parameters:
 1. The path to the file on the local file system
 2. A human readable alias for the file (choose a unique one)
+For more information see `s3_upload.py --help`.
 
 The output file is written to the specified output directory under \<alias\>.json.
 If such a file already exists, an error is thrown.
