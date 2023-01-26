@@ -85,7 +85,7 @@ def expand_env_vars_in_path(path: Path) -> Path:
     """Expand environment variables in a Path."""
 
     with subprocess.Popen(  # nosec
-        "realpath /workspace/$(whoami)", shell=True, stdout=subprocess.PIPE
+        f"realpath {path}", shell=True, stdout=subprocess.PIPE
     ) as process:
         if process.wait() != 0 or not process.stdout:
             raise RuntimeError(f"Parsing of path failed: {path}")
