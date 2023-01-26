@@ -28,6 +28,7 @@ import logging
 import math
 import os
 import shutil
+import subprocess  # nosec
 import sys
 from dataclasses import dataclass
 from io import BufferedReader
@@ -45,7 +46,7 @@ import typer
 import yaml
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from pycurl_requests.adapters import PyCurlHttpAdapter  # type: ignore
-from pydantic import BaseSettings, Field, SecretStr
+from pydantic import BaseSettings, Field, SecretStr, validator
 from requests.adapters import HTTPAdapter, Retry  # type: ignore
 
 
@@ -80,6 +81,20 @@ PART_SIZE = 16 * 1024**2
 SESSION = configure_session()
 
 
+def expand_env_vars_in_path(path: Path) -> Path:
+    """Expand environment variables in a Path."""
+
+    with subprocess.Popen(  # nosec
+        "realpath /workspace/$(whoami)", shell=True, stdout=subprocess.PIPE
+    ) as process:
+        if process.wait() != 0 or not process.stdout:
+            raise RuntimeError(f"Parsing of path failed: {path}")
+
+        output = process.stdout.read().decode("utf-8").strip()
+
+    return Path(output)
+
+
 class Config(BaseSettings):
     """
     Required options from a config file named .upload.yaml placed in
@@ -104,6 +119,20 @@ class Config(BaseSettings):
         ...,
         description=("Directory for the output metadata file"),
     )
+
+    @validator("tmp_dir")
+    def expand_env_vars_temp_dir(
+        cls, tmp_dir: Path
+    ):  # pylint: disable=no-self-argument,no-self-use
+        """Expand vars in path"""
+        return expand_env_vars_in_path(tmp_dir)
+
+    @validator("output_dir")
+    def expand_env_vars_output_dir(
+        cls, output_dir: Path
+    ):  # pylint: disable=no-self-argument,no-self-use
+        """Expand vars in path"""
+        return expand_env_vars_in_path(output_dir)
 
 
 @dataclass
