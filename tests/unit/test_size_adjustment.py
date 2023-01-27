@@ -16,38 +16,29 @@
 
 from src.s3_upload import Config, check_adjust_part_size
 
-# if we need more tests that need actual not dummy values here, this should be a fixture
-# instead
-CONFIG = Config(
-    s3_endpoint_url="s3://test_url",
-    s3_access_key_id="test_access_key",
-    s3_secret_access_key="test_secret_key",
-    bucket_id="test_bucket",
-    tmp_dir="/tmp",
-    output_dir="/tmp/test_output",
-)
+from ..fixtures.config import config_fixture  # noqa: F401
 
 
-def test_check_adjust_part_size():
+def test_check_adjust_part_size(config_fixture: Config):  # noqa: F811
     """Test adaptive adjustment"""
-    CONFIG.part_size = 16
+    config_fixture.part_size = 16
     file_size = 16 * 80_000 * 1024**2
-    check_adjust_part_size(config=CONFIG, file_size=file_size)
-    adjusted_part_size = CONFIG.part_size / 1024**2
+    check_adjust_part_size(config=config_fixture, file_size=file_size)
+    adjusted_part_size = config_fixture.part_size / 1024**2
     assert adjusted_part_size == 256
 
 
-def test_check_adjust_part_size_lower_bound():
+def test_check_adjust_part_size_lower_bound(config_fixture: Config):  # noqa: F811
     """Test lower bound"""
     lower_expect = 5 * 1024**2
-    CONFIG.part_size = 4
-    check_adjust_part_size(config=CONFIG, file_size=32 * 1024**2)
-    assert CONFIG.part_size == lower_expect
+    config_fixture.part_size = 4
+    check_adjust_part_size(config=config_fixture, file_size=32 * 1024**2)
+    assert config_fixture.part_size == lower_expect
 
 
-def test_check_adjust_part_size_upper_bound():
+def test_check_adjust_part_size_upper_bound(config_fixture: Config):  # noqa: F811
     """Test upper bound"""
     upper_expect = 5 * 1024**3
-    CONFIG.part_size = int(5.1 * 1024)
-    check_adjust_part_size(config=CONFIG, file_size=32 * 1024**2)
-    assert CONFIG.part_size == upper_expect
+    config_fixture.part_size = int(5.1 * 1024)
+    check_adjust_part_size(config=config_fixture, file_size=32 * 1024**2)
+    assert config_fixture.part_size == upper_expect

@@ -15,14 +15,10 @@
 
 """Testing the whole encryption, upload, validation flow"""
 
-import shutil
 import sys
-from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncGenerator
 
 import pytest  # type: ignore
-import pytest_asyncio  # type: ignore
 from ghga_service_chassis_lib.utils import big_temp_file  # type: ignore
 from hexkit.providers.s3.testutils import (  # type: ignore
     config_from_localstack_container,
@@ -31,44 +27,27 @@ from testcontainers.localstack import LocalStackContainer  # type: ignore
 
 from src.s3_upload import Config, async_main, objectstorage
 
+from ..fixtures.config import config_fixture  # noqa: F401
+
 ALIAS = "test_file"
 BUCKET_ID = "test-bucket"
 
 
-@dataclass
-class TestDirs:
-    """Container for test output dir Path objects"""
-
-    output_dir: Path
-    tmp_dir: Path
-
-
-@pytest_asyncio.fixture
-async def test_dirs() -> AsyncGenerator[TestDirs, None]:
-    """Fixture to provide and cleanup test output dirs"""
-    test_output = Path("test_output")
-    tmp_dir = Path("test_tmp")
-    yield TestDirs(output_dir=test_output, tmp_dir=tmp_dir)
-
-    shutil.rmtree(test_output)
-    tmp_dir.rmdir()
-
-
 @pytest.mark.asyncio
-async def test_process(test_dirs: TestDirs):
+async def test_process(config_fixture: Config):  # noqa: F811
     """Test whole upload/download process for s3_upload script"""
     with LocalStackContainer(image="localstack/localstack:0.14.2").with_services(
         "s3"
     ) as localstack:
         s3_config = config_from_localstack_container(localstack)
 
-        config = Config(
-            s3_endpoint_url=s3_config.s3_endpoint_url,
-            s3_access_key_id=s3_config.s3_access_key_id,
-            s3_secret_access_key=s3_config.s3_secret_access_key,
-            bucket_id=BUCKET_ID,
-            tmp_dir=test_dirs.tmp_dir,
-            output_dir=test_dirs.output_dir,
+        config = config_fixture.copy(
+            update={
+                "s3_endpoint_url": s3_config.s3_endpoint_url,
+                "s3_access_key_id": s3_config.s3_access_key_id,
+                "s3_secret_access_key": s3_config.s3_secret_access_key,
+                "bucket_id": BUCKET_ID,
+            }
         )
         storage = objectstorage(config=config)
         await storage.create_bucket(bucket_id=config.bucket_id)
