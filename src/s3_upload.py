@@ -423,9 +423,9 @@ def get_checksum_unencrypted(file_location: Path) -> str:
 def objectstorage(config: Config):
     """Configure S3 and return S3 DAO"""
     s3_config = S3Config(
-        s3_endpoint_url=config.s3_endpoint_url.get_secret_value(),
-        s3_access_key_id=config.s3_access_key_id.get_secret_value(),
-        s3_secret_access_key=config.s3_secret_access_key.get_secret_value(),
+        s3_endpoint_url=config.s3_endpoint_url,
+        s3_access_key_id=config.s3_access_key_id,
+        s3_secret_access_key=config.s3_secret_access_key,
     )
     return S3ObjectStorage(config=s3_config)
 
