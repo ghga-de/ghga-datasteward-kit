@@ -19,7 +19,7 @@ from src.s3_upload import Config, check_adjust_part_size
 from ..fixtures.config import config_fixture  # noqa: F401
 
 
-def test_check_adjust_part_size(config: Config):  # noqa: F811
+def test_check_adjust_part_size(config_fixture: Config):  # noqa: F811
     """Test adaptive adjustment"""
     config_fixture.part_size = 16
     file_size = 16 * 80_000 * 1024**2
@@ -28,7 +28,7 @@ def test_check_adjust_part_size(config: Config):  # noqa: F811
     assert adjusted_part_size == 256
 
 
-def test_check_adjust_part_size_lower_bound(config: Config):  # noqa: F811
+def test_check_adjust_part_size_lower_bound(config_fixture: Config):  # noqa: F811
     """Test lower bound"""
     lower_expect = 5 * 1024**2
     config_fixture.part_size = 4
@@ -36,7 +36,7 @@ def test_check_adjust_part_size_lower_bound(config: Config):  # noqa: F811
     assert config_fixture.part_size == lower_expect
 
 
-def test_check_adjust_part_size_upper_bound(config: Config):  # noqa: F811
+def test_check_adjust_part_size_upper_bound(config_fixture: Config):  # noqa: F811
     """Test upper bound"""
     upper_expect = 5 * 1024**3
     config_fixture.part_size = int(5.1 * 1024)
