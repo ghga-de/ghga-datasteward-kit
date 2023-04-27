@@ -155,6 +155,8 @@ class ChunkedUploader:
     async def encrypt_and_upload(self):
         """Delegate encryption and perform multipart upload"""
 
+        num_parts = math.ceil(self.unencrypted_file_size / self.config.part_size)
+
         with open(self.input_path, "rb") as file:
             async with MultipartUpload(
                 config=self.config,
@@ -162,14 +164,18 @@ class ChunkedUploader:
                 file_size=self.unencrypted_file_size,
                 part_size=self.config.part_size,
             ) as upload:
-                LOGGER.info("(1/*) Initialized file uplod for %s\n", upload.file_id)
+                LOGGER.info("(1/7) Initialized file uplod for %s.", upload.file_id)
                 for part_number, part in enumerate(
                     self.encryptor.process_file(file=file), start=1
                 ):
                     LOGGER.info(
-                        "\r(2/*) Processing upload for file part %i", part_number
+                        "(2/7) Processing upload for file part (%i/%i)",
+                        part_number,
+                        num_parts,
                     )
                     await upload.send_part(part_number=part_number, part=part)
+
+                LOGGER.info("(3/7) Finished upload for %s.", upload.file_id)
 
 
 class ChunkedDownloader:
@@ -203,10 +209,14 @@ class ChunkedDownloader:
 
     async def download(self):
         """Download file in parts and validate checksums"""
+        LOGGER.info("(4/7) Downloading file %s for validation.", self.file_id)
         download_url = await self.storage.get_object_download_url(
             bucket_id=self.config.bucket_id, object_id=self.file_id
         )
-        decryptor = Decryptor(file_secret=self.file_secret, part_size=self.part_size)
+        num_parts = math.ceil(self.file_size / self.part_size)
+        decryptor = Decryptor(
+            file_secret=self.file_secret, num_parts=num_parts, part_size=self.part_size
+        )
         download_func = partial(self._download_parts, download_url=download_url)
         decryptor.process_parts(download_func)
         self.validate_checksums(checkums=decryptor.checksums)
@@ -217,14 +227,16 @@ class ChunkedDownloader:
             raise ValueError(
                 f"Checksum mismatch:\nUpload:\n{checkums}\nDownload:\n{self.target_checksums}"
             )
+        LOGGER.info("(6/7) Succesfully validated checksums for %s.", self.file_id)
 
 
 class Decryptor:
     """Handles on the fly decryption and checksum calculation"""
 
-    def __init__(self, file_secret: bytes, part_size: int) -> None:
+    def __init__(self, file_secret: bytes, num_parts: int, part_size: int) -> None:
         self.checksums = Checksums()
         self.file_secret = file_secret
+        self.num_parts = num_parts
         self.part_size = part_size
 
     def _decrypt(self, part: bytes):
@@ -250,7 +262,8 @@ class Decryptor:
         unprocessed_bytes = b""
         download_buffer = b""
 
-        for file_part in download_files():
+        for part_number, file_part in enumerate(download_files()):
+            LOGGER.info("(5/7) Downloading part (%i/%i)", part_number, self.num_parts)
             # process unencrypted
             self.checksums.update_encrypted(file_part)
             unprocessed_bytes += file_part
@@ -386,6 +399,7 @@ class Metadata:  # pylint: disable=too-many-instance-attributes
         output_path = output_dir / f"{self.alias}.json"
         self._check_output_path(output_path)
 
+        LOGGER.info("(7/7) Writing metadata to %s.", output_path)
         # owner read-only
         with output_path.open("w") as file:
             json.dump(output, file, indent=2)
@@ -461,9 +475,9 @@ class MultipartUpload:
 def objectstorage(config: Config):
     """Configure S3 and return S3 DAO"""
     s3_config = S3Config(
-        s3_endpoint_url=config.s3_endpoint_url,
-        s3_access_key_id=config.s3_access_key_id,
-        s3_secret_access_key=config.s3_secret_access_key,
+        s3_endpoint_url=config.s3_endpoint_url.get_secret_value(),
+        s3_access_key_id=config.s3_access_key_id.get_secret_value(),
+        s3_secret_access_key=config.s3_secret_access_key.get_secret_value(),
     )
     return S3ObjectStorage(config=s3_config)
 
