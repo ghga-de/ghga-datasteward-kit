@@ -12,26 +12,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""A config fixture"""
-
-from tempfile import TemporaryDirectory
-from typing import Generator
-
-import pytest
-
-from src.s3_upload import Config
-
-
-@pytest.fixture
-def config_fixture() -> Generator[Config, None, None]:
-    """Generate a test Config file."""
-
-    with TemporaryDirectory() as output_dir:
-        yield Config(
-            s3_endpoint_url="s3://test_url",
-            s3_access_key_id="test_access_key",
-            s3_secret_access_key="test_secret_key",
-            bucket_id="test_bucket",
-            output_dir=output_dir,
-        )

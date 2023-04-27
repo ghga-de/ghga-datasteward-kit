@@ -32,7 +32,6 @@ from dataclasses import dataclass
 from functools import partial
 from io import BufferedReader
 from pathlib import Path
-from tempfile import mkstemp
 from typing import Any, Generator
 from uuid import uuid4
 
@@ -106,28 +105,290 @@ class Config(BaseSettings):
         return expand_env_vars_in_path(output_dir)
 
 
-class Keypair:
-    """Crypt4GH keypair"""
+class Checksums:
+    """Container for checksum calculation"""
 
     def __init__(self):
-        """Creates a keypair using crypt4gh"""
-        LOGGER.info("(1/7) Generating keypair")
-        # Crypt4GH always writes to file and tmp_path fixture causes permission issues
+        self.unencrypted_sha256 = hashlib.sha256()
+        self.encrypted_md5: list[str] = []
+        self.encrypted_sha256: list[str] = []
 
-        sk_file, sk_path = mkstemp(prefix="private", suffix=".key")
-        pk_file, pk_path = mkstemp(prefix="public", suffix=".key")
+    def __repr__(self) -> str:
+        return (
+            f"Unencrypted: {self.unencrypted_sha256.hexdigest()}\n"
+            + f"Encrypted MD5: {self.encrypted_md5}\n"
+            + f"Encrypted SHA256: {self.encrypted_sha256}"
+        )
 
-        # Crypt4GH does not reset the umask it sets, so we need to deal with it
-        original_umask = os.umask(0o022)
+    def get(self):
+        """Return all checksums at the end of processing"""
+        return (
+            self.unencrypted_sha256.hexdigest(),
+            self.encrypted_md5,
+            self.encrypted_sha256,
+        )
 
-        crypt4gh.keys.c4gh.generate(seckey=sk_file, pubkey=pk_file)
-        self.public_key = crypt4gh.keys.get_public_key(pk_path)
-        self.private_key = crypt4gh.keys.get_private_key(sk_path, lambda: None)
+    def update_unencrypted(self, part: bytes):
+        """Update checksum for unencrypted file"""
+        self.unencrypted_sha256.update(part)
 
-        # remove unneeded files
-        os.umask(original_umask)
-        Path(pk_path).unlink()
-        Path(sk_path).unlink()
+    def update_encrypted(self, part: bytes):
+        """Update encrypted part checksums"""
+        self.encrypted_md5.append(hashlib.md5(part, usedforsecurity=False).hexdigest())
+        self.encrypted_sha256.append(hashlib.sha256(part).hexdigest())
+
+
+class ChunkedUploader:
+    """Handler class dealing with upload functionality"""
+
+    def __init__(self, input_path: Path, alias: str, config: Config) -> None:
+        self.alias = alias
+        self.config = config
+        self.input_path = input_path
+        self.encryptor = Encryptor(self.config.part_size)
+        self.file_id = str(uuid4())
+
+    async def encrypt_and_upload(self):
+        """Delegate encryption and perform multipart upload"""
+        file_size = self.input_path.stat().st_size
+
+        with open(self.input_path, "rb") as file:
+            async with MultipartUpload(
+                config=self.config,
+                file_id=self.file_id,
+                file_size=file_size,
+                part_size=self.config.part_size,
+            ) as upload:
+                LOGGER.info("(1/*) Initialized file uplod for %s\n", upload.file_id)
+                for part_number, part in enumerate(
+                    self.encryptor.process_file(file=file), start=1
+                ):
+                    LOGGER.info(
+                        "\r(2/*) Processing upload for file part %i", part_number
+                    )
+                    await upload.send_part(part_number=part_number, part=part)
+
+
+class ChunkedDownloader:
+    """Handler class dealing with download functionality"""
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        config: Config,
+        file_id: str,
+        file_size: int,
+        file_secret: bytes,
+        part_size: int,
+        target_checksums: Checksums,
+    ) -> None:
+        self.config = config
+        self.storage = objectstorage(self.config)
+        self.file_id = file_id
+        self.file_size = file_size
+        self.file_secret = file_secret
+        self.part_size = part_size
+        self.target_checksums = target_checksums
+
+    def _download_parts(self, download_url):
+        """Download file parts"""
+        for start, stop in get_ranges(
+            file_size=self.file_size, part_size=self.config.part_size
+        ):
+            headers = {"Range": f"bytes={start}-{stop}"}
+            response = SESSION.get(download_url, timeout=60, headers=headers)
+            yield response.content
+
+    async def download(self):
+        """Download file in parts and validate checksums"""
+        download_url = await self.storage.get_object_download_url(
+            bucket_id=self.config.bucket_id, object_id=self.file_id
+        )
+        decryptor = Decryptor(file_secret=self.file_secret, part_size=self.part_size)
+        download_func = partial(self._download_parts, download_url=download_url)
+        decryptor.process_parts(download_func)
+        self.validate_checksums(checkums=decryptor.checksums)
+
+    def validate_checksums(self, checkums: Checksums):
+        """Confirm checksums for upload and download match"""
+        if not self.target_checksums.get() == checkums.get():
+            raise ValueError(
+                f"Checksum mismatch:\nUpload:\n{checkums}\nDownload:\n{self.target_checksums}"
+            )
+
+
+class Decryptor:
+    """Handles on the fly decryption and checksum calculation"""
+
+    def __init__(self, file_secret: bytes, part_size: int) -> None:
+        self.checksums = Checksums()
+        self.file_secret = file_secret
+        self.part_size = part_size
+
+    def _decrypt(self, part: bytes):
+        """Decrypt file part"""
+        segments, incomplete_segment = get_segments(
+            part=part, segment_size=crypt4gh.lib.CIPHER_SEGMENT_SIZE
+        )
+
+        decrypted_segments = []
+        for segment in segments:
+            decrypted_segments.append(self._decrypt_segment(segment))
+
+        return b"".join(decrypted_segments), incomplete_segment
+
+    def _decrypt_segment(self, segment: bytes):
+        """Decrypt single ciphersegment"""
+        return crypt4gh.lib.decrypt_block(
+            ciphersegment=segment, session_keys=[self.file_secret]
+        )
+
+    def process_parts(self, download_files: partial[Generator[bytes, None, None]]):
+        """Encrypt and upload file parts."""
+        unprocessed_bytes = b""
+        download_buffer = b""
+
+        for file_part in download_files():
+            # process unencrypted
+            self.checksums.update_encrypted(file_part)
+            unprocessed_bytes += file_part
+
+            # encrypt in chunks
+            decrypted_bytes, unprocessed_bytes = self._decrypt(unprocessed_bytes)
+            download_buffer += decrypted_bytes
+
+            # update checksums and yield if part size
+            if len(download_buffer) >= self.part_size:
+                current_part = download_buffer[: self.part_size]
+                self.checksums.update_unencrypted(current_part)
+                download_buffer = download_buffer[self.part_size :]
+
+        # process dangling bytes
+        if unprocessed_bytes:
+            download_buffer += self._decrypt_segment(unprocessed_bytes)
+
+        if len(download_buffer) >= self.part_size:
+            current_part = download_buffer[: self.part_size]
+            self.checksums.update_unencrypted(current_part)
+            download_buffer = download_buffer[self.part_size :]
+
+        self.checksums.update_unencrypted(download_buffer)
+
+
+class Encryptor:
+    """Handles on the fly encryption and checksum calculation"""
+
+    def __init__(self, part_size: int):
+        self.part_size = part_size
+        self.checksums = Checksums()
+        self.file_secret = os.urandom(32)
+
+    def _encrypt(self, part: bytes):
+        """Encrypt file part using secret"""
+        segments, incomplete_segment = get_segments(
+            part=part, segment_size=crypt4gh.lib.SEGMENT_SIZE
+        )
+
+        encrypted_segments = []
+        for segment in segments:
+            encrypted_segments.append(self._encrypt_segment(segment))
+
+        return b"".join(encrypted_segments), incomplete_segment
+
+    def _encrypt_segment(self, segment=bytes):
+        """Encrypt one single segment"""
+        nonce = os.urandom(12)
+        encrypted_data = crypto_aead_chacha20poly1305_ietf_encrypt(
+            segment, None, nonce, self.file_secret
+        )  # no aad
+        return nonce + encrypted_data
+
+    # type annotation for file parts, should be generator
+    def process_file(self, file: BufferedReader):
+        """Encrypt and upload file parts."""
+        unprocessed_bytes = b""
+        upload_buffer = b""
+
+        for file_part in read_file_parts(file=file, part_size=self.part_size):
+            # process unencrypted
+            self.checksums.update_unencrypted(file_part)
+            unprocessed_bytes += file_part
+
+            # encrypt in chunks
+            encrypted_bytes, unprocessed_bytes = self._encrypt(unprocessed_bytes)
+            upload_buffer += encrypted_bytes
+
+            # update checksums and yield if part size
+            if len(upload_buffer) >= self.part_size:
+                current_part = upload_buffer[: self.part_size]
+                self.checksums.update_encrypted(current_part)
+                yield current_part
+                upload_buffer = upload_buffer[self.part_size :]
+
+        # process dangling bytes
+        if unprocessed_bytes:
+            upload_buffer += self._encrypt_segment(unprocessed_bytes)
+
+        if len(upload_buffer) >= self.part_size:
+            current_part = upload_buffer[: self.part_size]
+            self.checksums.update_encrypted(current_part)
+            yield current_part
+            upload_buffer = upload_buffer[self.part_size :]
+
+        self.checksums.update_encrypted(upload_buffer)
+        yield upload_buffer
+
+
+@dataclass
+class Metadata:  # pylint: disable=too-many-instance-attributes
+    """Container class for output metadata"""
+
+    alias: str
+    file_uuid: str
+    original_path: Path
+    part_size: int
+    file_secret: bytes
+    checksums: Checksums
+    unencrypted_size: int
+    encrypted_size: int
+
+    def serialize(self, output_dir: Path):
+        """Serialize metadata to file"""
+
+        output: dict[str, Any] = {}
+        output["Alias"] = self.alias
+        output["File UUID"] = self.file_uuid
+        output["Original filesystem path"] = str(self.original_path.resolve())
+        output["Part Size"] = f"{self.part_size // 1024**2} MiB"
+        output["Unencrypted file size"] = self.unencrypted_size
+        output["Encrypted file size"] = self.encrypted_size
+        output["Symmetric file encryption secret"] = base64.b64encode(
+            self.file_secret
+        ).decode("utf-8")
+        (
+            unencrypted_checksum,
+            encrypted_md5_checksums,
+            encrypted_sha256_checksums,
+        ) = self.checksums.get()
+        output["Unencrypted file checksum"] = unencrypted_checksum
+        output["Encrypted file part checksums (MD5)"] = encrypted_md5_checksums
+        output["Encrypted file part checksums (SHA256)"] = encrypted_sha256_checksums
+
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True)
+
+        output_path = output_dir / f"{self.alias}.json"
+        self._check_output_path(output_path)
+
+        # owner read-only
+        with output_path.open("w") as file:
+            json.dump(output, file, indent=2)
+        os.chmod(path=output_path, mode=0o400)
+
+    def _check_output_path(self, output_path: Path):
+        """Check if we accidentally try to overwrite an alread existing metadata file"""
+        if output_path.exists():
+            msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
+            handle_superficial_error(msg=msg)
 
 
 class MultipartUpload:
@@ -188,256 +449,6 @@ class MultipartUpload:
                 object_id=self.file_id,
             )
             raise exc
-
-
-class Checksums:
-    """Container for checksum calculation"""
-
-    def __init__(self):
-        self.unencrypted_sha256 = hashlib.sha256()
-        self.encrypted_md5: list[str] = []
-        self.encrypted_sha256: list[str] = []
-
-    def get(self):
-        """Return all checksums at the end of processing"""
-        return (
-            self.unencrypted_sha256.hexdigest(),
-            self.encrypted_md5,
-            self.encrypted_sha256,
-        )
-
-    def update_unencrypted(self, part: bytes):
-        """Update checksum for unencrypted file"""
-        self.unencrypted_sha256.update(part)
-
-    def update_encrypted(self, part: bytes):
-        """Update encrypted part checksums"""
-        self.encrypted_md5.append(hashlib.md5(part, usedforsecurity=False).hexdigest())
-        self.encrypted_sha256.append(hashlib.sha256(part).hexdigest())
-
-
-class Encryptor:
-    """Handles on the fly encryption and checksum calculation"""
-
-    def __init__(self, part_size: int):
-        self.part_size = part_size
-        self.checksums = Checksums()
-        self.file_secret = os.urandom(32)
-
-    def _encrypt(self, part: bytes):
-        """Encrypt file part using secret"""
-        segments, incomplete_segment = get_segments(
-            part=part, segment_size=crypt4gh.lib.SEGMENT_SIZE
-        )
-
-        encrypted_segments = []
-        for segment in segments:
-            nonce = os.urandom(12)
-            encrypted_data = crypto_aead_chacha20poly1305_ietf_encrypt(
-                segment, None, nonce, self.file_secret
-            )  # no aad
-
-            encrypted_segments.append(nonce + encrypted_data)
-
-        return b"".join(encrypted_segments), incomplete_segment
-
-    # type annotation for file parts, should be generator
-    def process_file(self, file: BufferedReader):
-        """Encrypt and upload file parts."""
-        unprocessed_bytes = b""
-        upload_buffer = b""
-
-        for file_part in read_file_parts(file=file, part_size=self.part_size):
-            # process unencrypted
-            self.checksums.update_unencrypted(file_part)
-            unprocessed_bytes += file_part
-
-            # encrypt in chunks
-            encrypted_bytes, unprocessed_bytes = self._encrypt(unprocessed_bytes)
-            upload_buffer += encrypted_bytes
-
-            # update checksums and yield if part size
-            if len(upload_buffer) >= self.part_size:
-                current_part = upload_buffer[: self.part_size]
-                self.checksums.update_encrypted(current_part)
-                yield current_part
-                upload_buffer = upload_buffer[self.part_size :]
-
-        self.checksums.update_encrypted(upload_buffer)
-        yield upload_buffer
-
-
-class ChunkedUploader:
-    """Handler class dealing with upload functionality"""
-
-    def __init__(self, input_path: Path, alias: str, config: Config) -> None:
-        self.alias = alias
-        self.config = config
-        self.input_path = input_path
-        self.encryptor = Encryptor(self.config.part_size)
-        self.file_id = str(uuid4())
-
-    async def encrypt_and_upload(self):
-        """Delegate encryption and perform multipart upload"""
-        file_size = self.input_path.stat().st_size
-
-        with open(self.input_path, "rb") as file:
-            async with MultipartUpload(
-                config=self.config,
-                file_id=self.file_id,
-                file_size=file_size,
-                part_size=self.config.part_size,
-            ) as upload:
-                for part_number, part in enumerate(
-                    self.encryptor.process_file(file=file)
-                ):
-                    await upload.send_part(part_number=part_number, part=part)
-
-
-@dataclass
-class Metadata:  # pylint: disable=too-many-instance-attributes
-    """Container class for output metadata"""
-
-    alias: str
-    file_uuid: str
-    original_path: Path
-    part_size: int
-    file_secret: bytes
-    checksums: Checksums
-    unencrypted_size: int
-    encrypted_size: int
-
-    def serialize(self, output_dir: Path):
-        """Serialize metadata to file"""
-
-        output: dict[str, Any] = {}
-        output["Alias"] = self.alias
-        output["File UUID"] = self.file_uuid
-        output["Original filesystem path"] = str(self.original_path.resolve())
-        output["Part Size"] = f"{self.part_size // 1024**2} MiB"
-        output["Unencrypted file size"] = self.unencrypted_size
-        output["Encrypted file size"] = self.encrypted_size
-        output["Symmetric file encryption secret"] = base64.b64encode(
-            self.file_secret
-        ).decode("utf-8")
-        (
-            unencrypted_checksum,
-            encrypted_md5_checksums,
-            encrypted_sha256_checksums,
-        ) = self.checksums.get()
-        output["Unencrypted file checksum"] = unencrypted_checksum
-        output["Encrypted file part checksums (MD5)"] = encrypted_md5_checksums
-        output["Encrypted file part checksums (SHA256)"] = encrypted_sha256_checksums
-
-        if not output_dir.exists():
-            output_dir.mkdir(parents=True)
-
-        output_path = output_dir / f"{self.alias}.json"
-        self._check_output_path(output_path)
-
-        # owner read-only
-        with output_path.open("w") as file:
-            json.dump(output, file, indent=2)
-        os.chmod(path=output_path, mode=0o400)
-
-    def _check_output_path(self, output_path: Path):
-        """Check if we accidentally try to overwrite an alread existing metadata file"""
-        if output_path.exists():
-            msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
-            handle_superficial_error(msg=msg)
-
-
-class ChunkedDownloader:
-    """Handler class dealing with download functionality"""
-
-    def __init__(  # pylint: disable=too-many-arguments
-        self,
-        config: Config,
-        file_id: str,
-        file_size: int,
-        file_secret: bytes,
-        part_size: int,
-        target_checksums: Checksums,
-    ) -> None:
-        self.config = config
-        self.storage = objectstorage(self.config)
-        self.file_id = file_id
-        self.file_size = file_size
-        self.file_secret = file_secret
-        self.part_size = part_size
-        self.target_checksums = target_checksums
-
-    def _download_parts(self, download_url):
-        """Download file parts"""
-        for start, stop in get_ranges(
-            file_size=self.file_size, part_size=self.config.part_size
-        ):
-            headers = {"Range": f"bytes={start}-{stop}"}
-            response = SESSION.get(download_url, timeout=60, headers=headers)
-            yield response.content
-
-    async def download(self):
-        """Download file in parts and validate checksums"""
-        download_url = await self.storage.get_object_download_url(
-            bucket_id=self.config.bucket_id, object_id=self.file_id
-        )
-        decryptor = Decryptor(file_secret=self.file_secret, part_size=self.part_size)
-        download_func = partial(self._download_parts, download_url=download_url)
-        decryptor.process_parts(download_func)
-        self.validate_checksums(checkums=decryptor.checksums)
-
-    def validate_checksums(self, checkums: Checksums):
-        """Confirm checksums for upload and download match"""
-        if not self.target_checksums.get() == checkums.get():
-            raise ValueError(
-                f"Checksum mismatch:\nUpload:\n{checkums}\nDownload:\n{self.target_checksums}"
-            )
-
-
-class Decryptor:
-    """Handles on the fly decryption and checksum calculation"""
-
-    def __init__(self, file_secret: bytes, part_size: int) -> None:
-        self.checksums = Checksums()
-        self.file_secret = file_secret
-        self.part_size = part_size
-
-    def process_parts(self, download_files: partial[Generator[bytes, None, None]]):
-        """Encrypt and upload file parts."""
-        unprocessed_bytes = b""
-        download_buffer = b""
-
-        for file_part in download_files():
-            # process unencrypted
-            self.checksums.update_encrypted(file_part)
-            unprocessed_bytes += file_part
-
-            # encrypt in chunks
-            decrypted_bytes, unprocessed_bytes = self._decrypt(unprocessed_bytes)
-            download_buffer += decrypted_bytes
-
-            # update checksums and yield if part size
-            if len(download_buffer) >= self.part_size:
-                current_part = download_buffer[: self.part_size]
-                self.checksums.update_unencrypted(current_part)
-                download_buffer = download_buffer[self.part_size :]
-
-        self.checksums.update_unencrypted(download_buffer)
-
-    def _decrypt(self, part: bytes):
-        """Decrypt file part"""
-        segments, incomplete_segment = get_segments(
-            part=part, segment_size=crypt4gh.lib.CIPHER_SEGMENT_SIZE
-        )
-
-        decrypted_segments = []
-        for segment in segments:
-            decrypted = crypt4gh.lib.decrypt_block(
-                ciphersegment=segment, session_keys=[self.file_secret]
-            )
-            decrypted_segments.append(decrypted)
-
-        return b"".join(decrypted_segments), incomplete_segment
 
 
 def objectstorage(config: Config):

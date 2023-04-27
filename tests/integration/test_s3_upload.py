@@ -54,6 +54,5 @@ async def test_process(config_fixture: Config):  # noqa: F811
         sys.set_int_max_str_digits(50 * 1024**2)  # type: ignore
         with big_temp_file(50 * 1024**2) as file:
             await async_main(input_path=Path(file.name), alias=ALIAS, config=config)
-        # tmp dir empty and output file exists?
-        assert not any(config.tmp_dir.iterdir())
+        # output file exists?
         assert (config.output_dir / ALIAS).with_suffix(".json").exists()
