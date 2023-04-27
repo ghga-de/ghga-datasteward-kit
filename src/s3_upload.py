@@ -141,22 +141,25 @@ class Checksums:
 class ChunkedUploader:
     """Handler class dealing with upload functionality"""
 
-    def __init__(self, input_path: Path, alias: str, config: Config) -> None:
+    def __init__(
+        self, input_path: Path, alias: str, config: Config, unencrypted_file_size: int
+    ) -> None:
         self.alias = alias
         self.config = config
         self.input_path = input_path
         self.encryptor = Encryptor(self.config.part_size)
         self.file_id = str(uuid4())
+        self.unencrypted_file_size = unencrypted_file_size
+        self.encrypted_file_size = 0
 
     async def encrypt_and_upload(self):
         """Delegate encryption and perform multipart upload"""
-        file_size = self.input_path.stat().st_size
 
         with open(self.input_path, "rb") as file:
             async with MultipartUpload(
                 config=self.config,
                 file_id=self.file_id,
-                file_size=file_size,
+                file_size=self.unencrypted_file_size,
                 part_size=self.config.part_size,
             ) as upload:
                 LOGGER.info("(1/*) Initialized file uplod for %s\n", upload.file_id)
@@ -176,7 +179,7 @@ class ChunkedDownloader:
         self,
         config: Config,
         file_id: str,
-        file_size: int,
+        encrypted_file_size: int,
         file_secret: bytes,
         part_size: int,
         target_checksums: Checksums,
@@ -184,7 +187,7 @@ class ChunkedDownloader:
         self.config = config
         self.storage = objectstorage(self.config)
         self.file_id = file_id
-        self.file_size = file_size
+        self.file_size = encrypted_file_size
         self.file_secret = file_secret
         self.part_size = part_size
         self.target_checksums = target_checksums
@@ -281,6 +284,7 @@ class Encryptor:
         self.part_size = part_size
         self.checksums = Checksums()
         self.file_secret = os.urandom(32)
+        self.encrypted_file_size = 0
 
     def _encrypt(self, part: bytes):
         """Encrypt file part using secret"""
@@ -321,6 +325,7 @@ class Encryptor:
             if len(upload_buffer) >= self.part_size:
                 current_part = upload_buffer[: self.part_size]
                 self.checksums.update_encrypted(current_part)
+                self.encrypted_file_size += self.part_size
                 yield current_part
                 upload_buffer = upload_buffer[self.part_size :]
 
@@ -331,10 +336,12 @@ class Encryptor:
         if len(upload_buffer) >= self.part_size:
             current_part = upload_buffer[: self.part_size]
             self.checksums.update_encrypted(current_part)
+            self.encrypted_file_size += self.part_size
             yield current_part
             upload_buffer = upload_buffer[self.part_size :]
 
         self.checksums.update_encrypted(upload_buffer)
+        self.encrypted_file_size += len(upload_buffer)
         yield upload_buffer
 
 
@@ -577,17 +584,36 @@ async def async_main(input_path: Path, alias: str, config: Config):
 
     file_size = input_path.stat().st_size
     check_adjust_part_size(config=config, file_size=file_size)
-    uploader = ChunkedUploader(input_path=input_path, alias=alias, config=config)
+
+    uploader = ChunkedUploader(
+        input_path=input_path,
+        alias=alias,
+        config=config,
+        unencrypted_file_size=file_size,
+    )
     await uploader.encrypt_and_upload()
+
     downloader = ChunkedDownloader(
         config=config,
         file_id=uploader.file_id,
-        file_size=file_size,
+        encrypted_file_size=uploader.encryptor.encrypted_file_size,
         file_secret=uploader.encryptor.file_secret,
         part_size=config.part_size,
         target_checksums=uploader.encryptor.checksums,
     )
     await downloader.download()
+
+    metadata = Metadata(
+        alias=uploader.alias,
+        file_uuid=uploader.file_id,
+        original_path=input_path,
+        part_size=config.part_size,
+        file_secret=uploader.encryptor.file_secret,
+        checksums=uploader.encryptor.checksums,
+        unencrypted_size=file_size,
+        encrypted_size=uploader.encryptor.encrypted_file_size,
+    )
+    metadata.serialize(config.output_dir)
 
 
 if __name__ == "__main__":
