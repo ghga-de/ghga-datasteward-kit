@@ -133,7 +133,6 @@ def handle_file_uploads(  # noqa: C901
 
     try:
         while files_to_do or in_progress:
-
             # start new processes:
             while len(in_progress) < parallel_processes and files_to_do:
                 next_file = files_to_do.pop()
