@@ -19,6 +19,7 @@ from tempfile import TemporaryDirectory
 from typing import Generator
 
 import pytest
+from pydantic import SecretStr
 
 from src.s3_upload import Config
 
@@ -29,9 +30,9 @@ def config_fixture() -> Generator[Config, None, None]:
 
     with TemporaryDirectory() as output_dir:
         yield Config(
-            s3_endpoint_url="s3://test_url",
-            s3_access_key_id="test_access_key",
-            s3_secret_access_key="test_secret_key",
+            s3_endpoint_url=SecretStr("s3://test_url"),
+            s3_access_key_id=SecretStr("test_access_key"),
+            s3_secret_access_key=SecretStr("test_secret_key"),
             bucket_id="test_bucket",
             output_dir=output_dir,
         )

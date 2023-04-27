@@ -23,6 +23,7 @@ from ghga_service_chassis_lib.utils import big_temp_file  # type: ignore
 from hexkit.providers.s3.testutils import (  # type: ignore
     config_from_localstack_container,
 )
+from pydantic import SecretStr
 from testcontainers.localstack import LocalStackContainer  # type: ignore
 
 from src.s3_upload import Config, async_main, objectstorage
@@ -43,8 +44,8 @@ async def test_process(config_fixture: Config):  # noqa: F811
 
         config = config_fixture.copy(
             update={
-                "s3_endpoint_url": s3_config.s3_endpoint_url,
-                "s3_access_key_id": s3_config.s3_access_key_id,
+                "s3_endpoint_url": SecretStr(s3_config.s3_endpoint_url),
+                "s3_access_key_id": SecretStr(s3_config.s3_access_key_id),
                 "s3_secret_access_key": s3_config.s3_secret_access_key,
                 "bucket_id": BUCKET_ID,
             }
