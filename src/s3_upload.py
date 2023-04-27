@@ -32,6 +32,7 @@ from dataclasses import dataclass
 from functools import partial
 from io import BufferedReader
 from pathlib import Path
+from time import time
 from typing import Any, Generator
 from uuid import uuid4
 
@@ -156,6 +157,7 @@ class ChunkedUploader:
         """Delegate encryption and perform multipart upload"""
 
         num_parts = math.ceil(self.unencrypted_file_size / self.config.part_size)
+        start = time()
 
         with open(self.input_path, "rb") as file:
             async with MultipartUpload(
@@ -168,13 +170,18 @@ class ChunkedUploader:
                 for part_number, part in enumerate(
                     self.encryptor.process_file(file=file), start=1
                 ):
-                    LOGGER.info(
-                        "(2/7) Processing upload for file part (%i/%i)",
-                        part_number,
-                        num_parts,
-                    )
                     await upload.send_part(part_number=part_number, part=part)
 
+                    delta = time() - start
+                    avg_speed = (
+                        part_number * (self.config.part_size / 1024**2) / delta
+                    )
+                    LOGGER.info(
+                        "(2/7) Processing upload for file part %i/%i (%.2f MiB/s)",
+                        part_number,
+                        num_parts,
+                        avg_speed,
+                    )
                 LOGGER.info("(3/7) Finished upload for %s.", upload.file_id)
 
 
@@ -261,9 +268,9 @@ class Decryptor:
         """Encrypt and upload file parts."""
         unprocessed_bytes = b""
         download_buffer = b""
+        start = time()
 
         for part_number, file_part in enumerate(download_files()):
-            LOGGER.info("(5/7) Downloading part (%i/%i)", part_number, self.num_parts)
             # process unencrypted
             self.checksums.update_encrypted(file_part)
             unprocessed_bytes += file_part
@@ -277,6 +284,15 @@ class Decryptor:
                 current_part = download_buffer[: self.part_size]
                 self.checksums.update_unencrypted(current_part)
                 download_buffer = download_buffer[self.part_size :]
+
+            delta = time() - start
+            avg_speed = (part_number * (self.part_size / 1024**2)) / delta
+            LOGGER.info(
+                "(5/7) Downloading part %i/%i (%.2f MiB/s)",
+                part_number,
+                self.num_parts,
+                avg_speed,
+            )
 
         # process dangling bytes
         if unprocessed_bytes:
@@ -397,19 +413,12 @@ class Metadata:  # pylint: disable=too-many-instance-attributes
             output_dir.mkdir(parents=True)
 
         output_path = output_dir / f"{self.alias}.json"
-        self._check_output_path(output_path)
 
         LOGGER.info("(7/7) Writing metadata to %s.", output_path)
         # owner read-only
         with output_path.open("w") as file:
             json.dump(output, file, indent=2)
         os.chmod(path=output_path, mode=0o400)
-
-    def _check_output_path(self, output_path: Path):
-        """Check if we accidentally try to overwrite an alread existing metadata file"""
-        if output_path.exists():
-            msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
-            handle_superficial_error(msg=msg)
 
 
 class MultipartUpload:
@@ -560,6 +569,13 @@ def check_adjust_part_size(config: Config, file_size: int):
     config.part_size = part_size
 
 
+def check_output_path(output_path: Path):
+    """Check if we accidentally try to overwrite an alread existing metadata file"""
+    if output_path.exists():
+        msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
+        handle_superficial_error(msg=msg)
+
+
 def main(
     input_path: Path = typer.Option(..., help="Local path of the input file"),
     alias: str = typer.Option(..., help="A human readable file alias"),
@@ -571,7 +587,6 @@ def main(
     """
 
     config = load_config_yaml(config_path)
-
     asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
 
 
@@ -595,6 +610,8 @@ async def async_main(input_path: Path, alias: str, config: Config):
     if input_path.is_dir():
         msg = f"File location points to a directory: {input_path.resolve()}"
         handle_superficial_error(msg=msg)
+
+    check_output_path(config.output_dir / f"{alias}.json")
 
     file_size = input_path.stat().st_size
     check_adjust_part_size(config=config, file_size=file_size)

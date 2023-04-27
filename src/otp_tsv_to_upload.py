@@ -27,7 +27,7 @@ from typing import Optional
 import typer
 from pydantic import BaseModel
 
-from s3_upload import load_config_yaml
+from .s3_upload import load_config_yaml
 
 HERE = Path(__file__).parent
 
