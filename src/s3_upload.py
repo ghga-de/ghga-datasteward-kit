@@ -157,13 +157,17 @@ class ChunkedUploader:
         """Delegate encryption and perform multipart upload"""
 
         num_parts = math.ceil(self.unencrypted_file_size / self.config.part_size)
+        # compute encrypted_file_size
+        num_segments = math.ceil(self.unencrypted_file_size / crypt4gh.lib.SEGMENT_SIZE)
+        encrypted_file_size = self.unencrypted_file_size + num_segments * 28
+
         start = time()
 
         with open(self.input_path, "rb") as file:
             async with MultipartUpload(
                 config=self.config,
                 file_id=self.file_id,
-                file_size=self.unencrypted_file_size,
+                encrypted_file_size=encrypted_file_size,
                 part_size=self.config.part_size,
             ) as upload:
                 LOGGER.info("(1/7) Initialized file uplod for %s.", upload.file_id)
@@ -181,6 +185,12 @@ class ChunkedUploader:
                         part_number,
                         num_parts,
                         avg_speed,
+                    )
+                if encrypted_file_size != self.encryptor.encrypted_file_size:
+                    raise ValueError(
+                        "Mismatch between actual and theoretical encrypted part size:\n"
+                        + f"Is: {self.encryptor.encrypted_file_size}\n"
+                        + "Should be: {encrypted_file_size}"
                     )
                 LOGGER.info("(3/7) Finished upload for %s.", upload.file_id)
 
@@ -425,12 +435,12 @@ class MultipartUpload:
     """Context manager to handle init + complete/abort for S3 multipart upload"""
 
     def __init__(
-        self, config: Config, file_id: str, file_size: int, part_size: int
+        self, config: Config, file_id: str, encrypted_file_size: int, part_size: int
     ) -> None:
         self.config = config
         self.storage = objectstorage(config=self.config)
         self.file_id = file_id
-        self.file_size = file_size
+        self.file_size = encrypted_file_size
         self.part_size = part_size
         self.upload_id = ""
 
