@@ -156,10 +156,10 @@ class ChunkedUploader:
     async def encrypt_and_upload(self):
         """Delegate encryption and perform multipart upload"""
 
-        num_parts = math.ceil(self.unencrypted_file_size / self.config.part_size)
         # compute encrypted_file_size
         num_segments = math.ceil(self.unencrypted_file_size / crypt4gh.lib.SEGMENT_SIZE)
         encrypted_file_size = self.unencrypted_file_size + num_segments * 28
+        num_parts = math.ceil(encrypted_file_size / self.config.part_size)
 
         start = time()
 
@@ -190,7 +190,7 @@ class ChunkedUploader:
                     raise ValueError(
                         "Mismatch between actual and theoretical encrypted part size:\n"
                         + f"Is: {self.encryptor.encrypted_file_size}\n"
-                        + "Should be: {encrypted_file_size}"
+                        + f"Should be: {encrypted_file_size}"
                     )
                 LOGGER.info("(3/7) Finished upload for %s.", upload.file_id)
 
@@ -217,10 +217,13 @@ class ChunkedDownloader:
 
     def _download_parts(self, download_url):
         """Download file parts"""
-        for start, stop in get_ranges(
-            file_size=self.file_size, part_size=self.config.part_size
+
+        for part_no, (start, stop) in enumerate(
+            get_ranges(file_size=self.file_size, part_size=self.config.part_size),
+            start=1,
         ):
             headers = {"Range": f"bytes={start}-{stop}"}
+            LOGGER.debug("Downloading part number %i. %s", part_no, headers)
             response = SESSION.get(download_url, timeout=60, headers=headers)
             yield response.content
 
@@ -308,12 +311,13 @@ class Decryptor:
         if unprocessed_bytes:
             download_buffer += self._decrypt_segment(unprocessed_bytes)
 
-        if len(download_buffer) >= self.part_size:
+        while len(download_buffer) >= self.part_size:
             current_part = download_buffer[: self.part_size]
             self.checksums.update_unencrypted(current_part)
             download_buffer = download_buffer[self.part_size :]
 
-        self.checksums.update_unencrypted(download_buffer)
+        if download_buffer:
+            self.checksums.update_unencrypted(download_buffer)
 
 
 class Encryptor:
@@ -372,16 +376,17 @@ class Encryptor:
         if unprocessed_bytes:
             upload_buffer += self._encrypt_segment(unprocessed_bytes)
 
-        if len(upload_buffer) >= self.part_size:
+        while len(upload_buffer) >= self.part_size:
             current_part = upload_buffer[: self.part_size]
             self.checksums.update_encrypted(current_part)
             self.encrypted_file_size += self.part_size
             yield current_part
             upload_buffer = upload_buffer[self.part_size :]
 
-        self.checksums.update_encrypted(upload_buffer)
-        self.encrypted_file_size += len(upload_buffer)
-        yield upload_buffer
+        if upload_buffer:
+            self.checksums.update_encrypted(upload_buffer)
+            self.encrypted_file_size += len(upload_buffer)
+            yield upload_buffer
 
 
 @dataclass
@@ -521,12 +526,14 @@ def get_segments(part: bytes, segment_size: int):
 def get_ranges(file_size: int, part_size: int):
     """Calculate part ranges"""
     num_parts = file_size / part_size
+    num_parts_floor = int(num_parts)
+
     byte_ranges = [
         (part_size * part_no, part_size * (part_no + 1) - 1)
-        for part_no in range(int(num_parts))
+        for part_no in range(num_parts_floor)
     ]
-    if math.ceil(num_parts) != int(num_parts):
-        byte_ranges.append((part_size * int(num_parts), file_size - 1))
+    if math.ceil(num_parts) != num_parts_floor:
+        byte_ranges.append((part_size * num_parts_floor, file_size - 1))
 
     return byte_ranges
 
