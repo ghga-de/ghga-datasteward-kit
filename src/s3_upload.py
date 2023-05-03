@@ -21,59 +21,38 @@ objectstorage.
 
 import asyncio
 import base64
-import codecs
 import hashlib
 import json
 import logging
 import math
 import os
-import shutil
 import subprocess  # nosec
 import sys
 from dataclasses import dataclass
+from functools import partial
 from io import BufferedReader
 from pathlib import Path
-from tempfile import mkstemp
-from typing import Any
+from time import time
+from typing import Any, Generator
 from uuid import uuid4
 
 import crypt4gh.header  # type: ignore
 import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
-import pycurl  # type: ignore
 import requests  # type: ignore
 import typer
 import yaml
+from ghga_connector.core.file_operations import read_file_parts
+from ghga_connector.core.session import RequestsSession
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
-from pycurl_requests.adapters import PyCurlHttpAdapter  # type: ignore
+from nacl.bindings import crypto_aead_chacha20poly1305_ietf_encrypt
 from pydantic import BaseSettings, Field, SecretStr, validator
-from requests.adapters import HTTPAdapter, Retry  # type: ignore
-
-
-def configure_pycurl_session() -> requests.Session:
-    """Configure session with pycurl requests adapter"""
-    with requests.session() as session:
-        curl = pycurl.Curl()
-
-        adapter = PyCurlHttpAdapter(curl)
-
-        session.mount("http://", adapter=adapter)
-        session.mount("https://", adapter=adapter)
-
-        return session
 
 
 def configure_session() -> requests.Session:
     """Configure session with exponential backoff retry"""
-    with requests.session() as session:
-
-        retries = Retry(total=7, backoff_factor=1)
-        adapter = HTTPAdapter(max_retries=retries)
-
-        session.mount("http://", adapter=adapter)
-        session.mount("https://", adapter=adapter)
-
-        return session
+    RequestsSession.configure(6)
+    return RequestsSession.session
 
 
 LOGGER = logging.getLogger("s3_upload")
@@ -101,367 +80,460 @@ class Config(BaseSettings):
     the current working dir or the home dir.
     """
 
-    s3_endpoint_url: SecretStr = Field(..., description=("URL of the S3 server"))
+    s3_endpoint_url: SecretStr = Field(..., description="URL of the S3 server")
     s3_access_key_id: SecretStr = Field(
-        ..., description=("Access key ID for the S3 server")
+        ..., description="Access key ID for the S3 server"
     )
     s3_secret_access_key: SecretStr = Field(
-        ..., description=("Secret access key for the S3 server")
+        ..., description="Secret access key for the S3 server"
     )
     bucket_id: str = Field(
-        ..., description=("Bucket id where the encrypted, uploaded file is stored")
+        ..., description="Bucket id where the encrypted, uploaded file is stored"
     )
     part_size: int = Field(
-        16, description=("Upload part size in MiB. Has to be between 5 and 5120.")
+        16, description="Upload part size in MiB. Has to be between 5 and 5120."
     )
-    tmp_dir: Path = Field(..., description=("Directory for temporary output files"))
     output_dir: Path = Field(
         ...,
-        description=("Directory for the output metadata file"),
+        description="Directory for the output metadata file",
     )
-
-    @validator("tmp_dir")
-    def expand_env_vars_temp_dir(
-        cls, tmp_dir: Path
-    ):  # pylint: disable=no-self-argument,no-self-use
-        """Expand vars in path"""
-        return expand_env_vars_in_path(tmp_dir)
 
     @validator("output_dir")
     def expand_env_vars_output_dir(
         cls, output_dir: Path
-    ):  # pylint: disable=no-self-argument,no-self-use
+    ):  # pylint: disable=no-self-argument
         """Expand vars in path"""
         return expand_env_vars_in_path(output_dir)
 
 
-@dataclass
-class Keypair:
-    """Crypt4GH keypair"""
+class Checksums:
+    """Container for checksum calculation"""
 
-    public_key: bytes
-    private_key: bytes
+    def __init__(self):
+        self.unencrypted_sha256 = hashlib.sha256()
+        self.encrypted_md5: list[str] = []
+        self.encrypted_sha256: list[str] = []
+
+    def __repr__(self) -> str:
+        return (
+            f"Unencrypted: {self.unencrypted_sha256.hexdigest()}\n"
+            + f"Encrypted MD5: {self.encrypted_md5}\n"
+            + f"Encrypted SHA256: {self.encrypted_sha256}"
+        )
+
+    def get(self):
+        """Return all checksums at the end of processing"""
+        return (
+            self.unencrypted_sha256.hexdigest(),
+            self.encrypted_md5,
+            self.encrypted_sha256,
+        )
+
+    def update_unencrypted(self, part: bytes):
+        """Update checksum for unencrypted file"""
+        self.unencrypted_sha256.update(part)
+
+    def update_encrypted(self, part: bytes):
+        """Update encrypted part checksums"""
+        self.encrypted_md5.append(hashlib.md5(part, usedforsecurity=False).hexdigest())
+        self.encrypted_sha256.append(hashlib.sha256(part).hexdigest())
 
 
-class Upload:
-    """Handler class dealing with most of the upload functionality"""
+class ChunkedUploader:
+    """Handler class dealing with upload functionality"""
 
-    def __init__(self, input_path: Path, alias: str, config: Config) -> None:
-        self.config = config
-        self.file_id = str(uuid4())
+    def __init__(
+        self, input_path: Path, alias: str, config: Config, unencrypted_file_size: int
+    ) -> None:
         self.alias = alias
+        self.config = config
         self.input_path = input_path
-        self.checksum = get_checksum_unencrypted(input_path)
-        self.keypair = generate_crypt4gh_keypair()
+        self.encryptor = Encryptor(self.config.part_size)
+        self.file_id = str(uuid4())
+        self.unencrypted_file_size = unencrypted_file_size
+        self.encrypted_file_size = 0
 
-    async def process_file(self):
-        """Run upload/download/validation flow"""
-        # upload related, clean up encrypted file on exception
-        try:
-            encrypted_file_loc = self._encrypt_file()
-            file_secret, offset = self._read_envelope(
-                encrypted_file_loc=encrypted_file_loc
-            )
-            file_size = encrypted_file_loc.stat().st_size - offset
-            enc_md5sums, enc_sha256sums = await self._upload_file(
-                encrypted_file_loc=encrypted_file_loc,
-                file_size=file_size,
-                offset=offset,
-            )
-        except (Exception, KeyboardInterrupt) as exc:
-            # cleanup tmp dir in case of failure
-            shutil.rmtree(self.config.tmp_dir / self.alias)
-            raise exc
-        finally:
-            # cleanup local encrypted file. _upload_file takes care of multipart upload
-            encrypted_file_loc.unlink(missing_ok=True)
+    async def encrypt_and_upload(self):
+        """Delegate encryption and perform multipart upload"""
 
-        # upload related, clean redwonloaded, encrypted file on exception, clean up
-        # object in bucket, remove temporary unencrypted file
-        destination = encrypted_file_loc
-        destination_decrypted = destination.with_name(destination.name + "_decrypted")
-        try:
-            await self._download(
-                file_size=file_size,
-                destination=destination,
-                file_secret=file_secret,
-            )
-            # only calculate the checksum after we have the complete file
-            self._validate_checksum(
-                destination=destination, destination_decrypted=destination_decrypted
-            )
-        except (Exception, KeyboardInterrupt) as exc:
-            storage = objectstorage(config=self.config)
-            await storage.delete_object(
-                bucket_id=self.config.bucket_id, object_id=self.file_id
-            )
-            raise exc
-        finally:
-            # cleanup downloaded and unencrypted file and tmp subdir
-            destination.unlink(missing_ok=True)
-            destination_decrypted.unlink(missing_ok=True)
-            shutil.rmtree(self.config.tmp_dir / self.alias)
+        # compute encrypted_file_size
+        num_segments = math.ceil(self.unencrypted_file_size / crypt4gh.lib.SEGMENT_SIZE)
+        encrypted_file_size = self.unencrypted_file_size + num_segments * 28
+        num_parts = math.ceil(encrypted_file_size / self.config.part_size)
 
-        self._write_metadata(
-            enc_md5sums=enc_md5sums,
-            enc_sha256sums=enc_sha256sums,
-            file_secret=file_secret,
-        )
+        start = time()
 
-    def _encrypt_file(self):
-        """Encrypt file using Crypt4GH"""
-        LOGGER.info("(2/7) Encrypting file %s", self.input_path.resolve())
-        tmp_dir = self.config.tmp_dir / self.alias
-        if not tmp_dir.exists():
-            tmp_dir.mkdir(parents=True)
-        output_path = tmp_dir / self.file_id
+        with open(self.input_path, "rb") as file:
+            async with MultipartUpload(
+                config=self.config,
+                file_id=self.file_id,
+                encrypted_file_size=encrypted_file_size,
+                part_size=self.config.part_size,
+            ) as upload:
+                LOGGER.info("(1/7) Initialized file uplod for %s.", upload.file_id)
+                for part_number, part in enumerate(
+                    self.encryptor.process_file(file=file), start=1
+                ):
+                    await upload.send_part(part_number=part_number, part=part)
 
-        keys = [(0, self.keypair.private_key, self.keypair.public_key)]
-
-        with self.input_path.open("rb") as infile:
-            with output_path.open("wb") as outfile:
-                crypt4gh.lib.encrypt(keys=keys, infile=infile, outfile=outfile)
-        return output_path
-
-    def _read_envelope(self, *, encrypted_file_loc: Path):
-        """Get file encryption/decryption secret and file content offset"""
-        LOGGER.info("(3/7) Extracting file secret and content offset")
-        with encrypted_file_loc.open("rb") as file:
-            keys = [(0, self.keypair.private_key, None)]
-            session_keys, _ = crypt4gh.header.deconstruct(infile=file, keys=keys)
-
-            file_secret = session_keys[0]
-            offset = file.tell()
-
-        return file_secret, offset
-
-    async def _upload_file(
-        self, *, encrypted_file_loc: Path, file_size: int, offset: int
-    ):
-        """Perform multipart upload and compute encrypted part checksums"""
-        storage = objectstorage(config=self.config)
-        upload_id = await storage.init_multipart_upload(
-            bucket_id=self.config.bucket_id, object_id=self.file_id
-        )
-
-        enc_md5sums = []
-        enc_sha256sums = []
-        sum_bytes = 0
-
-        with encrypted_file_loc.open("rb") as file:
-            for part_number, part in enumerate(
-                read_file(file=file, part_size=PART_SIZE, offset=offset), start=1
-            ):
-                try:
-                    sum_bytes += len(part)
+                    delta = time() - start
+                    avg_speed = (
+                        part_number * (self.config.part_size / 1024**2) / delta
+                    )
                     LOGGER.info(
-                        "(4/7) Uploading part no. %i (%.2f%%)",
+                        "(2/7) Processing upload for file part %i/%i (%.2f MiB/s)",
                         part_number,
-                        sum_bytes / file_size * 100,
+                        num_parts,
+                        avg_speed,
                     )
-                    enc_md5sums.append(
-                        hashlib.md5(part, usedforsecurity=False).hexdigest()
+                if encrypted_file_size != self.encryptor.encrypted_file_size:
+                    raise ValueError(
+                        "Mismatch between actual and theoretical encrypted part size:\n"
+                        + f"Is: {self.encryptor.encrypted_file_size}\n"
+                        + f"Should be: {encrypted_file_size}"
                     )
-                    enc_sha256sums.append(hashlib.sha256(part).hexdigest())
+                LOGGER.info("(3/7) Finished upload for %s.", upload.file_id)
 
-                    upload_url = await storage.get_part_upload_url(
-                        upload_id=upload_id,
-                        bucket_id=self.config.bucket_id,
-                        object_id=self.file_id,
-                        part_number=part_number,
-                    )
-                    SESSION.put(url=upload_url, data=part)
-                except (  # pylint: disable=broad-except
-                    Exception,
-                    KeyboardInterrupt,
-                ) as exc:
-                    await storage.abort_multipart_upload(
-                        upload_id=upload_id,
-                        bucket_id=self.config.bucket_id,
-                        object_id=self.file_id,
-                    )
-                    raise exc
 
-        try:
-            await storage.complete_multipart_upload(
-                upload_id=upload_id,
-                bucket_id=self.config.bucket_id,
-                object_id=self.file_id,
-                anticipated_part_quantity=math.ceil(file_size / PART_SIZE),
-                anticipated_part_size=PART_SIZE,
-            )
-        except (Exception, KeyboardInterrupt) as exc:  # pylint: disable=broad-except
-            await storage.abort_multipart_upload(
-                upload_id=upload_id,
-                bucket_id=self.config.bucket_id,
-                object_id=self.file_id,
-            )
-            raise exc
+class ChunkedDownloader:
+    """Handler class dealing with download functionality"""
 
-        return enc_md5sums, enc_sha256sums
-
-    async def _download(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
-        *,
-        file_size: int,
-        destination: Path,
+        config: Config,
+        file_id: str,
+        encrypted_file_size: int,
         file_secret: bytes,
-    ):  # pylint: disable=too-many-arguments
-        """Download uploaded file"""
-        storage = objectstorage(config=self.config)
-        download_url = await storage.get_object_download_url(
+        part_size: int,
+        target_checksums: Checksums,
+    ) -> None:
+        self.config = config
+        self.storage = objectstorage(self.config)
+        self.file_id = file_id
+        self.file_size = encrypted_file_size
+        self.file_secret = file_secret
+        self.part_size = part_size
+        self.target_checksums = target_checksums
+
+    def _download_parts(self, download_url):
+        """Download file parts"""
+
+        for part_no, (start, stop) in enumerate(
+            get_ranges(file_size=self.file_size, part_size=self.config.part_size),
+            start=1,
+        ):
+            headers = {"Range": f"bytes={start}-{stop}"}
+            LOGGER.debug("Downloading part number %i. %s", part_no, headers)
+            response = SESSION.get(download_url, timeout=60, headers=headers)
+            yield response.content
+
+    async def download(self):
+        """Download file in parts and validate checksums"""
+        LOGGER.info("(4/7) Downloading file %s for validation.", self.file_id)
+        download_url = await self.storage.get_object_download_url(
             bucket_id=self.config.bucket_id, object_id=self.file_id
         )
-        with destination.open("wb") as local_file:
-            envelope = prepare_envelope(keypair=self.keypair, file_secret=file_secret)
-            local_file.write(envelope)
+        num_parts = math.ceil(self.file_size / self.part_size)
+        decryptor = Decryptor(
+            file_secret=self.file_secret, num_parts=num_parts, part_size=self.part_size
+        )
+        download_func = partial(self._download_parts, download_url=download_url)
+        decryptor.process_parts(download_func)
+        self.validate_checksums(checkums=decryptor.checksums)
 
-            for start, stop in get_ranges(file_size=file_size):
-                headers = {"Range": f"bytes={start}-{stop}"}
-                response = SESSION.get(download_url, timeout=60, headers=headers)
-                chunk = response.content
-                LOGGER.info(
-                    "(5/7) Downloading file for validation (%.2f%%)",
-                    stop / file_size * 100,
-                )
-                local_file.write(chunk)
-
-    def _validate_checksum(self, destination: Path, destination_decrypted: Path):
-        """Decrypt downloaded file and compare checksum with original"""
-
-        LOGGER.info("(6/7) Decrypting and validating checksum")
-        keys = [(0, self.keypair.private_key, None)]
-
-        with destination.open("rb") as infile:
-            with destination_decrypted.open("wb") as outfile:
-                crypt4gh.lib.decrypt(
-                    keys=keys,
-                    infile=infile,
-                    outfile=outfile,
-                    sender_pubkey=self.keypair.public_key,
-                )
-        dl_checksum = get_checksum_unencrypted(destination_decrypted)
-        if dl_checksum != self.checksum:
+    def validate_checksums(self, checkums: Checksums):
+        """Confirm checksums for upload and download match"""
+        if not self.target_checksums.get() == checkums.get():
             raise ValueError(
-                f"Checksum mismatch:\nExpected: {self.checksum}\nActual: {dl_checksum}"
+                f"Checksum mismatch:\nUpload:\n{checkums}\nDownload:\n{self.target_checksums}"
+            )
+        LOGGER.info("(6/7) Succesfully validated checksums for %s.", self.file_id)
+
+
+class Decryptor:
+    """Handles on the fly decryption and checksum calculation"""
+
+    def __init__(self, file_secret: bytes, num_parts: int, part_size: int) -> None:
+        self.checksums = Checksums()
+        self.file_secret = file_secret
+        self.num_parts = num_parts
+        self.part_size = part_size
+
+    def _decrypt(self, part: bytes):
+        """Decrypt file part"""
+        segments, incomplete_segment = get_segments(
+            part=part, segment_size=crypt4gh.lib.CIPHER_SEGMENT_SIZE
+        )
+
+        decrypted_segments = []
+        for segment in segments:
+            decrypted_segments.append(self._decrypt_segment(segment))
+
+        return b"".join(decrypted_segments), incomplete_segment
+
+    def _decrypt_segment(self, segment: bytes):
+        """Decrypt single ciphersegment"""
+        return crypt4gh.lib.decrypt_block(
+            ciphersegment=segment, session_keys=[self.file_secret]
+        )
+
+    def process_parts(self, download_files: partial[Generator[bytes, None, None]]):
+        """Encrypt and upload file parts."""
+        unprocessed_bytes = b""
+        download_buffer = b""
+        start = time()
+
+        for part_number, file_part in enumerate(download_files()):
+            # process unencrypted
+            self.checksums.update_encrypted(file_part)
+            unprocessed_bytes += file_part
+
+            # encrypt in chunks
+            decrypted_bytes, unprocessed_bytes = self._decrypt(unprocessed_bytes)
+            download_buffer += decrypted_bytes
+
+            # update checksums and yield if part size
+            if len(download_buffer) >= self.part_size:
+                current_part = download_buffer[: self.part_size]
+                self.checksums.update_unencrypted(current_part)
+                download_buffer = download_buffer[self.part_size :]
+
+            delta = time() - start
+            avg_speed = (part_number * (self.part_size / 1024**2)) / delta
+            LOGGER.info(
+                "(5/7) Downloading part %i/%i (%.2f MiB/s)",
+                part_number,
+                self.num_parts,
+                avg_speed,
             )
 
-    def _write_metadata(
-        self,
-        *,
-        enc_md5sums: list[str],
-        enc_sha256sums: list[str],
-        file_secret: bytes,
-    ):  # pylint: disable=too-many-arguments
-        """Write all necessary data about the uploaded file"""
+        # process dangling bytes
+        if unprocessed_bytes:
+            download_buffer += self._decrypt_segment(unprocessed_bytes)
+
+        while len(download_buffer) >= self.part_size:
+            current_part = download_buffer[: self.part_size]
+            self.checksums.update_unencrypted(current_part)
+            download_buffer = download_buffer[self.part_size :]
+
+        if download_buffer:
+            self.checksums.update_unencrypted(download_buffer)
+
+
+class Encryptor:
+    """Handles on the fly encryption and checksum calculation"""
+
+    def __init__(self, part_size: int):
+        self.part_size = part_size
+        self.checksums = Checksums()
+        self.file_secret = os.urandom(32)
+        self.encrypted_file_size = 0
+
+    def _encrypt(self, part: bytes):
+        """Encrypt file part using secret"""
+        segments, incomplete_segment = get_segments(
+            part=part, segment_size=crypt4gh.lib.SEGMENT_SIZE
+        )
+
+        encrypted_segments = []
+        for segment in segments:
+            encrypted_segments.append(self._encrypt_segment(segment))
+
+        return b"".join(encrypted_segments), incomplete_segment
+
+    def _encrypt_segment(self, segment=bytes):
+        """Encrypt one single segment"""
+        nonce = os.urandom(12)
+        encrypted_data = crypto_aead_chacha20poly1305_ietf_encrypt(
+            segment, None, nonce, self.file_secret
+        )  # no aad
+        return nonce + encrypted_data
+
+    # type annotation for file parts, should be generator
+    def process_file(self, file: BufferedReader):
+        """Encrypt and upload file parts."""
+        unprocessed_bytes = b""
+        upload_buffer = b""
+
+        for file_part in read_file_parts(file=file, part_size=self.part_size):
+            # process unencrypted
+            self.checksums.update_unencrypted(file_part)
+            unprocessed_bytes += file_part
+
+            # encrypt in chunks
+            encrypted_bytes, unprocessed_bytes = self._encrypt(unprocessed_bytes)
+            upload_buffer += encrypted_bytes
+
+            # update checksums and yield if part size
+            if len(upload_buffer) >= self.part_size:
+                current_part = upload_buffer[: self.part_size]
+                self.checksums.update_encrypted(current_part)
+                self.encrypted_file_size += self.part_size
+                yield current_part
+                upload_buffer = upload_buffer[self.part_size :]
+
+        # process dangling bytes
+        if unprocessed_bytes:
+            upload_buffer += self._encrypt_segment(unprocessed_bytes)
+
+        while len(upload_buffer) >= self.part_size:
+            current_part = upload_buffer[: self.part_size]
+            self.checksums.update_encrypted(current_part)
+            self.encrypted_file_size += self.part_size
+            yield current_part
+            upload_buffer = upload_buffer[self.part_size :]
+
+        if upload_buffer:
+            self.checksums.update_encrypted(upload_buffer)
+            self.encrypted_file_size += len(upload_buffer)
+            yield upload_buffer
+
+
+@dataclass
+class Metadata:  # pylint: disable=too-many-instance-attributes
+    """Container class for output metadata"""
+
+    alias: str
+    file_uuid: str
+    original_path: Path
+    part_size: int
+    file_secret: bytes
+    checksums: Checksums
+    unencrypted_size: int
+    encrypted_size: int
+
+    def serialize(self, output_dir: Path):
+        """Serialize metadata to file"""
+
         output: dict[str, Any] = {}
         output["Alias"] = self.alias
-        output["File UUID"] = self.file_id
-        output["Original filesystem path"] = str(self.input_path.resolve())
-        output["Part Size"] = f"{self.config.part_size // 1024**2} MiB"
-        output["Symmetric file encryption secret"] = codecs.decode(
-            base64.b64encode(file_secret), encoding="utf-8"
-        )
-        output["Unencrypted file checksum"] = self.checksum
-        output["Encrypted file part checksums (MD5)"] = enc_md5sums
-        output["Encrypted file part checksums (SHA256)"] = enc_sha256sums
+        output["File UUID"] = self.file_uuid
+        output["Original filesystem path"] = str(self.original_path.resolve())
+        output["Part Size"] = f"{self.part_size // 1024**2} MiB"
+        output["Unencrypted file size"] = self.unencrypted_size
+        output["Encrypted file size"] = self.encrypted_size
+        output["Symmetric file encryption secret"] = base64.b64encode(
+            self.file_secret
+        ).decode("utf-8")
+        (
+            unencrypted_checksum,
+            encrypted_md5_checksums,
+            encrypted_sha256_checksums,
+        ) = self.checksums.get()
+        output["Unencrypted file checksum"] = unencrypted_checksum
+        output["Encrypted file part checksums (MD5)"] = encrypted_md5_checksums
+        output["Encrypted file part checksums (SHA256)"] = encrypted_sha256_checksums
 
-        if not self.config.output_dir.exists():
-            self.config.output_dir.mkdir(parents=True)
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True)
 
-        output_path = self.config.output_dir / f"{self.alias}.json"
-        LOGGER.info("(7/7) Writing file metadata to %s", output_path)
+        output_path = output_dir / f"{self.alias}.json"
+
+        LOGGER.info("(7/7) Writing metadata to %s.", output_path)
         # owner read-only
         with output_path.open("w") as file:
             json.dump(output, file, indent=2)
         os.chmod(path=output_path, mode=0o400)
 
 
-def check_output_path(alias: str, output_dir: Path):
-    """Check if we accidentally try to overwrite an alread existing metadata file"""
-    output_path = output_dir / f"{alias}.json"
-    if output_path.exists():
-        msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
-        handle_superficial_error(msg=msg)
+class MultipartUpload:
+    """Context manager to handle init + complete/abort for S3 multipart upload"""
 
+    def __init__(
+        self, config: Config, file_id: str, encrypted_file_size: int, part_size: int
+    ) -> None:
+        self.config = config
+        self.storage = objectstorage(config=self.config)
+        self.file_id = file_id
+        self.file_size = encrypted_file_size
+        self.part_size = part_size
+        self.upload_id = ""
 
-def generate_crypt4gh_keypair() -> Keypair:
-    """Creates a keypair using crypt4gh"""
-    LOGGER.info("(1/7) Generating keypair")
-    # Crypt4GH always writes to file and tmp_path fixture causes permission issues
+    async def __aenter__(self):
+        """Start multipart upload"""
+        self.upload_id = await self.storage.init_multipart_upload(
+            bucket_id=self.config.bucket_id, object_id=self.file_id
+        )
+        return self
 
-    sk_file, sk_path = mkstemp(prefix="private", suffix=".key")
-    pk_file, pk_path = mkstemp(prefix="public", suffix=".key")
+    async def __aexit__(self, exc_t, exc_v, exc_tb):
+        """Complete or clean up multipart upload"""
+        try:
+            await self.storage.complete_multipart_upload(
+                upload_id=self.upload_id,
+                bucket_id=self.config.bucket_id,
+                object_id=self.file_id,
+                anticipated_part_quantity=math.ceil(self.file_size / self.part_size),
+                anticipated_part_size=self.part_size,
+            )
+        except (Exception, KeyboardInterrupt) as exc:  # pylint: disable=broad-except
+            await self.storage.abort_multipart_upload(
+                upload_id=self.upload_id,
+                bucket_id=self.config.bucket_id,
+                object_id=self.file_id,
+            )
+            raise exc
 
-    # Crypt4GH does not reset the umask it sets, so we need to deal with it
-    original_umask = os.umask(0o022)
-    crypt4gh.keys.c4gh.generate(seckey=sk_file, pubkey=pk_file)
-    public_key = crypt4gh.keys.get_public_key(pk_path)
-    private_key = crypt4gh.keys.get_private_key(sk_path, lambda: None)
-    os.umask(original_umask)
-    Path(pk_path).unlink()
-    Path(sk_path).unlink()
-    return Keypair(public_key=public_key, private_key=private_key)
-
-
-def get_checksum_unencrypted(file_location: Path) -> str:
-    """Compute SHA256 checksum over unencrypted file content"""
-
-    LOGGER.info("Computing checksum...\tThis might take a moment")
-    sha256sum = hashlib.sha256()
-    file_size = file_location.stat().st_size
-    sum_bytes = 0
-    with file_location.open("rb") as file:
-        for part in read_file(file=file, part_size=PART_SIZE):
-            sum_bytes += len(part)
-            LOGGER.info("Computing checksum (%.2f%%)", sum_bytes / file_size * 100)
-            sha256sum.update(part)
-
-    return sha256sum.hexdigest()
+    async def send_part(self, part: bytes, part_number: int):
+        """Handle upload of one file part"""
+        try:
+            upload_url = await self.storage.get_part_upload_url(
+                upload_id=self.upload_id,
+                bucket_id=self.config.bucket_id,
+                object_id=self.file_id,
+                part_number=part_number,
+            )
+            SESSION.put(url=upload_url, data=part)
+        except (  # pylint: disable=broad-except
+            Exception,
+            KeyboardInterrupt,
+        ) as exc:
+            await self.storage.abort_multipart_upload(
+                upload_id=self.upload_id,
+                bucket_id=self.config.bucket_id,
+                object_id=self.file_id,
+            )
+            raise exc
 
 
 def objectstorage(config: Config):
     """Configure S3 and return S3 DAO"""
     s3_config = S3Config(
-        s3_endpoint_url=config.s3_endpoint_url,
-        s3_access_key_id=config.s3_access_key_id,
-        s3_secret_access_key=config.s3_secret_access_key,
+        s3_endpoint_url=config.s3_endpoint_url.get_secret_value(),
+        s3_access_key_id=config.s3_access_key_id.get_secret_value(),
+        s3_secret_access_key=config.s3_secret_access_key.get_secret_value(),
     )
     return S3ObjectStorage(config=s3_config)
 
 
-def read_file(*, file: BufferedReader, part_size: int, offset: int = 0):
-    """Read file content from offset in chunks"""
-    file.seek(offset)
-    while True:
-        file_part = file.read(part_size)
-
-        if len(file_part) == 0:
-            return
-
-        yield file_part
-
-
-def prepare_envelope(keypair: Keypair, file_secret: bytes):
-    """
-    Create personalized envelope
-    """
-    keys = [(0, keypair.private_key, keypair.public_key)]
-    header_content = crypt4gh.header.make_packet_data_enc(0, file_secret)
-    header_packets = crypt4gh.header.encrypt(header_content, keys)
-    header_bytes = crypt4gh.header.serialize(header_packets)
-    return header_bytes
-
-
-def get_ranges(file_size: int):
-    """Calculate part ranges"""
-    num_parts = file_size / PART_SIZE
-    byte_ranges = [
-        (PART_SIZE * part_no, PART_SIZE * (part_no + 1) - 1)
-        for part_no in range(int(num_parts))
+def get_segments(part: bytes, segment_size: int):
+    """Chunk part into cipher segments"""
+    num_segments = len(part) / segment_size
+    full_segments = int(num_segments)
+    segments = [
+        part[i * segment_size : (i + 1) * segment_size] for i in range(full_segments)
     ]
-    if math.ceil(num_parts) != int(num_parts):
-        byte_ranges.append((PART_SIZE * int(num_parts), file_size - 1))
+
+    # check if we have a remainder of bytes that we need to handle,
+    # i.e. non-matching boundaries between part and cipher segment size
+    incomplete_segment = b""
+    partial_segment_idx = math.ceil(num_segments)
+    if partial_segment_idx != full_segments:
+        incomplete_segment = part[full_segments * segment_size :]
+    return segments, incomplete_segment
+
+
+def get_ranges(file_size: int, part_size: int):
+    """Calculate part ranges"""
+    num_parts = file_size / part_size
+    num_parts_floor = int(num_parts)
+
+    byte_ranges = [
+        (part_size * part_no, part_size * (part_no + 1) - 1)
+        for part_no in range(num_parts_floor)
+    ]
+    if math.ceil(num_parts) != num_parts_floor:
+        byte_ranges.append((part_size * num_parts_floor, file_size - 1))
 
     return byte_ranges
 
@@ -514,6 +586,35 @@ def check_adjust_part_size(config: Config, file_size: int):
     config.part_size = part_size
 
 
+def check_output_path(output_path: Path):
+    """Check if we accidentally try to overwrite an alread existing metadata file"""
+    if output_path.exists():
+        msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
+        handle_superficial_error(msg=msg)
+
+
+def main(
+    input_path: Path = typer.Option(..., help="Local path of the input file"),
+    alias: str = typer.Option(..., help="A human readable file alias"),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+):
+    """
+    Custom script to encrypt data using Crypt4GH and directly uploading it to S3
+    objectstorage.
+    """
+
+    config = load_config_yaml(config_path)
+    asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
+
+
+def load_config_yaml(path: Path) -> Config:
+    """Load config parameters from the specified YAML file."""
+
+    with open(path, "r", encoding="utf-8") as config_file:
+        config_dict = yaml.safe_load(config_file)
+    return Config(**config_dict)
+
+
 async def async_main(input_path: Path, alias: str, config: Config):
     """
     Run encryption, upload and validation.
@@ -527,33 +628,40 @@ async def async_main(input_path: Path, alias: str, config: Config):
         msg = f"File location points to a directory: {input_path.resolve()}"
         handle_superficial_error(msg=msg)
 
-    check_adjust_part_size(config=config, file_size=input_path.stat().st_size)
-    check_output_path(alias=alias, output_dir=config.output_dir)
-    upload = Upload(input_path=input_path, alias=alias, config=config)
-    await upload.process_file()
+    check_output_path(config.output_dir / f"{alias}.json")
 
+    file_size = input_path.stat().st_size
+    check_adjust_part_size(config=config, file_size=file_size)
 
-def load_config_yaml(path: Path) -> Config:
-    """Load config parameters from the specified YAML file."""
+    uploader = ChunkedUploader(
+        input_path=input_path,
+        alias=alias,
+        config=config,
+        unencrypted_file_size=file_size,
+    )
+    await uploader.encrypt_and_upload()
 
-    with open(path, "r", encoding="utf-8") as config_file:
-        config_dict = yaml.safe_load(config_file)
-    return Config(**config_dict)
+    downloader = ChunkedDownloader(
+        config=config,
+        file_id=uploader.file_id,
+        encrypted_file_size=uploader.encryptor.encrypted_file_size,
+        file_secret=uploader.encryptor.file_secret,
+        part_size=config.part_size,
+        target_checksums=uploader.encryptor.checksums,
+    )
+    await downloader.download()
 
-
-def main(
-    input_path: Path = typer.Option(..., help="Local path of the input file"),
-    alias: str = typer.Option(..., help="A human readable file alias"),
-    config_path: Path = typer.Option(..., help=("Path to a config YAML.")),
-):
-    """
-    Custom script to encrypt data using Crypt4GH and directly uploading it to S3
-    objectstorage.
-    """
-
-    config = load_config_yaml(config_path)
-
-    asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
+    metadata = Metadata(
+        alias=uploader.alias,
+        file_uuid=uploader.file_id,
+        original_path=input_path,
+        part_size=config.part_size,
+        file_secret=uploader.encryptor.file_secret,
+        checksums=uploader.encryptor.checksums,
+        unencrypted_size=file_size,
+        encrypted_size=uploader.encryptor.encrypted_file_size,
+    )
+    metadata.serialize(config.output_dir)
 
 
 if __name__ == "__main__":
