@@ -6,50 +6,33 @@ jobs:
   static-code-analysis:
     runs-on: ubuntu-latest
     name: Static Code Analysis
-    env:
-      REL_SRC_DIR_PATH: ./src
     steps:
-      - uses: actions/checkout@v2.4.2
+      - uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v3.1.2
-        with:
-          python-version: 3.9
+      - id: common
+        uses: ghga-de/gh-action-common@v2
 
-      - name: Install System Dependencies
-        run: |
-          sudo apt update
-          sudo apt install --fix-missing libcurl4-openssl-dev libssl-dev
-
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - uses: pre-commit/action@v2.0.3
-
+      - uses: pre-commit/action@v3.0.0
+        env:
+          SKIP: no-commit-to-branch
       - name: black
         run: |
           black --check .
-
       - name: isort
         run: |
           isort --check --profile black .
-
       - name: mypy
         run: |
-          mypy \
-            --show-error-codes \
-            --disable-error-code import \
-            "${REL_SRC_DIR_PATH}"
-
+          mypy .
       - name: pylint
         run: |
-          pylint "${REL_SRC_DIR_PATH}"
-
+          pylint "${{ steps.common.outputs.MAIN_SRC_DIR }}"
       - name: flake8
         run: |
           flake8 --config .flake8
-
       - name: bandit
         run: |
-          bandit -r "${REL_SRC_DIR_PATH}"
+          bandit -r "${{ steps.common.outputs.MAIN_SRC_DIR }}"
+      - name: Check license header and file
+        run: |
+          ./scripts/license_checker.py
