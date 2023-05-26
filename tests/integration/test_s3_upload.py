@@ -18,7 +18,7 @@
 import sys
 from pathlib import Path
 
-import pytest  # type: ignore
+import pytest
 from ghga_service_chassis_lib.utils import big_temp_file  # type: ignore
 from hexkit.providers.s3.testutils import (  # type: ignore
     config_from_localstack_container,
@@ -52,7 +52,7 @@ async def test_process(config_fixture: Config):  # noqa: F811
         )
         storage = objectstorage(config=config)
         await storage.create_bucket(bucket_id=config.bucket_id)
-        sys.set_int_max_str_digits(50 * 1024**2)  # type: ignore
+        sys.set_int_max_str_digits(50 * 1024**2)
         with big_temp_file(50 * 1024**2) as file:
             await async_main(input_path=Path(file.name), alias=ALIAS, config=config)
         # output file exists?
