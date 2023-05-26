@@ -46,6 +46,13 @@ The resulting file is owner read-only and contains the following information:
 Attention: Keep this output file in a safe, private location.
 If this file is lost, the uploaded file content becomes inaccessible.
 
+## generate_metadata_catalog_accessions.py
+
+A script for generating accessions for the metadata catalog. Accessions wiil be
+stored in a text file.
+
+Please use `./generate_metadata_catalog_accessions.py --help` for help.
+
 ## Quick Start
 For setting up the development environment, we rely on the
 [devcontainer feature](https://code.visualstudio.com/docs/remote/containers) of vscode
