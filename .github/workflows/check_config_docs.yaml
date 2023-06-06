@@ -1,4 +1,4 @@
-name: Check if the config schema and the example are up to date.
+name: Check if the config docs are up to date.
 
 on: push
 
