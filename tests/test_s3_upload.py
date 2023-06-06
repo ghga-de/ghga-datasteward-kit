@@ -15,6 +15,7 @@
 
 """Testing the whole encryption, upload, validation flow"""
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -50,6 +51,7 @@ async def test_process(config_fixture: Config):  # noqa: F811
         )
         storage = objectstorage(config=config)
         await storage.create_bucket(bucket_id=config.bucket_id)
+        sys.set_int_max_str_digits(50 * 1024**2)
         with big_temp_file(50 * 1024**2) as file:
             await async_main(input_path=Path(file.name), alias=ALIAS, config=config)
         # output file exists?
