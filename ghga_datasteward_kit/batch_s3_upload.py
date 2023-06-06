@@ -27,7 +27,7 @@ from typing import Optional
 import typer
 from pydantic import BaseModel
 
-from s3_upload import load_config_yaml  # type: ignore
+from ghga_datasteward_kit.s3_upload import load_config_yaml  # type: ignore
 
 HERE = Path(__file__).parent
 
@@ -44,10 +44,10 @@ class FileMetadata(BaseModel):
         frozen = True
 
 
-def load_file_metadata(otp_tsv: Path) -> list[FileMetadata]:
+def load_file_metadata(file_overview_tsv: Path) -> list[FileMetadata]:
     """Load file metadata from a tsv."""
 
-    with open(otp_tsv, "r", encoding="utf-8") as tsv_file:
+    with open(file_overview_tsv, "r", encoding="utf-8") as tsv_file:
         files = [
             FileMetadata(
                 path=Path(line.split("\t")[0].strip()).resolve(),
@@ -186,7 +186,13 @@ def handle_file_uploads(  # noqa: C901
 
 
 def main(
-    otp_tsv: Path = typer.Option(..., help="Path to OTP tsv file."),
+    file_overview_tsv: Path = typer.Option(
+        ...,
+        help=(
+            "Path to a tsv file with the first column containing the file path and the"
+            + " second column containing the file alias."
+        ),
+    ),
     config_path: Path = typer.Option(..., help="Path to a config YAML."),
     parallel_processes: int = typer.Option(..., help="Number of parallel uploads."),
     dry_run: bool = typer.Option(
@@ -200,7 +206,7 @@ def main(
     """
 
     config = load_config_yaml(config_path)
-    files = load_file_metadata(otp_tsv=otp_tsv)
+    files = load_file_metadata(file_overview_tsv=file_overview_tsv)
 
     handle_file_uploads(
         files=files,
@@ -209,8 +215,3 @@ def main(
         parallel_processes=parallel_processes,
         dry_run=dry_run,
     )
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    typer.run(main)
