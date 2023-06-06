@@ -26,7 +26,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from ghga_datasteward_kit.s3_upload import load_config_yaml  # type: ignore
+from ghga_datasteward_kit.s3_upload import load_config_yaml
 
 HERE = Path(__file__).parent
 
