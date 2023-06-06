@@ -1,6 +1,0 @@
-s3_access_key_id: s3_access_key_id
-s3_secret_access_key: s3_secret_access_key
-s3_endpoint_url: s3_endpoint_url
-bucket_id: bucket_id
-tmp_dir: tmp_dir
-output_dir: output_dir
