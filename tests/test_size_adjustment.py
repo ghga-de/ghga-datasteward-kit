@@ -14,9 +14,8 @@
 # limitations under the License.
 """Test adjustment code for part size"""
 
-from src.s3_upload import Config, check_adjust_part_size
-
-from ..fixtures.config import config_fixture  # noqa: F401
+from ghga_datasteward_kit.s3_upload import Config, check_adjust_part_size
+from tests.fixtures.config import config_fixture  # noqa: F401
 
 
 def test_check_adjust_part_size(config_fixture: Config):  # noqa: F811

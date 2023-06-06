@@ -1,12 +1,29 @@
-# Scripts for Data Stewards
+# GHGA Data Steward Kit
 
-This repository contains useful scripts for data stewards interacting with GHGA infrastructure.
-## Documentation:
+Utilities for data stewards interacting with GHGA infrastructure.
 
-The following scripts are currently implemented:
-### s3_upload.py
+## Installation:
 
-This script facilitates encrypting files using Crypt4GH and uploading the encrypted content to a (remote) S3-compatible object storage.
+This package can be installed using pip:
+
+```
+pip install ghga-datasteward-kit
+```
+
+## Usage:
+
+An overview of all commands is provided using:
+
+```
+ghga-datasteward-kit --help
+```
+
+The following paragraphs provide additional help for using the different commands:
+
+### s3-upload
+
+This command facilitates encrypting files using Crypt4GH and uploading the encrypted
+content to a (remote) S3-compatible object storage.
 This process consists of multiple steps:
 1. Generate a unique file id
 2. Create unencrypted file checksum
@@ -16,22 +33,15 @@ This process consists of multiple steps:
 6. Download encrypted file content, decrypt and verify checksum
 7. Write file/upload information to output file
 
-The user needs to provide a config file containing the following information:
-- S3 endpoint URL
-- S3 access key ID
-- S3 secret access key
-- ID of the bucket where the encrypted file content is to be stored
-- Path to a local directory that can be used for temporary output files
-- Path to a local directory for actual output
+The user needs to provide a config yaml containing information as described
+[here](./s3_upload_config.md).
 
-Please adapt the example_data/template.upload.yaml.
 In addition to these general configuration options, each invocation of this script needs
-2 additional parameters:
+2 additional parameters passed to the command line:
 1. The path to the file on the local file system
 2. A human readable alias for the file (choose a unique one)
-For more information see `s3_upload.py --help`.
 
-The output file is written to the specified output directory under \<alias\>.json.
+An output file is written to the specified output directory under \<alias\>.json.
 If such a file already exists, an error is thrown.
 
 The resulting file is owner read-only and contains the following information:
@@ -46,14 +56,12 @@ The resulting file is owner read-only and contains the following information:
 Attention: Keep this output file in a safe, private location.
 If this file is lost, the uploaded file content becomes inaccessible.
 
-## generate_metadata_catalog_accessions.py
+### generate-catalog-accessions
 
-A script for generating accessions for the metadata catalog. Accessions wiil be
+A command for generating accessions for the metadata catalog. Accessions wiil be
 stored in a text file.
 
-Please use `./generate_metadata_catalog_accessions.py --help` for help.
-
-## Quick Start
+## Development
 For setting up the development environment, we rely on the
 [devcontainer feature](https://code.visualstudio.com/docs/remote/containers) of vscode
 in combination with Docker Compose.

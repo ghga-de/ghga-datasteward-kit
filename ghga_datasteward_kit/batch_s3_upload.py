@@ -24,7 +24,6 @@ from pathlib import Path
 from time import sleep
 from typing import Optional
 
-import typer
 from pydantic import BaseModel
 
 from ghga_datasteward_kit.s3_upload import load_config_yaml  # type: ignore
@@ -186,19 +185,10 @@ def handle_file_uploads(  # noqa: C901
 
 
 def main(
-    file_overview_tsv: Path = typer.Option(
-        ...,
-        help=(
-            "Path to a tsv file with the first column containing the file path and the"
-            + " second column containing the file alias."
-        ),
-    ),
-    config_path: Path = typer.Option(..., help="Path to a config YAML."),
-    parallel_processes: int = typer.Option(..., help="Number of parallel uploads."),
-    dry_run: bool = typer.Option(
-        False,
-        help=("Only print commands for each file." + " No uploads are performed."),
-    ),
+    file_overview_tsv: Path,
+    config_path: Path,
+    parallel_processes: int,
+    dry_run: bool,
 ):
     """
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3

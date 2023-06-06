@@ -40,7 +40,6 @@ import crypt4gh.header  # type: ignore
 import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
 import requests  # type: ignore
-import typer
 import yaml
 from ghga_connector.core.file_operations import read_file_parts
 from ghga_connector.core.session import RequestsSession
@@ -76,8 +75,7 @@ def expand_env_vars_in_path(path: Path) -> Path:
 
 class Config(BaseSettings):
     """
-    Required options from a config file named .upload.yaml placed in
-    the current working dir or the home dir.
+    Required options for file uploads.
     """
 
     s3_endpoint_url: SecretStr = Field(..., description="URL of the S3 server")
@@ -593,20 +591,6 @@ def check_output_path(output_path: Path):
         handle_superficial_error(msg=msg)
 
 
-def main(
-    input_path: Path = typer.Option(..., help="Local path of the input file"),
-    alias: str = typer.Option(..., help="A human readable file alias"),
-    config_path: Path = typer.Option(..., help="Path to a config YAML."),
-):
-    """
-    Custom script to encrypt data using Crypt4GH and directly uploading it to S3
-    objectstorage.
-    """
-
-    config = load_config_yaml(config_path)
-    asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
-
-
 def load_config_yaml(path: Path) -> Config:
     """Load config parameters from the specified YAML file."""
 
@@ -664,6 +648,11 @@ async def async_main(input_path: Path, alias: str, config: Config):
     metadata.serialize(config.output_dir)
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    typer.run(main)
+def main(input_path, alias: str, config_path: Path):
+    """
+    Custom script to encrypt data using Crypt4GH and directly uploading it to S3
+    objectstorage.
+    """
+
+    config = load_config_yaml(config_path)
+    asyncio.run(async_main(input_path=input_path, alias=alias, config=config))

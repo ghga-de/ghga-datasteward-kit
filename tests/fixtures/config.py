@@ -21,7 +21,7 @@ from typing import Generator
 import pytest
 from pydantic import SecretStr
 
-from src.s3_upload import Config
+from ghga_datasteward_kit.s3_upload import Config
 
 
 @pytest.fixture

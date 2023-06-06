@@ -15,7 +15,6 @@
 
 """Testing the whole encryption, upload, validation flow"""
 
-import sys
 from pathlib import Path
 
 import pytest
@@ -26,9 +25,8 @@ from hexkit.providers.s3.testutils import (  # type: ignore
 from pydantic import SecretStr
 from testcontainers.localstack import LocalStackContainer  # type: ignore
 
-from src.s3_upload import Config, async_main, objectstorage
-
-from ..fixtures.config import config_fixture  # noqa: F401
+from ghga_datasteward_kit.s3_upload import Config, async_main, objectstorage
+from tests.fixtures.config import config_fixture  # noqa: F401
 
 ALIAS = "test_file"
 BUCKET_ID = "test-bucket"
@@ -52,7 +50,6 @@ async def test_process(config_fixture: Config):  # noqa: F811
         )
         storage = objectstorage(config=config)
         await storage.create_bucket(bucket_id=config.bucket_id)
-        sys.set_int_max_str_digits(50 * 1024**2)
         with big_temp_file(50 * 1024**2) as file:
             await async_main(input_path=Path(file.name), alias=ALIAS, config=config)
         # output file exists?

@@ -1,4 +1,4 @@
-# Copyright 2021 Universität Tübingen, DKFZ and EMBL
+# Copyright 2023 Universität Tübingen, DKFZ and EMBL
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utils for Fixture handling"""
+"""Collection of all config classes."""
 
-from pathlib import Path
+from ghga_datasteward_kit.s3_upload import Config as S3UploadConfig
 
-BASE_DIR = Path(__file__).parent.resolve()
+CONFIG_CLASSES = {"s3_upload": S3UploadConfig}

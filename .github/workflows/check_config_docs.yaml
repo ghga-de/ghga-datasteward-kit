@@ -1,0 +1,18 @@
+name: Check if the config schema and the example are up to date.
+
+on: push
+
+jobs:
+  static-code-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: common
+        uses: ghga-de/gh-action-common@v2
+
+      - name: Check config docs
+        run: |
+          export ${{ steps.common.outputs.CONFIG_YAML_ENV_VAR_NAME }}="${{ steps.common.outputs.CONFIG_YAML }}"
+
+          ./scripts/update_config_docs.py --check
