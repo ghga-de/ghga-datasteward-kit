@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2023 Universität Tübingen, DKFZ and EMBL
+# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,6 @@
 
 from pathlib import Path
 
-import typer
 from metldata.accession_registry.accession_handler import AccessionHandler
 from metldata.accession_registry.accession_store import AccessionStore
 from metldata.accession_registry.config import Config
@@ -108,44 +107,3 @@ def main(*, store_path: Path, resource_type: str, number: int) -> list[str]:
         number=number,
         accession_handler=accession_handler,
     )
-
-
-def cli(
-    *,
-    store_path: Path = typer.Option(
-        ...,
-        help=(
-            "The path to the accession store which is a text file that has to exist."
-        ),
-    ),
-    resource_type: str = typer.Option(
-        ...,
-        help=(
-            "The resource type for which to generate accessions. Can be one of: "
-            f"{list(RESOURCE_PREFIXES.keys())}"
-        ),
-    ),
-    number: int = typer.Option(..., help="The number of accessions to generate."),
-) -> None:
-    """Generate Metadata Catalog Accessions for the specified resource type.
-
-    The accessions will be stored in the specified accession store and returned to
-    stdout.
-    """
-
-    accessions = main(
-        store_path=store_path, resource_type=resource_type.lower(), number=number
-    )
-
-    for accession in accessions:
-        typer.echo(accession)
-
-
-def run():
-    """Run the CLI."""
-
-    typer.run(cli)
-
-
-if __name__ == "__main__":
-    run()

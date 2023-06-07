@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022 Universität Tübingen, DKFZ and EMBL
+# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,10 +24,9 @@ from pathlib import Path
 from time import sleep
 from typing import Optional
 
-import typer
 from pydantic import BaseModel
 
-from s3_upload import load_config_yaml  # type: ignore
+from ghga_datasteward_kit.s3_upload import load_config_yaml
 
 HERE = Path(__file__).parent
 
@@ -44,10 +43,10 @@ class FileMetadata(BaseModel):
         frozen = True
 
 
-def load_file_metadata(otp_tsv: Path) -> list[FileMetadata]:
+def load_file_metadata(file_overview_tsv: Path) -> list[FileMetadata]:
     """Load file metadata from a tsv."""
 
-    with open(otp_tsv, "r", encoding="utf-8") as tsv_file:
+    with open(file_overview_tsv, "r", encoding="utf-8") as tsv_file:
         files = [
             FileMetadata(
                 path=Path(line.split("\t")[0].strip()).resolve(),
@@ -186,13 +185,10 @@ def handle_file_uploads(  # noqa: C901
 
 
 def main(
-    otp_tsv: Path = typer.Option(..., help="Path to OTP tsv file."),
-    config_path: Path = typer.Option(..., help="Path to a config YAML."),
-    parallel_processes: int = typer.Option(..., help="Number of parallel uploads."),
-    dry_run: bool = typer.Option(
-        False,
-        help=("Only print commands for each file." + " No uploads are performed."),
-    ),
+    file_overview_tsv: Path,
+    config_path: Path,
+    parallel_processes: int,
+    dry_run: bool,
 ):
     """
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
@@ -200,7 +196,7 @@ def main(
     """
 
     config = load_config_yaml(config_path)
-    files = load_file_metadata(otp_tsv=otp_tsv)
+    files = load_file_metadata(file_overview_tsv=file_overview_tsv)
 
     handle_file_uploads(
         files=files,
@@ -209,8 +205,3 @@ def main(
         parallel_processes=parallel_processes,
         dry_run=dry_run,
     )
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    typer.run(main)
