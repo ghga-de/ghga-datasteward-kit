@@ -20,7 +20,7 @@
 
 from pathlib import Path
 
-from metldata.accession_registry.accession_handler import AccessionHandler
+from metldata.accession_registry.accession_registry import AccessionRegistry
 from metldata.accession_registry.accession_store import AccessionStore
 from metldata.accession_registry.config import Config
 
@@ -45,21 +45,21 @@ SUFFIX_LENGTH = 14
 
 
 def generate_accessions(
-    *, resource_type: str, number: int, accession_handler: AccessionHandler
+    *, resource_type: str, number: int, accession_registry: AccessionRegistry
 ) -> list[str]:
     """Generate Accessions to be used in the Metadata Catalog.
 
     Args:
         resource_type (str): The resource type for which to generate accessions.
         number (int): The number of accessions to generate.
-        accession_handler (AccessionHandler): The accession handler to use.
+        accession_registry (AccessionRegistry): The accession registry to use.
 
     Returns:
         list[str]: The generated accessions.
     """
 
     accessions = [
-        accession_handler.get_accession(resource_type=resource_type)
+        accession_registry.get_accession(resource_type=resource_type)
         for _ in range(number)
     ]
     return accessions
@@ -100,10 +100,12 @@ def main(*, store_path: Path, resource_type: str, number: int) -> list[str]:
 
     config = get_config(store_path=store_path)
     accession_store = AccessionStore(config=config)
-    accession_handler = AccessionHandler(config=config, accession_store=accession_store)
+    accession_registry = AccessionRegistry(
+        config=config, accession_store=accession_store
+    )
 
     return generate_accessions(
         resource_type=resource_type,
         number=number,
-        accession_handler=accession_handler,
+        accession_registry=accession_registry,
     )
