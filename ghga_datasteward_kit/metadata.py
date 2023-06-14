@@ -39,7 +39,7 @@ from pydantic import Field
 from ghga_datasteward_kit.utils import load_config_yaml
 
 
-class SubmissionAndTransformationConfig(
+class MetadataConfig(
     SubmissionConfig,
     AccessionConfig,
     TransformationEventHandlingConfig,
@@ -56,7 +56,7 @@ def submit_metadata(
     submission_title: str,
     submission_description: str,
     metadata: Json,
-    config: SubmissionAndTransformationConfig
+    config: MetadataConfig
 ) -> str:
     """Submit metadata to the submission registry."""
 
@@ -101,9 +101,7 @@ def submit_metadata_from_path(
     with open(metadata_path, "r", encoding="utf8") as metadata_file:
         metadata = yaml.safe_load(metadata_file)
 
-    config = load_config_yaml(
-        path=config_path, config_cls=SubmissionAndTransformationConfig
-    )
+    config = load_config_yaml(path=config_path, config_cls=MetadataConfig)
 
     return submit_metadata(
         submission_title=submission_title,
@@ -113,7 +111,7 @@ def submit_metadata_from_path(
     )
 
 
-def transform_metadata(*, config: SubmissionAndTransformationConfig) -> None:
+def transform_metadata(*, config: MetadataConfig) -> None:
     """Run transformation workflow on submitted metadata to produce artifacts."""
 
     asyncio.run(
@@ -130,8 +128,6 @@ def transform_metadata_from_path(*, config_path: Path) -> None:
     """Load config from path and run transformation workflow on submitted
     metadata to produce artifacts."""
 
-    config = load_config_yaml(
-        path=config_path, config_cls=SubmissionAndTransformationConfig
-    )
+    config = load_config_yaml(path=config_path, config_cls=MetadataConfig)
 
     transform_metadata(config=config)
