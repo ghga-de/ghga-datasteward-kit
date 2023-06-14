@@ -40,12 +40,13 @@ import crypt4gh.header  # type: ignore
 import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
 import requests  # type: ignore
-import yaml
 from ghga_connector.core.file_operations import read_file_parts
 from ghga_connector.core.session import RequestsSession
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from nacl.bindings import crypto_aead_chacha20poly1305_ietf_encrypt
 from pydantic import BaseSettings, Field, SecretStr, validator
+
+from ghga_datasteward_kit.utils import load_config_yaml
 
 
 def configure_session() -> requests.Session:
@@ -591,14 +592,6 @@ def check_output_path(output_path: Path):
         handle_superficial_error(msg=msg)
 
 
-def load_config_yaml(path: Path) -> Config:
-    """Load config parameters from the specified YAML file."""
-
-    with open(path, "r", encoding="utf-8") as config_file:
-        config_dict = yaml.safe_load(config_file)
-    return Config(**config_dict)
-
-
 async def async_main(input_path: Path, alias: str, config: Config):
     """
     Run encryption, upload and validation.
@@ -654,5 +647,5 @@ def main(input_path, alias: str, config_path: Path):
     objectstorage.
     """
 
-    config = load_config_yaml(config_path)
+    config = load_config_yaml(config_path, Config)
     asyncio.run(async_main(input_path=input_path, alias=alias, config=config))

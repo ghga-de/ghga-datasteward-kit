@@ -16,31 +16,32 @@
 """Submit metadata to the submission registry."""
 
 import asyncio
+from pathlib import Path
+
+import yaml
 from metldata.accession_registry.accession_registry import AccessionRegistry
 from metldata.accession_registry.accession_store import AccessionStore
-from metldata.submission_registry.models import SubmissionHeader
 from metldata.accession_registry.config import Config as AccessionConfig
-from metldata.submission_registry.submission_registry import SubmissionRegistry
-from metldata.submission_registry.submission_store import SubmissionStore
-from metldata.submission_registry.event_publisher import SourceEventPublisher
-from metldata.submission_registry.config import Config as SubmissionConfig
-from metldata.event_handling.event_handling import (
-    FileSystemEventPublisher,
-    FileSystemEventConfig,
-)
-from metldata.transform.main import (
-    run_workflow_on_all_source_events,
-    TransformationEventHandlingConfig,
-)
 from metldata.builtin_workflows.ghga_archive import GHGA_ARCHIVE_WORKFLOW
 from metldata.custom_types import Json
+from metldata.event_handling.event_handling import FileSystemEventPublisher
+from metldata.submission_registry.config import Config as SubmissionConfig
+from metldata.submission_registry.event_publisher import SourceEventPublisher
+from metldata.submission_registry.models import SubmissionHeader
+from metldata.submission_registry.submission_registry import SubmissionRegistry
+from metldata.submission_registry.submission_store import SubmissionStore
+from metldata.transform.main import (
+    TransformationEventHandlingConfig,
+    run_workflow_on_all_source_events,
+)
 from pydantic import Field
+
+from ghga_datasteward_kit.utils import load_config_yaml
 
 
 class SubmissionAndTransformationConfig(
     SubmissionConfig,
     AccessionConfig,
-    FileSystemEventConfig,
     TransformationEventHandlingConfig,
 ):
     """Config parameters used for submission and transformation of metadata."""
@@ -56,7 +57,7 @@ def submit_metadata(
     submission_description: str,
     metadata: Json,
     config: SubmissionAndTransformationConfig
-):
+) -> str:
     """Submit metadata to the submission registry."""
 
     submission_store = SubmissionStore(config=config)
@@ -87,7 +88,32 @@ def submit_metadata(
     return submission_id
 
 
-def transform_metadata(*, config=SubmissionAndTransformationConfig):
+def submit_metadata_from_path(
+    *,
+    submission_title: str,
+    submission_description: str,
+    metadata_path: Path,
+    config_path: Path
+):
+    """Read metadata and config from the specified paths and then submit
+    metadata to the submission registry."""
+
+    with open(metadata_path, "r", encoding="utf8") as metadata_file:
+        metadata = yaml.safe_load(metadata_file)
+
+    config = load_config_yaml(
+        path=config_path, config_cls=SubmissionAndTransformationConfig
+    )
+
+    return submit_metadata(
+        submission_title=submission_title,
+        submission_description=submission_description,
+        metadata=metadata,
+        config=config,
+    )
+
+
+def transform_metadata(*, config: SubmissionAndTransformationConfig) -> None:
     """Run transformation workflow on submitted metadata to produce artifacts."""
 
     asyncio.run(
@@ -98,3 +124,14 @@ def transform_metadata(*, config=SubmissionAndTransformationConfig):
             original_model=config.metadata_model,
         )
     )
+
+
+def transform_metadata_from_path(*, config_path: Path) -> None:
+    """Load config from path and run transformation workflow on submitted
+    metadata to produce artifacts."""
+
+    config = load_config_yaml(
+        path=config_path, config_cls=SubmissionAndTransformationConfig
+    )
+
+    transform_metadata(config=config)
