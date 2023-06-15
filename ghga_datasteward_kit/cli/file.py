@@ -18,7 +18,12 @@ from pathlib import Path
 
 import typer
 
-from ghga_datasteward_kit import batch_s3_upload, s3_upload
+from ghga_datasteward_kit import (
+    batch_s3_upload,
+    catalog_accession_generator,
+    file_ingest,
+    s3_upload,
+)
 
 cli = typer.Typer()
 
@@ -58,3 +63,10 @@ def batch_upload(
         parallel_processes=parallel_processes,
         dry_run=dry_run,
     )
+
+
+@cli.command()
+def ingest_upload_metadata(metadata_dir: Path = typer.Option(..., help="")):
+    """Upload all output metdata files from the given directory to the file ingest service"""
+
+    file_ingest.main(input_directory=metadata_dir)
