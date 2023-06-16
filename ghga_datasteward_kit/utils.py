@@ -13,14 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Collection of all config classes."""
+"""Utility functions"""
 
-from ghga_datasteward_kit.loading import LoadConfig
-from ghga_datasteward_kit.metadata import MetadataConfig
-from ghga_datasteward_kit.s3_upload import Config as S3UploadConfig
 
-CONFIG_CLASSES = {
-    "s3_upload": S3UploadConfig,
-    "metadata": MetadataConfig,
-    "load": LoadConfig,
-}
+from pathlib import Path
+from typing import TypeVar
+
+import yaml
+from pydantic import BaseSettings
+
+# pylint: disable=invalid-name
+ConfigType = TypeVar("ConfigType", bound=BaseSettings)
+
+
+def load_config_yaml(path: Path, config_cls: type[ConfigType]) -> ConfigType:
+    """Load config parameters from the specified YAML file."""
+
+    with open(path, "r", encoding="utf-8") as config_file:
+        config_dict = yaml.safe_load(config_file)
+    return config_cls(**config_dict)

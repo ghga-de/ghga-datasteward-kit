@@ -26,7 +26,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from ghga_datasteward_kit.s3_upload import load_config_yaml
+from ghga_datasteward_kit.s3_upload import Config, load_config_yaml
 
 HERE = Path(__file__).parent
 
@@ -195,7 +195,7 @@ def main(
     objectstorage.
     """
 
-    config = load_config_yaml(config_path)
+    config = load_config_yaml(path=config_path, config_cls=Config)
     files = load_file_metadata(file_overview_tsv=file_overview_tsv)
 
     handle_file_uploads(

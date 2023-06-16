@@ -13,14 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Collection of all config classes."""
+"""Data loading related functionality."""
+from pathlib import Path
 
-from ghga_datasteward_kit.loading import LoadConfig
-from ghga_datasteward_kit.metadata import MetadataConfig
-from ghga_datasteward_kit.s3_upload import Config as S3UploadConfig
+from metldata.load.client import upload_artifacts_via_http_api as upload_metadata
+from metldata.load.config import ArtifactLoaderClientConfig
 
-CONFIG_CLASSES = {
-    "s3_upload": S3UploadConfig,
-    "metadata": MetadataConfig,
-    "load": LoadConfig,
-}
+from ghga_datasteward_kit.utils import load_config_yaml
+
+
+class LoadConfig(ArtifactLoaderClientConfig):
+    """Load Config"""
+
+
+def load(*, config_path: Path) -> None:
+    """Load file and metadata artifacts to the loader API."""
+
+    config = load_config_yaml(path=config_path, config_cls=LoadConfig)
+
+    token = input(
+        "Please paste the token used to authenticate against the loader API: "
+    )
+
+    upload_metadata(config=config, token=token.strip())

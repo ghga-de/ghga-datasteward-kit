@@ -19,9 +19,13 @@ from pathlib import Path
 
 import typer
 
-from ghga_datasteward_kit import batch_s3_upload, catalog_accession_generator, s3_upload
+from ghga_datasteward_kit import catalog_accession_generator, loading
+from ghga_datasteward_kit.cli.file import cli as file_cli
+from ghga_datasteward_kit.cli.metadata import cli as metadata_cli
 
 cli = typer.Typer()
+cli.add_typer(file_cli, name="files", help="File related operations.")
+cli.add_typer(metadata_cli, name="metadata", help="Metadata related operations.")
 
 
 @cli.command()
@@ -57,37 +61,16 @@ def generate_catalog_accessions(
 
 
 @cli.command()
-def upload_single_file(
-    input_path: Path = typer.Option(..., help="Local path of the input file"),
-    alias: str = typer.Option(..., help="A human readable file alias"),
-    config_path: Path = typer.Option(..., help="Path to a config YAML."),
-):
-    """Upload a single file to S3."""
-
-    s3_upload.main(input_path=input_path, alias=alias, config_path=config_path)
-
-
-@cli.command()
-def upload_multiple_files(
-    tsv: Path = typer.Option(
+def load(
+    *,
+    config_path: Path = typer.Option(
         ...,
-        help=(
-            "Path to a tsv file with the first column containing the file path and the"
-            + " second column containing the file alias."
-        ),
-    ),
-    config_path: Path = typer.Option(..., help="Path to a config YAML."),
-    parallel_processes: int = typer.Option(..., help="Number of parallel uploads."),
-    dry_run: bool = typer.Option(
-        False,
-        help=("Only print commands for each file." + " No uploads are performed."),
+        help="A path to a config YAML.",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
     ),
 ):
-    """Upload multiple files to S3."""
-
-    batch_s3_upload.main(
-        file_overview_tsv=tsv,
-        config_path=config_path,
-        parallel_processes=parallel_processes,
-        dry_run=dry_run,
-    )
+    """Make files and metadata publicly available in the running system."""
+    loading.load(config_path=config_path)

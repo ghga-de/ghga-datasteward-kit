@@ -13,14 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Collection of all config classes."""
+"""Metadata paths for tests"""
 
-from ghga_datasteward_kit.loading import LoadConfig
-from ghga_datasteward_kit.metadata import MetadataConfig
-from ghga_datasteward_kit.s3_upload import Config as S3UploadConfig
+from tests.fixtures.utils import BASE_DIR
 
-CONFIG_CLASSES = {
-    "s3_upload": S3UploadConfig,
-    "metadata": MetadataConfig,
-    "load": LoadConfig,
-}
+METADATA_CONFIG_PATH = BASE_DIR / "metadata_config.yaml"
+ORIGINAL_METADATA_PATH = BASE_DIR / "original_metadata.yaml"
+ORIGINAL_MODEL_PATH = BASE_DIR / "original_model.yaml"
