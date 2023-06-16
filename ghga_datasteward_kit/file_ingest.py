@@ -12,18 +12,76 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""TODO"""
+"""Interaction with file ingest service"""
 
 from pathlib import Path
+from typing import Generator
+
+import httpx
+from pydantic import BaseSettings, Field, ValidationError
 
 from ghga_datasteward_kit import models
 
 
-def main(input_directory: Path):
+class IngestConfig(BaseSettings):
+    endpoint_base: str = Field(
+        ..., description="Base URL under which the /ingest endpoint is available."
+    )
+    pubkey: str = Field(
+        ..., description="Public key used for encryption of the payload."
+    )
+    token: str = Field(
+        ...,
+        description="Token used for authentication against the file ingest service.",
+    )
+
+
+def main(
+    input_directory: Path,
+    config: IngestConfig,
+    id_generator: Generator[str, None, None],
+):
     """TODO"""
+
+    errors = {}
 
     for in_path in input_directory.iterdir():
         if in_path.suffix == ".json":
-            output_metadata = models.OutputMetadata.load(input_path=in_path)
-            upload_metadata = output_metadata.to_upload_metadata(file_id="")
-            _ = upload_metadata.encrypt_metadata(public_key="")
+            file_id = next(id_generator)
+            try:
+                file_ingest(in_path=in_path, file_id=file_id, config=config)
+            except (ValidationError, ValueError) as error:
+                errors[in_path.resolve()] = str(error)
+                continue
+
+    if errors:
+        print(f"Encountered {len(errors)} errors during processing")
+        for file_path, cause in errors.items():
+            print(f" -{file_path}: {cause}")
+    else:
+        print("Sucessfully sent all file upload metadata for ingest")
+
+
+def file_ingest(in_path: Path, file_id: str, config: IngestConfig):
+    """TODO"""
+
+    print(f"\rIngesting file upload metadata for {in_path}.", end="")
+
+    output_metadata = models.OutputMetadata.load(input_path=in_path)
+    upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
+    encrypted = upload_metadata.encrypt_metadata(pubkey=config.pubkey)
+
+    headers = {"Authorization": f"Bearer {config.token}"}
+
+    with httpx.Client() as client:
+        response = client.post(
+            f"{config.endpoint_base}", json=encrypted.dict(), headers=headers
+        )
+
+        if response.status_code != 202:
+            if response.status_code in (403, 422):
+                raise ValueError(response.json()["detail"])
+
+            raise ValueError(
+                f"Unxpected server response: {response.status_code}: {response.text}"
+            )

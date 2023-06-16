@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""TODO"""
+"""Contains different output metadata representations"""
 
 import base64
 import hashlib
@@ -151,11 +151,11 @@ class FileUploadMetadata(BaseModel):
     encrypted_md5_checksums: list[str]
     encrypted_sha256_checksums: list[str]
 
-    def encrypt_metadata(self, public_key: str):
+    def encrypt_metadata(self, pubkey: str):
         """Create payload by encryption FileUploadMetadata"""
 
         payload = self.json()
-        encrypted = encrypt(data=payload, key=public_key)
+        encrypted = encrypt(data=payload, key=pubkey)
 
         return FileUploadMetadataEncrypted(payload=encrypted)
 
