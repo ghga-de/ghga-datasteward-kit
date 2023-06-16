@@ -1,4 +1,4 @@
-# SubmissionAndTransformationConfig
+# MetadataConfig
 
 
 *Config parameters used for submission and transformation of metadata.*
