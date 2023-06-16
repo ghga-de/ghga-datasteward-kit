@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from ghga_service_chassis_lib.utils import big_temp_file  # type: ignore
+from ghga_service_commons.utils.temp_files import big_temp_file  # type: ignore
 from hexkit.providers.s3.testutils import (  # type: ignore
     config_from_localstack_container,
 )
