@@ -22,7 +22,7 @@ from typing import Generator
 
 import pytest
 
-from ghga_datasteward_kit.cli.metadata import submit
+from ghga_datasteward_kit.cli.metadata import submit, transform
 from tests.fixtures.metadata import (
     METADATA_CONFIG_PATH,
     ORIGINAL_METADATA_PATH,
@@ -51,3 +51,5 @@ def test_happy(workdir):
         metadata_path=ORIGINAL_METADATA_PATH,
         config_path=METADATA_CONFIG_PATH,
     )
+
+    transform(config_path=METADATA_CONFIG_PATH)
