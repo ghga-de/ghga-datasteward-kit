@@ -18,7 +18,6 @@
 import os
 import shutil
 from pathlib import Path
-from re import A
 from typing import Generator
 
 import pytest
