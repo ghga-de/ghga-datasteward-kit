@@ -22,6 +22,13 @@ import typer
 from ghga_datasteward_kit import catalog_accession_generator, loading
 from ghga_datasteward_kit.cli.file import cli as file_cli
 from ghga_datasteward_kit.cli.metadata import cli as metadata_cli
+from ghga_datasteward_kit.utils import (
+    TOKEN_HASH_PATH,
+    TOKEN_PATH,
+    TokenNotExistError,
+    assert_token_exist,
+    save_token_and_hash,
+)
 
 cli = typer.Typer()
 cli.add_typer(file_cli, name="files", help="File related operations.")
@@ -74,3 +81,27 @@ def load(
 ):
     """Make files and metadata publicly available in the running system."""
     loading.load(config_path=config_path)
+
+
+@cli.command()
+def generate_credentials(
+    overwrite: bool = typer.Option(
+        False, help="If specify, overwrite the existing credentials"
+    )
+):
+    """Generate credentials, save them into file and return hash together with file paths"""
+    if not overwrite:
+        try:
+            assert_token_exist()
+        except TokenNotExistError:
+            pass
+        else:
+            typer.echo('The token file already exist, use the "overwrite" to overwrite')
+            raise typer.Abort()
+
+    _, hash_ = save_token_and_hash()
+
+    typer.echo("Successfully generated credentials")
+    typer.echo(f"The token can be found in file: {TOKEN_PATH}")
+    typer.echo(f"The token hash can be found in file: {TOKEN_HASH_PATH}")
+    typer.echo(f'The token hash: "{hash_}"')
