@@ -4,10 +4,25 @@ event_store_path: event_store
 artifact_topic_prefix: artifact
 accession_store_path: accession_store
 prefix_mapping:
-  SampleFile: GHGASF
-  ExperimentFile: GHGAEF
-  Experiment: GHGAE
-  Sample: GHGAS
+  Study: GHGAS
+  StudyFile: GHGAF
+  SampleFile: GHGAF
+  SequencingProcessFile: GHGAF
+  AnalysisProcessOutputFile: GHGAF
+  DataAccessPolicy: GHGAP
+  DataAccessCommittee: GHGAC
+  Analysis: GHGAZ
+  Publication: GHGAU
+  AnalysisProcess: GHGAR
+  SequencingExperiment: GHGAX
+  Condition: GHGAK
+  LibraryPreparationProtocol: GHGAL
+  SequencingProtocol: GHGAQ
+  SequencingProcess: GHGAO
+  Individual: GHGAI
+  Trio: GHGAT
+  Biospecimen: GHGAM
+  Sample: GHGAN
   Dataset: GHGAD
 suffix_length: 14
 metadata_model_path: original_model.yaml
@@ -22,86 +37,59 @@ workflow_config:
         source_class: Dataset
         description: "Fully embedded dataset."
         embedded_references:
-          sample_files:
-            target_class: EmbeddedSampleFile
-            source_class: SampleFile
-            description: "Fully sample file."
+          data_access_policy:
+            target_class: EmbeddedDataAccessPolicy
+            source_class: DataAccessPolicy
+            description: "Fully embedded data access policy."
             embedded_references:
-              sample:
-                target_class: EmbeddedSample
-                source_class: Sample
-                description: "Fully embedded sample."
-                embedded_references:
-                  experiment: Experiment
-          experiment_files:
-            target_class: EmbeddedExperimentFile
-            source_class: ExperimentFile
-            description: "Fully experiment file."
-            embedded_references:
-              experiment: Experiment
+              data_access_committee: DataAccessCommittee
   infer_multiway_references:
     inferred_ref_map:
       Dataset:
+        study_files:
+          path: "Dataset<(dataset)StudyFile"
+          multivalued: true
+        studies:
+          path: "Dataset<(dataset)StudyFile(study)>Study"
+          multivalued: true
+        sample_files:
+          path: "Dataset<(dataset)SampleFile"
+          multivalued: true
         samples:
-          path: "Dataset(sample_files)>SampleFile(sample)>Sample"
-          multivalued: true
-        experiments:
-          path: "Dataset(experiment_files)>ExperimentFile(experiment)>Experiment"
-          multivalued: true
-      Experiment:
-        samples:
-          path: "Experiment<(experiment)Sample"
-          multivalued: true
-        files:
-          path: "Experiment<(experiment)ExperimentFile"
-          multivalued: true
-      Sample:
-        files:
-          path: "Sample<(sample)SampleFile"
+          path: "Dataset<(dataset)SampleFile(sample)>Sample"
           multivalued: true
   merge_dataset_file_lists:
     merge_instructions:
       - class_name: Dataset
-        source_slots: [sample_files, experiment_files]
+        source_slots: [study_files, sample_files]
         target_slot: files
         target_description: >-
           All files associated with the dataset.
   remove_restricted_metadata:
-    slots_to_delete:
-      SampleFile:
-        - alias
-        - filename
-        - checksum
-      ExperimentFile:
-        - alias
-        - filename
-        - checksum
-      Sample:
-        - alias
-      Dataset:
-        - alias
-      Experiment:
-        - alias
+    slots_to_delete: {}
   embed_public:
     embedding_profiles:
       - target_class: EmbeddedDataset
         source_class: Dataset
         description: "Fully embedded dataset."
         embedded_references:
+          data_access_policy:
+            target_class: EmbeddedDataAccessPolicy
+            source_class: DataAccessPolicy
+            description: "Fully embedded data access policy."
+            embedded_references:
+              data_access_committee: DataAccessCommittee
+          studies: Study
+          study_files:
+            target_class: EmbeddedStudyFile
+            source_class: StudyFile
+            description: "Fully embedded study file."
+            embedded_references:
+              study: Study
+          samples: Sample
           sample_files:
             target_class: EmbeddedSampleFile
             source_class: SampleFile
-            description: "Fully sample file."
+            description: "Fully embedded sample file."
             embedded_references:
-              sample:
-                target_class: EmbeddedSample
-                source_class: Sample
-                description: "Fully embedded sample."
-                embedded_references:
-                  experiment: Experiment
-          experiment_files:
-            target_class: EmbeddedExperimentFile
-            source_class: ExperimentFile
-            description: "Fully experiment file."
-            embedded_references:
-              experiment: Experiment
+              sample: Sample
