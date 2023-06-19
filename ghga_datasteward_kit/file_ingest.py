@@ -24,6 +24,8 @@ from ghga_datasteward_kit import models
 
 
 class IngestConfig(BaseSettings):
+    """TODO"""
+
     endpoint_base: str = Field(
         ..., description="Base URL under which the /ingest endpoint is available."
     )
@@ -79,7 +81,7 @@ def file_ingest(in_path: Path, file_id: str, config: IngestConfig):
         )
 
         if response.status_code != 202:
-            if response.status_code in (403, 422):
+            if response.status_code in (403, 422, 500):
                 raise ValueError(response.json()["detail"])
 
             raise ValueError(
