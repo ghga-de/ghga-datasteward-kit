@@ -57,6 +57,21 @@ def submit(
 
 
 @cli.command()
+def generate_artifact_models(
+    config_path: Path = typer.Option(
+        ...,
+        help="Path to a config YAML.",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+    )
+):
+    """Run transformation workflow to generate artifact models."""
+    metadata.transform_metadata_from_path(config_path=config_path)
+
+
+@cli.command()
 def transform(
     config_path: Path = typer.Option(
         ...,

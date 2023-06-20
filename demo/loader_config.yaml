@@ -1,0 +1,8 @@
+event_store_path: /workspace/demo/store/event_store
+artifact_topic_prefix: artifact
+loader_api_root: http://host.docker.internal:8080
+artifact_types:
+  - embedded_public
+  - embedded_restricted
+  - resolved_public
+  - resolved_restricted

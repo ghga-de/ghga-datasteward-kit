@@ -1,0 +1,219 @@
+{
+  "payload": {
+    "annotation": {
+      "accession_map": {
+        "datasets": {
+          "test_dataset_01": "GHGAD10963133999285"
+        },
+        "experiment_files": {
+          "test_sample_02_R1": "GHGAEF50243076386869",
+          "test_sample_02_R2": "GHGAEF74860111002913"
+        },
+        "experiments": {
+          "test_experiment_01": "GHGAE43293018314873"
+        },
+        "sample_files": {
+          "test_sample_01_R1": "GHGASF81596327980213",
+          "test_sample_01_R2": "GHGASF54841396870863"
+        },
+        "samples": {
+          "test_sample_01": "GHGAS14504828722652",
+          "test_sample_02": "GHGAS77149722824923"
+        }
+      }
+    },
+    "content": {
+      "datasets": [
+        {
+          "accession": "GHGAD10963133999285",
+          "experiment_files": [
+            "GHGAEF50243076386869",
+            "GHGAEF74860111002913"
+          ],
+          "experiments": [
+            "GHGAE43293018314873"
+          ],
+          "files": [
+            "GHGASF81596327980213",
+            "GHGASF54841396870863",
+            "GHGAEF50243076386869",
+            "GHGAEF74860111002913"
+          ],
+          "sample_files": [
+            "GHGASF81596327980213",
+            "GHGASF54841396870863"
+          ],
+          "samples": [
+            "GHGAS14504828722652"
+          ]
+        }
+      ],
+      "embedded_dataset": [
+        {
+          "accession": "GHGAD10963133999285",
+          "experiment_files": [
+            {
+              "accession": "GHGAEF50243076386869",
+              "experiment": {
+                "accession": "GHGAE43293018314873",
+                "description": "A test experiment.",
+                "files": [
+                  "GHGAEF50243076386869",
+                  "GHGAEF74860111002913"
+                ],
+                "samples": [
+                  "GHGAS14504828722652",
+                  "GHGAS77149722824923"
+                ]
+              },
+              "format": "fastq",
+              "size": 92345234
+            },
+            {
+              "accession": "GHGAEF74860111002913",
+              "experiment": {
+                "accession": "GHGAE43293018314873",
+                "description": "A test experiment.",
+                "files": [
+                  "GHGAEF50243076386869",
+                  "GHGAEF74860111002913"
+                ],
+                "samples": [
+                  "GHGAS14504828722652",
+                  "GHGAS77149722824923"
+                ]
+              },
+              "format": "fastq",
+              "size": 234243
+            }
+          ],
+          "experiments": [
+            "GHGAE43293018314873"
+          ],
+          "files": [
+            "GHGASF81596327980213",
+            "GHGASF54841396870863",
+            "GHGAEF50243076386869",
+            "GHGAEF74860111002913"
+          ],
+          "sample_files": [
+            {
+              "accession": "GHGASF81596327980213",
+              "format": "fastq",
+              "sample": {
+                "accession": "GHGAS14504828722652",
+                "description": "A tests sample.",
+                "experiment": {
+                  "accession": "GHGAE43293018314873",
+                  "description": "A test experiment.",
+                  "files": [
+                    "GHGAEF50243076386869",
+                    "GHGAEF74860111002913"
+                  ],
+                  "samples": [
+                    "GHGAS14504828722652",
+                    "GHGAS77149722824923"
+                  ]
+                },
+                "files": [
+                  "GHGASF54841396870863",
+                  "GHGASF81596327980213"
+                ]
+              },
+              "size": 299943
+            },
+            {
+              "accession": "GHGASF54841396870863",
+              "format": "fastq",
+              "sample": {
+                "accession": "GHGAS14504828722652",
+                "description": "A tests sample.",
+                "experiment": {
+                  "accession": "GHGAE43293018314873",
+                  "description": "A test experiment.",
+                  "files": [
+                    "GHGAEF50243076386869",
+                    "GHGAEF74860111002913"
+                  ],
+                  "samples": [
+                    "GHGAS14504828722652",
+                    "GHGAS77149722824923"
+                  ]
+                },
+                "files": [
+                  "GHGASF54841396870863",
+                  "GHGASF81596327980213"
+                ]
+              },
+              "size": 234243
+            }
+          ],
+          "samples": [
+            "GHGAS14504828722652"
+          ]
+        }
+      ],
+      "experiment_files": [
+        {
+          "accession": "GHGAEF50243076386869",
+          "experiment": "GHGAE43293018314873",
+          "format": "fastq",
+          "size": 92345234
+        },
+        {
+          "accession": "GHGAEF74860111002913",
+          "experiment": "GHGAE43293018314873",
+          "format": "fastq",
+          "size": 234243
+        }
+      ],
+      "experiments": [
+        {
+          "accession": "GHGAE43293018314873",
+          "description": "A test experiment.",
+          "files": [
+            "GHGAEF50243076386869",
+            "GHGAEF74860111002913"
+          ],
+          "samples": [
+            "GHGAS14504828722652",
+            "GHGAS77149722824923"
+          ]
+        }
+      ],
+      "sample_files": [
+        {
+          "accession": "GHGASF81596327980213",
+          "format": "fastq",
+          "sample": "GHGAS14504828722652",
+          "size": 299943
+        },
+        {
+          "accession": "GHGASF54841396870863",
+          "format": "fastq",
+          "sample": "GHGAS14504828722652",
+          "size": 234243
+        }
+      ],
+      "samples": [
+        {
+          "accession": "GHGAS14504828722652",
+          "description": "A tests sample.",
+          "experiment": "GHGAE43293018314873",
+          "files": [
+            "GHGASF54841396870863",
+            "GHGASF81596327980213"
+          ]
+        },
+        {
+          "accession": "GHGAS77149722824923",
+          "description": "A tests sample.",
+          "experiment": "GHGAE43293018314873",
+          "files": []
+        }
+      ]
+    },
+    "submission_id": "557d8f96-ee84-41ba-bdeb-bc8d66ce42a7"
+  },
+  "type_": "embedded_public"
+}

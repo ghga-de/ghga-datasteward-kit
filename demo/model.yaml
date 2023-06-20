@@ -1,0 +1,250 @@
+id: https://w3id.org/Minimal-Model
+name: Minimal-Model
+version: 0.9.0
+prefixes:
+  linkml: https://w3id.org/linkml/
+imports:
+  - linkml:types
+
+default_range: string
+
+classes:
+  SampleFile:
+    slots:
+      - alias
+      - format
+      - size
+      - filename
+      - checksum
+      - sample
+    slot_usage:
+      alias:
+        required: true
+        identifier: true
+      format:
+        required: true
+      size:
+        required: true
+      filename:
+        required: true
+      checksum:
+        required: true
+      sample:
+        required: true
+        multivalued: false
+        inlined: false
+
+  ExperimentFile:
+    slots:
+      - alias
+      - format
+      - size
+      - filename
+      - checksum
+      - experiment
+    slot_usage:
+      alias:
+        required: true
+        identifier: true
+      format:
+        required: true
+      size:
+        required: true
+      filename:
+        required: true
+      checksum:
+        required: true
+      experiment:
+        required: true
+        multivalued: false
+        inlined: false
+
+  Dataset:
+    description: >-
+      A Dataset is a collection of Files.
+    slots:
+      - alias
+      - sample_files
+      - experiment_files
+    slot_usage:
+      alias:
+        required: true
+        identifier: true
+      sample_files:
+        required: true
+        multivalued: true
+        inlined: false
+      experiment_files:
+        required: true
+        multivalued: true
+        inlined: false
+
+  Sample:
+    description: >-
+      A sample that was used to generate Files containing experiment data.
+    slots:
+      - alias
+      - description
+      - experiment
+    slot_usage:
+      alias:
+        required: true
+        identifier: true
+      description:
+        required: true
+      experiment:
+        required: true
+        multivalued: false
+        inlined: false
+
+  Experiment:
+    description: >-
+      An experiment containing one or multiple samples.
+    slots:
+      - alias
+      - description
+    slot_usage:
+      alias:
+        required: true
+        identifier: true
+      description:
+        required: true
+
+  Submission:
+    tree_root: true
+    description: >-
+      A grouping entity that represents information about one or more entities.
+      A submission can be considered as a set of inter-related (and inter-connected)
+      entities that represent a data submission to GHGA.
+    slots:
+      - sample_files
+      - experiment_files
+      - datasets
+      - samples
+      - experiments
+    slot_usage:
+      sample_files:
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+      experiment_files:
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+      datasets:
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+      samples:
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+      experiments:
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+
+slots:
+  alias:
+    description: The alias for an entity.
+
+  description:
+    description: Description of an entity.
+
+  sample_files:
+    description: >-
+      The sample files associated with an entity.
+    range: SampleFile
+
+  experiment_files:
+    description: >-
+      The sample files associated with an entity.
+    range: ExperimentFile
+
+  datasets:
+    description: >-
+      The datasets associated with an entity.
+    range: Dataset
+
+  sample:
+    description: >-
+      The sample associated with an entity.
+    range: Sample
+
+  samples:
+    description: >-
+      The samples associated with an entity.
+    range: Sample
+
+  experiment:
+    description: >-
+      The experiment associated with an entity.
+    range: Experiment
+
+  experiments:
+    description: >-
+      The experiments associated with an entity.
+    range: Experiment
+
+  filename:
+    description: >-
+      The given filename.
+
+  format:
+    description: >-
+      The format of the file: BAM, SAM, CRAM, BAI, etc.
+    range: file format enum
+
+  size:
+    description: The size of a file in bytes.
+    range: integer
+
+  checksum:
+    description: >-
+      A computed value which depends on the contents of a block of data and which is transmitted or
+      stored along with the data in order to detect corruption of the data.
+      The receiving system recomputes the checksum based upon the received data and compares this
+      value with the one sent with the data. If the two values are the same, the receiver has some confidence
+      that the data was received correctly.
+
+enums:
+  file format enum:
+    description: >-
+      Enum to capture file types.
+    permissible_values:
+      bam:
+        description: BAM File
+      complete_genomics:
+        description: Complete Genomics File
+      cram:
+        description: CRAM File
+      fasta:
+        description: Fasta File
+      fastq:
+        description: FastQ File
+      pacbio_hdf5:
+        description: PacBio HDF5 File
+      sff:
+        description: >-
+          Standard flowgram format used to encode results
+          of pyrosequencing from the 454 Life Sciences platform.
+      srf:
+        description: >-
+          SRF is a generic format for DNA sequence data.
+      vcf:
+        description: >-
+          VCF file for storing gene sequence variations.
+      txt:
+        description: >-
+          Text file.
+      pxf:
+        description: >-
+          Phenopacket file.
+      other:
+        description: >-
+          Other format.

@@ -1,0 +1,31 @@
+// Copyright 2023 Universität Tübingen, DKFZ and EMBL
+// for the German Human Genome-Phenome Archive (GHGA)
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+GHGASF48493102539240
+GHGASF28945015714482
+GHGAEF42310105578130
+GHGAEF66123031106950
+GHGAD07762195060960
+GHGAS39869880064478
+GHGAS87194565609891
+GHGAE31328003657768
+GHGASF81596327980213
+GHGASF54841396870863
+GHGAEF50243076386869
+GHGAEF74860111002913
+GHGAD10963133999285
+GHGAS14504828722652
+GHGAS77149722824923
+GHGAE43293018314873

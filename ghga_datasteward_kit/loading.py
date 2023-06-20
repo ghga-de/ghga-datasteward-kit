@@ -19,7 +19,7 @@ from pathlib import Path
 from metldata.load.client import upload_artifacts_via_http_api as upload_metadata
 from metldata.load.config import ArtifactLoaderClientConfig
 
-from ghga_datasteward_kit.utils import load_config_yaml
+from ghga_datasteward_kit.utils import load_config_yaml, read_token
 
 
 class LoadConfig(ArtifactLoaderClientConfig):
@@ -30,9 +30,6 @@ def load(*, config_path: Path) -> None:
     """Load file and metadata artifacts to the loader API."""
 
     config = load_config_yaml(path=config_path, config_cls=LoadConfig)
+    token = read_token()
 
-    token = input(
-        "Please paste the token used to authenticate against the loader API: "
-    )
-
-    upload_metadata(config=config, token=token.strip())
+    upload_metadata(config=config, token=token)
