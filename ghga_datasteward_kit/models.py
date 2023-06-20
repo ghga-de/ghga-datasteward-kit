@@ -110,7 +110,7 @@ class OutputMetadata:  # pylint: disable=too-many-instance-attributes
             part_size=self.part_size,
             unencrypted_size=self.unencrypted_size,
             encrypted_size=self.encrypted_size,
-            file_secret=self.file_secret,
+            file_secret=base64.b64encode(self.file_secret).decode("utf-8"),
             unencrypted_checksum=self.unencrypted_checksum,
             encrypted_md5_checksums=self.encrypted_md5_checksums,
             encrypted_sha256_checksums=self.encrypted_sha256_checksums,
@@ -123,17 +123,19 @@ class OutputMetadata:  # pylint: disable=too-many-instance-attributes
         with input_path.open("r") as infile:
             data = json.load(infile)
 
+        part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
+
         return OutputMetadata(
             alias=data["Alias"],
             file_uuid=data["File UUID"],
-            original_path=data["Original filesystem path"],
-            part_size=data["Part Size"],
-            file_secret=data["Symmetric file encryption secret"],
+            original_path=Path(data["Original filesystem path"]),
+            part_size=part_size,
+            file_secret=base64.b64decode(data["Symmetric file encryption secret"]),
             unencrypted_checksum=data["Unencrypted file checksum"],
             encrypted_md5_checksums=data["Encrypted file part checksums (MD5)"],
             encrypted_sha256_checksums=data["Encrypted file part checksums (SHA256)"],
-            unencrypted_size=data["Unencrypted file size"],
-            encrypted_size=data["Encrypted file size"],
+            unencrypted_size=int(data["Unencrypted file size"]),
+            encrypted_size=int(data["Encrypted file size"]),
         )
 
 

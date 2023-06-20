@@ -67,7 +67,7 @@ def main(
 def file_ingest(in_path: Path, file_id: str, config: IngestConfig):
     """TODO"""
 
-    print(f"\rIngesting file upload metadata for {in_path}.", end="")
+    print(f"Ingesting file upload metadata for {in_path}.")
 
     output_metadata = models.OutputMetadata.load(input_path=in_path)
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)

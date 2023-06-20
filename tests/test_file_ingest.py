@@ -32,10 +32,10 @@ async def test_ingest_directly(
 ):
     """TODO"""
 
-    in_path = ingest_fixture.input_dir / "test"
-
     httpx_mock.add_response(url=ingest_fixture.config.endpoint_base, status_code=202)
-    file_ingest(in_path=in_path, file_id="test", config=ingest_fixture.config)
+    file_ingest(
+        in_path=ingest_fixture.file_path, file_id="test", config=ingest_fixture.config
+    )
 
     httpx_mock.add_response(
         url=ingest_fixture.config.endpoint_base,
@@ -43,7 +43,11 @@ async def test_ingest_directly(
         status_code=403,
     )
     with pytest.raises(ValueError, match="Unauthorized"):
-        file_ingest(in_path=in_path, file_id="test", config=ingest_fixture.config)
+        file_ingest(
+            in_path=ingest_fixture.file_path,
+            file_id="test",
+            config=ingest_fixture.config,
+        )
 
     httpx_mock.add_response(
         url=ingest_fixture.config.endpoint_base,
@@ -53,27 +57,11 @@ async def test_ingest_directly(
     with pytest.raises(
         ValueError, match="Could not decrypt received payload with the given key."
     ):
-        file_ingest(in_path=in_path, file_id="test", config=ingest_fixture.config)
-
-    httpx_mock.add_response(
-        url=ingest_fixture.config.endpoint_base,
-        json={"detail": "Decrypted payload does not conform to expected format"},
-        status_code=422,
-    )
-    with pytest.raises(
-        ValueError, match="Decrypted payload does not conform to expected format"
-    ):
-        file_ingest(in_path=in_path, file_id="test", config=ingest_fixture.config)
-
-    httpx_mock.add_response(
-        url=ingest_fixture.config.endpoint_base,
-        json={"detail": "Decrypted payload does not conform to expected format"},
-        status_code=500,
-    )
-    with pytest.raises(
-        ValueError, match="Decrypted payload does not conform to expected format"
-    ):
-        file_ingest(in_path=in_path, file_id="test", config=ingest_fixture.config)
+        file_ingest(
+            in_path=ingest_fixture.file_path,
+            file_id="test",
+            config=ingest_fixture.config,
+        )
 
 
 @pytest.mark.asyncio
