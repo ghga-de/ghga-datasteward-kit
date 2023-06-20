@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import pytest
+import yaml
 from pytest_httpx import HTTPXMock
 
 from ghga_datasteward_kit.file_ingest import file_ingest, main
@@ -70,10 +71,15 @@ async def test_main(
 ):
     """Test if main file ingest function works correctly"""
 
+    config_path = ingest_fixture.input_dir / "config.yaml"
+
+    with config_path.open("w") as config_file:
+        yaml.dump(ingest_fixture.config.dict(), config_file)
+
     httpx_mock.add_response(url=ingest_fixture.config.endpoint_base, status_code=202)
     main(
         input_directory=ingest_fixture.input_dir,
-        config=ingest_fixture.config,
+        config_path=config_path,
         id_generator=id_generator,
     )
     out, _ = capfd.readouterr()
@@ -87,7 +93,7 @@ async def test_main(
     )
     main(
         input_directory=ingest_fixture.input_dir,
-        config=ingest_fixture.config,
+        config_path=config_path,
         id_generator=id_generator,
     )
 

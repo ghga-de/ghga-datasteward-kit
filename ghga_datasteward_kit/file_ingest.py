@@ -20,7 +20,7 @@ from typing import Callable
 import httpx
 from pydantic import BaseSettings, Field, ValidationError
 
-from ghga_datasteward_kit import models
+from ghga_datasteward_kit import models, utils
 
 
 class IngestConfig(BaseSettings):
@@ -40,10 +40,12 @@ class IngestConfig(BaseSettings):
 
 def main(
     input_directory: Path,
-    config: IngestConfig,
+    config_path: Path,
     id_generator: Callable[[], str],
 ):
     """Handle ingestion of a folder of s3 upload file metadata"""
+
+    config = utils.load_config_yaml(path=config_path, config_cls=IngestConfig)
 
     errors = {}
 

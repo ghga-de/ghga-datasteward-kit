@@ -18,12 +18,7 @@ from pathlib import Path
 
 import typer
 
-from ghga_datasteward_kit import (
-    batch_s3_upload,
-    catalog_accession_generator,
-    file_ingest,
-    s3_upload,
-)
+from ghga_datasteward_kit import batch_s3_upload, file_ingest, s3_upload
 
 cli = typer.Typer()
 
@@ -66,7 +61,21 @@ def batch_upload(
 
 
 @cli.command()
-def ingest_upload_metadata(metadata_dir: Path = typer.Option(..., help="")):
+def ingest_upload_metadata(
+    metadata_dir: Path = typer.Option(
+        ...,
+        help="Path to directory containing output files from the upload/batch_upload command.",
+    ),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+):
     """Upload all output metdata files from the given directory to the file ingest service"""
 
-    file_ingest.main(input_directory=metadata_dir)
+    def dummy_generator():
+        """Placeholder, needs replacement with actual implementation"""
+        yield "invalid_id"
+
+    file_ingest.main(
+        input_directory=metadata_dir,
+        config_path=config_path,
+        id_generator=dummy_generator,
+    )
