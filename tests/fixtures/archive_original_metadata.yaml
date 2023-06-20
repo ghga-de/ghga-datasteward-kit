@@ -7,6 +7,7 @@
         "description": "A study that is the A study",
         "type": "SYNTHETIC_GENOMICS",
         "affiliations": ["Some Institute", "Some other Institute"],
+        "attributes": [],
       },
       {
         "alias": "STUDY_B",
@@ -14,6 +15,7 @@
         "description": "A study that is the B study",
         "type": "WHOLE_GENOME_SEQUENCING",
         "affiliations": [],
+        "attributes": [],
       },
     ],
   "study_files":
@@ -597,8 +599,8 @@
     [
       {
         "alias": "DAC_1",
-        "name": "The DAC 1",
-        "description": "A great DAC. Very friendly.",
+        "email": "dac@dac.dac",
+        "institute": "The DAC institute",
       },
     ],
   "publications": [],
@@ -609,4 +611,11 @@
   "sequencing_process_files": [],
   "sequencing_processes": [],
   "trios": [],
+  "analyses": [],
+  "biospecimens": [],
+  "individuals": [],
+  "samples": [],
+  "sequencing_experiments": [],
+  "sequencing_protocols": [],
+  "library_preparation_protocols": [],
 }
