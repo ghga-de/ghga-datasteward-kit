@@ -16,6 +16,8 @@
 """Submit metadata to the submission registry."""
 
 import asyncio
+import json
+from copy import deepcopy
 from pathlib import Path
 
 import yaml
@@ -119,20 +121,59 @@ def submit_metadata_from_path(
     )
 
 
-def save_artifact_model(
-    *, artifact_name: str, artifact_model: MetadataModel, artifact_model_dir: Path
+def save_artifact_models(
+    *, artifact_models: dict[str, MetadataModel], artifact_model_dir: Path
 ):
     """Save an artifact model."""
 
-    artifact_model_path = artifact_model_dir / f"{artifact_name}_model.yaml"
-    with open(artifact_model_path, "w", encoding="utf8") as artifact_model_file:
-        yaml.safe_dump(artifact_model.dict(), artifact_model_file)
+    for artifact_name, artifact_model in artifact_models.items():
+        artifact_model_path = artifact_model_dir / f"{artifact_name}_model.yaml"
+        artifact_model.write_yaml(path=artifact_model_path)
+
+
+def save_artifact_infos(
+    *, artifact_infos: list[ArtifactInfo], artifact_model_dir: Path
+):
+    """Save artifact infos."""
+
+    artifact_infos_path = artifact_model_dir / "artifact_infos.json"
+    artifact_infos_json = [
+        json.loads(artifact_info.json()) for artifact_info in artifact_infos
+    ]
+    with open(artifact_infos_path, "w", encoding="utf8") as artifact_infos_file:
+        json.dump(artifact_infos_json, artifact_infos_file, indent=2)
+
+    simplified_artifact_infos = deepcopy(artifact_infos)
+    for artifact_info in simplified_artifact_infos:
+        for resource_classe in artifact_info.resource_classes.values():
+            resource_classe.json_schema = {}
+    simplified_artifact_infos_path = (
+        artifact_model_dir / "simplified_artifact_infos.json"
+    )
+    simplified_artifact_infos_json = [
+        json.loads(artifact_info.json()) for artifact_info in simplified_artifact_infos
+    ]
+    with open(
+        simplified_artifact_infos_path, "w", encoding="utf8"
+    ) as simplified_artifact_infos_file:
+        json.dump(
+            simplified_artifact_infos_json, simplified_artifact_infos_file, indent=2
+        )
 
 
 def get_artifact_infos(
     *, artifact_models: dict[str, MetadataModel]
 ) -> list[ArtifactInfo]:
-    """"""
+    """Get artifact infos from artifact models."""
+
+    return [
+        load_artifact_info(
+            name=artifact_name,
+            description=artifact_name,
+            model=artifact_model,
+        )
+        for artifact_name, artifact_model in artifact_models.items()
+    ]
 
 
 def generate_artifact_models(*, config: MetadataConfig) -> None:
@@ -148,6 +189,26 @@ def generate_artifact_models(*, config: MetadataConfig) -> None:
         workflow_config=config.workflow_config,
         original_model=config.metadata_model,
     )
+
+    artifact_infos = get_artifact_infos(
+        artifact_models=workflow_handler.artifact_models
+    )
+
+    save_artifact_models(
+        artifact_models=workflow_handler.artifact_models,
+        artifact_model_dir=config.artifact_model_dir,
+    )
+    save_artifact_infos(
+        artifact_infos=artifact_infos, artifact_model_dir=config.artifact_model_dir
+    )
+
+
+def generate_artifact_models_from_path(*, config_path: Path) -> None:
+    """Generate artifact models and artifact infos and save them to file."""
+
+    config = load_config_yaml(path=config_path, config_cls=MetadataConfig)
+
+    generate_artifact_models(config=config)
 
 
 def transform_metadata(*, config: MetadataConfig) -> None:

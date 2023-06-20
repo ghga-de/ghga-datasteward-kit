@@ -26,3 +26,5 @@ ghga-datasteward-kit metadata submit \
 ghga-datasteward-kit metadata transform --config-path ./metadata_config.yaml
 
 ghga-datasteward-kit load --config-path ./loader_config.yaml
+
+ghga-datasteward-kit metadata generate-artifact-models --config-path ./metadata_config.yaml

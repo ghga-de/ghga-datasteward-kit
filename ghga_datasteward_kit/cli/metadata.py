@@ -68,7 +68,7 @@ def generate_artifact_models(
     )
 ):
     """Run transformation workflow to generate artifact models."""
-    metadata.transform_metadata_from_path(config_path=config_path)
+    metadata.generate_artifact_models_from_path(config_path=config_path)
 
 
 @cli.command()

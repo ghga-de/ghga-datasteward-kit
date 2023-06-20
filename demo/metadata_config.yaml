@@ -3,6 +3,7 @@ source_event_type: source_event
 event_store_path: /workspace/demo/store/event_store
 artifact_topic_prefix: artifact
 accession_store_path: /workspace/demo/store/accessions.txt
+artifact_model_dir: /workspace/demo/store/artifact_models
 prefix_mapping:
   SampleFile: GHGASF
   ExperimentFile: GHGAEF
