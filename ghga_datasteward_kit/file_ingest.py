@@ -15,7 +15,7 @@
 """Interaction with file ingest service"""
 
 from pathlib import Path
-from typing import Generator
+from typing import Callable
 
 import httpx
 from pydantic import BaseSettings, Field, ValidationError
@@ -41,15 +41,14 @@ class IngestConfig(BaseSettings):
 def main(
     input_directory: Path,
     config: IngestConfig,
-    id_generator: Generator[str, None, None],
+    id_generator: Callable[[], str],
 ):
     """TODO"""
 
     errors = {}
 
-    for in_path in input_directory.iterdir():
+    for in_path, file_id in zip(input_directory.iterdir(), id_generator()):
         if in_path.suffix == ".json":
-            file_id = next(id_generator)
             try:
                 file_ingest(in_path=in_path, file_id=file_id, config=config)
             except (ValidationError, ValueError) as error:
@@ -57,11 +56,11 @@ def main(
                 continue
 
     if errors:
-        print(f"Encountered {len(errors)} errors during processing")
+        print(f"Encountered {len(errors)} errors during processing.")
         for file_path, cause in errors.items():
             print(f" -{file_path}: {cause}")
     else:
-        print("Sucessfully sent all file upload metadata for ingest")
+        print("Sucessfully sent all file upload metadata for ingest.")
 
 
 def file_ingest(in_path: Path, file_id: str, config: IngestConfig):

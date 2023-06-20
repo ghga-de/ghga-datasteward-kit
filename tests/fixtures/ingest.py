@@ -48,7 +48,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
         token, token_hash = generate_token_and_hash()
         keypair = generate_key_pair()
 
-        file_path = Path(input_dir) / "test"
+        file_path = Path(input_dir) / "test.json"
 
         metadata = OutputMetadata(
             alias="test",
@@ -66,7 +66,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
         metadata.serialize(file_path)
 
         config = IngestConfig(
-            endpoint_base="https://test.ghga-file-ingest.de",
+            endpoint_base="https://not-a-valid-url",
             pubkey=encode_key(keypair.public),
             token=token,
         )

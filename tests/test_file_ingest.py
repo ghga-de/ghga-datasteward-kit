@@ -16,7 +16,7 @@
 import pytest
 from pytest_httpx import HTTPXMock
 
-from ghga_datasteward_kit.file_ingest import file_ingest
+from ghga_datasteward_kit.file_ingest import file_ingest, main
 from tests.fixtures.ingest import IngestFixture, ingest_fixture  # noqa: F401
 
 
@@ -65,5 +65,32 @@ async def test_ingest_directly(
 
 
 @pytest.mark.asyncio
-async def test_main(ingest_fixture: IngestFixture, httpx_mock: HTTPXMock):  # noqa: F811
+async def test_main(
+    capfd, ingest_fixture: IngestFixture, httpx_mock: HTTPXMock  # noqa: F811
+):
     """TODO"""
+
+    httpx_mock.add_response(url=ingest_fixture.config.endpoint_base, status_code=202)
+    main(
+        input_directory=ingest_fixture.input_dir,
+        config=ingest_fixture.config,
+        id_generator=id_generator,
+    )
+    out, _ = capfd.readouterr()
+
+    assert "Sucessfully sent all file upload metadata for ingest" in out
+
+    httpx_mock.add_response(
+        url=ingest_fixture.config.endpoint_base,
+        json={"detail": "Unauthorized"},
+        status_code=403,
+    )
+    main(
+        input_directory=ingest_fixture.input_dir,
+        config=ingest_fixture.config,
+        id_generator=id_generator,
+    )
+
+    out, _ = capfd.readouterr()
+
+    assert "Encountered 1 errors during processing" in out
