@@ -30,7 +30,7 @@ def id_generator():
 async def test_ingest_directly(
     ingest_fixture: IngestFixture, httpx_mock: HTTPXMock  # noqa: F811
 ):
-    """TODO"""
+    """Test file_ingest function directly"""
 
     httpx_mock.add_response(url=ingest_fixture.config.endpoint_base, status_code=202)
     file_ingest(
@@ -68,7 +68,7 @@ async def test_ingest_directly(
 async def test_main(
     capfd, ingest_fixture: IngestFixture, httpx_mock: HTTPXMock  # noqa: F811
 ):
-    """TODO"""
+    """Test if main file ingest function works correctly"""
 
     httpx_mock.add_response(url=ingest_fixture.config.endpoint_base, status_code=202)
     main(

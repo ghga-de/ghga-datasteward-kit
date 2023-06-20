@@ -24,7 +24,7 @@ from ghga_datasteward_kit import models
 
 
 class IngestConfig(BaseSettings):
-    """TODO"""
+    """Config options for calling the file ingest endpoint"""
 
     endpoint_base: str = Field(
         ..., description="Base URL under which the /ingest endpoint is available."
@@ -43,7 +43,7 @@ def main(
     config: IngestConfig,
     id_generator: Callable[[], str],
 ):
-    """TODO"""
+    """Handle ingestion of a folder of s3 upload file metadata"""
 
     errors = {}
 
@@ -64,7 +64,10 @@ def main(
 
 
 def file_ingest(in_path: Path, file_id: str, config: IngestConfig):
-    """TODO"""
+    """
+    Transform from s3 upload output representation to what the file ingest service expects.
+    Then call the ingest endpoint
+    """
 
     print(f"Ingesting file upload metadata for {in_path}.")
 
