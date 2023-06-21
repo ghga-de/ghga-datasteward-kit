@@ -20,20 +20,16 @@ objectstorage.
 """
 
 import asyncio
-import base64
-import hashlib
-import json
 import logging
 import math
 import os
 import subprocess  # nosec
 import sys
-from dataclasses import dataclass
 from functools import partial
 from io import BufferedReader
 from pathlib import Path
 from time import time
-from typing import Any, Generator
+from typing import Generator
 from uuid import uuid4
 
 import crypt4gh.header  # type: ignore
@@ -46,6 +42,7 @@ from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from nacl.bindings import crypto_aead_chacha20poly1305_ietf_encrypt
 from pydantic import BaseSettings, Field, SecretStr, validator
 
+from ghga_datasteward_kit import models
 from ghga_datasteward_kit.utils import load_config_yaml
 
 
@@ -103,39 +100,6 @@ class Config(BaseSettings):
     ):  # pylint: disable=no-self-argument
         """Expand vars in path"""
         return expand_env_vars_in_path(output_dir)
-
-
-class Checksums:
-    """Container for checksum calculation"""
-
-    def __init__(self):
-        self.unencrypted_sha256 = hashlib.sha256()
-        self.encrypted_md5: list[str] = []
-        self.encrypted_sha256: list[str] = []
-
-    def __repr__(self) -> str:
-        return (
-            f"Unencrypted: {self.unencrypted_sha256.hexdigest()}\n"
-            + f"Encrypted MD5: {self.encrypted_md5}\n"
-            + f"Encrypted SHA256: {self.encrypted_sha256}"
-        )
-
-    def get(self):
-        """Return all checksums at the end of processing"""
-        return (
-            self.unencrypted_sha256.hexdigest(),
-            self.encrypted_md5,
-            self.encrypted_sha256,
-        )
-
-    def update_unencrypted(self, part: bytes):
-        """Update checksum for unencrypted file"""
-        self.unencrypted_sha256.update(part)
-
-    def update_encrypted(self, part: bytes):
-        """Update encrypted part checksums"""
-        self.encrypted_md5.append(hashlib.md5(part, usedforsecurity=False).hexdigest())
-        self.encrypted_sha256.append(hashlib.sha256(part).hexdigest())
 
 
 class ChunkedUploader:
@@ -204,7 +168,7 @@ class ChunkedDownloader:
         encrypted_file_size: int,
         file_secret: bytes,
         part_size: int,
-        target_checksums: Checksums,
+        target_checksums: models.Checksums,
     ) -> None:
         self.config = config
         self.storage = objectstorage(self.config)
@@ -240,7 +204,7 @@ class ChunkedDownloader:
         decryptor.process_parts(download_func)
         self.validate_checksums(checkums=decryptor.checksums)
 
-    def validate_checksums(self, checkums: Checksums):
+    def validate_checksums(self, checkums: models.Checksums):
         """Confirm checksums for upload and download match"""
         if not self.target_checksums.get() == checkums.get():
             raise ValueError(
@@ -253,7 +217,7 @@ class Decryptor:
     """Handles on the fly decryption and checksum calculation"""
 
     def __init__(self, file_secret: bytes, num_parts: int, part_size: int) -> None:
-        self.checksums = Checksums()
+        self.checksums = models.Checksums()
         self.file_secret = file_secret
         self.num_parts = num_parts
         self.part_size = part_size
@@ -324,7 +288,7 @@ class Encryptor:
 
     def __init__(self, part_size: int):
         self.part_size = part_size
-        self.checksums = Checksums()
+        self.checksums = models.Checksums()
         self.file_secret = os.urandom(32)
         self.encrypted_file_size = 0
 
@@ -386,53 +350,6 @@ class Encryptor:
             self.checksums.update_encrypted(upload_buffer)
             self.encrypted_file_size += len(upload_buffer)
             yield upload_buffer
-
-
-@dataclass
-class Metadata:  # pylint: disable=too-many-instance-attributes
-    """Container class for output metadata"""
-
-    alias: str
-    file_uuid: str
-    original_path: Path
-    part_size: int
-    file_secret: bytes
-    checksums: Checksums
-    unencrypted_size: int
-    encrypted_size: int
-
-    def serialize(self, output_dir: Path):
-        """Serialize metadata to file"""
-
-        output: dict[str, Any] = {}
-        output["Alias"] = self.alias
-        output["File UUID"] = self.file_uuid
-        output["Original filesystem path"] = str(self.original_path.resolve())
-        output["Part Size"] = f"{self.part_size // 1024**2} MiB"
-        output["Unencrypted file size"] = self.unencrypted_size
-        output["Encrypted file size"] = self.encrypted_size
-        output["Symmetric file encryption secret"] = base64.b64encode(
-            self.file_secret
-        ).decode("utf-8")
-        (
-            unencrypted_checksum,
-            encrypted_md5_checksums,
-            encrypted_sha256_checksums,
-        ) = self.checksums.get()
-        output["Unencrypted file checksum"] = unencrypted_checksum
-        output["Encrypted file part checksums (MD5)"] = encrypted_md5_checksums
-        output["Encrypted file part checksums (SHA256)"] = encrypted_sha256_checksums
-
-        if not output_dir.exists():
-            output_dir.mkdir(parents=True)
-
-        output_path = output_dir / f"{self.alias}.json"
-
-        LOGGER.info("(7/7) Writing metadata to %s.", output_path)
-        # owner read-only
-        with output_path.open("w") as file:
-            json.dump(output, file, indent=2)
-        os.chmod(path=output_path, mode=0o400)
 
 
 class MultipartUpload:
@@ -628,17 +545,27 @@ async def async_main(input_path: Path, alias: str, config: Config):
     )
     await downloader.download()
 
-    metadata = Metadata(
+    (
+        unencrypted_checksum,
+        encrypted_md5_checksums,
+        encrypted_sha256_checksums,
+    ) = uploader.encryptor.checksums.get()
+
+    metadata = models.OutputMetadata(
         alias=uploader.alias,
         file_uuid=uploader.file_id,
         original_path=input_path,
         part_size=config.part_size,
         file_secret=uploader.encryptor.file_secret,
-        checksums=uploader.encryptor.checksums,
+        unencrypted_checksum=unencrypted_checksum,
+        encrypted_md5_checksums=encrypted_md5_checksums,
+        encrypted_sha256_checksums=encrypted_sha256_checksums,
         unencrypted_size=file_size,
         encrypted_size=uploader.encryptor.encrypted_file_size,
     )
-    metadata.serialize(config.output_dir)
+    output_path = config.output_dir / f"{uploader.alias}.json"
+    LOGGER.info("(7/7) Writing metadata to %s.", output_path)
+    metadata.serialize(output_path)
 
 
 def main(input_path, alias: str, config_path: Path):
