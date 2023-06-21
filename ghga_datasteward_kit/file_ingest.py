@@ -26,7 +26,7 @@ from ghga_datasteward_kit import models, utils
 class IngestConfig(BaseSettings):
     """Config options for calling the file ingest endpoint"""
 
-    endpoint_base: str = Field(
+    file_ingest_url: str = Field(
         ..., description="Base URL under which the /ingest endpoint is available."
     )
     pubkey: str = Field(
