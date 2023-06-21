@@ -14,6 +14,7 @@
 # limitations under the License.
 """Interaction with file ingest service"""
 
+from itertools import islice
 from pathlib import Path
 from typing import Callable
 
@@ -29,59 +30,66 @@ class IngestConfig(BaseSettings):
     file_ingest_url: str = Field(
         ..., description="Base URL under which the /ingest endpoint is available."
     )
-    pubkey: str = Field(
+    file_ingest_pubkey: str = Field(
         ..., description="Public key used for encryption of the payload."
     )
-    token: str = Field(
+    input_dir: Path = Field(
         ...,
-        description="Token used for authentication against the file ingest service.",
+        description="Path to directory containing output files from the "
+        + "upload/batch_upload command.",
     )
 
 
 def main(
-    input_directory: Path,
     config_path: Path,
     id_generator: Callable[[], str],
 ):
     """Handle ingestion of a folder of s3 upload file metadata"""
 
     config = utils.load_config_yaml(path=config_path, config_cls=IngestConfig)
+    token = utils.read_token()
 
     errors = {}
 
-    for in_path, file_id in zip(input_directory.iterdir(), id_generator()):
-        if in_path.suffix == ".json":
-            try:
-                file_ingest(in_path=in_path, file_id=file_id, config=config)
-            except (ValidationError, ValueError) as error:
-                errors[in_path.resolve()] = str(error)
-                continue
+    # pre generate paths/ids to make sure generator procudes a sufficient amount of ids
+    file_paths = [
+        file_path
+        for file_path in config.input_dir.iterdir()
+        if file_path.suffix == ".json"
+    ]
+    file_ids = list(islice(id_generator(), len(file_paths)))
 
-    if errors:
-        print(f"Encountered {len(errors)} errors during processing.")
-        for file_path, cause in errors.items():
-            print(f" -{file_path}: {cause}")
-    else:
-        print("Sucessfully sent all file upload metadata for ingest.")
+    if len(file_paths) != len(file_ids):
+        raise ValueError(
+            "Provided ID generator function does not create the correct amount of IDs."
+            + f"\nRequired: {len(file_paths)}, generated {len(file_ids)}"
+        )
+
+    for in_path, file_id in zip(file_paths, file_ids):
+        try:
+            file_ingest(in_path=in_path, file_id=file_id, token=token, config=config)
+        except (ValidationError, ValueError) as error:
+            errors[in_path.resolve()] = str(error)
+            continue
+
+    return errors
 
 
-def file_ingest(in_path: Path, file_id: str, config: IngestConfig):
+def file_ingest(in_path: Path, file_id: str, token: str, config: IngestConfig):
     """
     Transform from s3 upload output representation to what the file ingest service expects.
     Then call the ingest endpoint
     """
 
-    print(f"Ingesting file upload metadata for {in_path}.")
-
     output_metadata = models.OutputMetadata.load(input_path=in_path)
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
-    encrypted = upload_metadata.encrypt_metadata(pubkey=config.pubkey)
+    encrypted = upload_metadata.encrypt_metadata(pubkey=config.file_ingest_pubkey)
 
-    headers = {"Authorization": f"Bearer {config.token}"}
+    headers = {"Authorization": f"Bearer {token}"}
 
     with httpx.Client() as client:
         response = client.post(
-            f"{config.endpoint_base}", json=encrypted.dict(), headers=headers
+            f"{config.file_ingest_url}", json=encrypted.dict(), headers=headers
         )
 
         if response.status_code != 202:

@@ -33,7 +33,6 @@ class IngestFixture:
     """Necessary data for ingest testing."""
 
     config: IngestConfig
-    input_dir: Path
     file_path: Path
     token: str
     token_hash: str
@@ -53,7 +52,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
         metadata = OutputMetadata(
             alias="test",
             file_uuid="happy_little_object",
-            original_path=Path(input_dir) / "test",
+            original_path=file_path,
             part_size=16 * 1024**2,
             unencrypted_size=50 * 1024**2,
             encrypted_size=50 * 1024**2 + 128,
@@ -66,13 +65,12 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
         metadata.serialize(file_path)
 
         config = IngestConfig(
-            endpoint_base="https://not-a-valid-url",
-            pubkey=encode_key(keypair.public),
-            token=token,
+            file_ingest_url="https://not-a-valid-url",
+            file_ingest_pubkey=encode_key(keypair.public),
+            input_dir=Path(input_dir),
         )
         yield IngestFixture(
             config=config,
-            input_dir=Path(input_dir),
             file_path=file_path,
             token=token,
             token_hash=token_hash,

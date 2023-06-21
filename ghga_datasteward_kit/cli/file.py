@@ -62,20 +62,23 @@ def batch_upload(
 
 @cli.command()
 def ingest_upload_metadata(
-    metadata_dir: Path = typer.Option(
-        ...,
-        help="Path to directory containing output files from the upload/batch_upload command.",
-    ),
     config_path: Path = typer.Option(..., help="Path to a config YAML."),
 ):
     """Upload all output metdata files from the given directory to the file ingest service"""
 
     def dummy_generator():
         """Placeholder, needs replacement with actual implementation"""
-        yield "invalid_id"
+        while True:
+            yield "test_id"
 
-    file_ingest.main(
-        input_directory=metadata_dir,
+    errors = file_ingest.main(
         config_path=config_path,
         id_generator=dummy_generator,
     )
+
+    if errors:
+        print(f"Encountered {len(errors)} errors during processing.")
+        for file_path, cause in errors.items():
+            print(f" -{file_path}: {cause}")
+    else:
+        print("Sucessfully sent all file upload metadata for ingest.")
