@@ -29,52 +29,11 @@ services:
     # (Adding the "ports" property to this file will not forward from a Codespace.)
 
 
-    # Please uncomment, add, or remove services as needed:
+  mongodb:
+    image: mongo:5.0.4
+    restart: unless-stopped
+    volumes:
+      - mongo_fs:/data/db
 
-    #   postgresql:
-    #     image: postgres:latest
-    #     restart: unless-stopped
-    #     volumes:
-    #       - postgres_fs:/var/lib/postgresql/data
-    #     environment:
-    #       POSTGRES_USER: postgres
-    #       POSTGRES_DB: postgres
-    #       POSTGRES_PASSWORD: postgres
-    #     # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
-    #     # (Adding the "ports" property to this file will not forward from a Codespace.)
-
-    #   rabbitmq:
-    #     image: rabbitmq:3-management
-    #     ports:
-    #       - 5672:5672
-    #       - 15672:15672
-
-    #   localstack:
-    #     image: localstack/localstack
-    #     ports:
-    #       - "4566:4566"
-    #     environment:
-    #       SERVICES: s3
-    #       DEFAULT_REGION: eu-west-1
-    #       AWS_DEFAULT_REGION: eu-west-1
-    #       # accessible at localhost
-    #       HOSTNAME_EXTERNAL: localhost
-    #       USE_SSL: "false"
-    #       DATA_DIR: /tmp/localstack/data
-    #       DEBUG: 1
-    #     volumes:
-    #       - type: volume
-    #         source: s3_fs
-    #         target: /tmp/localstack
-    #         volume:
-    #           nocopy: true
-    #   mongodb:
-    #     image: mongo:5.0.4
-    #     restart: unless-stopped
-    #     volumes:
-    #       - mongo_fs:/data/db
-
-    # volumes:
-    #   postgres_fs: {}
-    #   s3_fs: {}
-    #   mongo_fs: {}
+volumes:
+  mongo_fs: {}

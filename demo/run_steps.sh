@@ -15,7 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cd demo
+metldata
+
 echo "n65vGs4QfPjCOTrNLjnX_cFNM7z_PhmdnOLqUoizWo4" > ~/.ghga_data_steward_token.txt
+
+ghga-datasteward-kit metadata generate-artifact-models --config-path ./metadata_config.yaml
 
 ghga-datasteward-kit metadata submit \
     --submission-title "Test" \
@@ -26,5 +31,3 @@ ghga-datasteward-kit metadata submit \
 ghga-datasteward-kit metadata transform --config-path ./metadata_config.yaml
 
 ghga-datasteward-kit load --config-path ./loader_config.yaml
-
-ghga-datasteward-kit metadata generate-artifact-models --config-path ./metadata_config.yaml

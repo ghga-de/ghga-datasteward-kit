@@ -42,6 +42,7 @@ def workdir_factory(original_model_path: Path):
         tmp_path.joinpath("event_store").mkdir()
         tmp_path.joinpath("submission_store").mkdir()
         tmp_path.joinpath("accession_store").touch()
+        tmp_path.joinpath("artifact_model").touch()
         shutil.copyfile(original_model_path, tmp_path / "original_model.yaml")
         cwd = os.getcwd()
         os.chdir(tmp_path)

@@ -24,7 +24,7 @@ from ghga_datasteward_kit.cli import cli
 def run():
     """Entrypoint of the package."""
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.CRITICAL)
     cli()
 
 
