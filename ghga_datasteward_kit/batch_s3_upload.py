@@ -80,10 +80,10 @@ def prepare_upload_command_line(
 
     log_file_path = output_dir / f"{file.alias}.log"
     python_interpreter_path = Path(sys.executable)
-    upload_script_path = HERE / "s3_upload.py"
 
     return (
-        f"{python_interpreter_path} {upload_script_path} --input-path {file.path}"
+        f"{python_interpreter_path} -m ghga_datasteward_kit files upload"
+        + f" --input-path {file.path}"
         + f" --alias {file.alias} --config-path {config_path}"
         + f" > {log_file_path} 2>&1"
     )

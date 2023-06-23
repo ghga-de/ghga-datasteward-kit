@@ -15,19 +15,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd demo
-metldata
+cd /workspace/demo
+
+mkdir -p \
+    ./store/artifact_models \
+    ./store/submissions \
+    ./store/event_store \
+    ./store/file_uploads
+touch ./store/accessions.txt
 
 echo "n65vGs4QfPjCOTrNLjnX_cFNM7z_PhmdnOLqUoizWo4" > ~/.ghga_data_steward_token.txt
 
-ghga-datasteward-kit metadata generate-artifact-models --config-path ./metadata_config.yaml
+curl -X PUT -H "Content-Type: application/json" \
+    -H "Authorization: AWS test:test" \
+    "http://localstack:4566/staging"
+
+ghga-datasteward-kit files upload \
+    --input-path ./input/files/SEQ_FILE_A_R1.fastq.gz \
+    --alias SEQ_FILE_A_R1.fastq.gz \
+    --config-path ./config/file_config.yaml
+
+rm ./store/file_uploads/SEQ_FILE_A_R1.fastq.gz.json
+
+ghga-datasteward-kit files batch-upload \
+    --tsv ./input/files.tsv \
+    --config-path ./config/file_config.yaml \
+    --parallel-processes 10
+
+ghga-datasteward-kit metadata generate-artifact-models \
+    --config-path ./config/metadata_config.yaml
+
+ghga-datasteward-kit metadata transpile ./input/metadata.xlsx ./input/metadata.json
 
 ghga-datasteward-kit metadata submit \
     --submission-title "Test" \
     --submission-description "Test" \
-    --metadata-path ./metadata.yaml \
-    --config-path ./metadata_config.yaml
+    --metadata-path ./input/metadata.json \
+    --config-path ./config/metadata_config.yaml
 
-ghga-datasteward-kit metadata transform --config-path ./metadata_config.yaml
+ghga-datasteward-kit metadata transform --config-path ./config/metadata_config.yaml
 
-ghga-datasteward-kit load --config-path ./loader_config.yaml
+ghga-datasteward-kit load --config-path ./config/loader_config.yaml
+
+rm -rf ./store
+rm ./input/metadata.json

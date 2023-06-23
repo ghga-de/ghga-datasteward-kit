@@ -14,6 +14,8 @@
 # limitations under the License.
 
 """Metadata related CLI"""
+
+import logging
 from pathlib import Path
 
 import typer
@@ -51,6 +53,7 @@ def submit(
 ):
     """Submit metadata to local submission registry (no upload takes place)."""
 
+    logging.basicConfig(level=logging.CRITICAL)
     metadata.submit_metadata_from_path(
         submission_title=submission_title,
         submission_description=submission_description,
@@ -71,6 +74,8 @@ def generate_artifact_models(
     )
 ):
     """Run transformation workflow to generate artifact models."""
+
+    logging.basicConfig(level=logging.CRITICAL)
     metadata.generate_artifact_models_from_path(config_path=config_path)
 
 
@@ -86,4 +91,6 @@ def transform(
     )
 ):
     """Run transformation workflow on submitted metadata to produce artifacts."""
+
+    logging.basicConfig(level=logging.CRITICAL)
     metadata.transform_metadata_from_path(config_path=config_path)

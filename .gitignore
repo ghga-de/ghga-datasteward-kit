@@ -28,7 +28,7 @@ share/python-wheels/
 MANIFEST
 
 demo/store
-demo/metadata.json
+demo/input/metadata.json
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
