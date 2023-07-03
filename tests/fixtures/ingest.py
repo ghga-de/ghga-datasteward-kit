@@ -23,9 +23,30 @@ from typing import Generator
 import pytest
 from ghga_service_commons.utils.crypt import KeyPair, encode_key, generate_key_pair
 from ghga_service_commons.utils.simple_token import generate_token_and_hash
+from ghga_service_commons.utils.utc_dates import now_as_utc
+from metldata.submission_registry.models import (
+    StatusChange,
+    Submission,
+    SubmissionStatus,
+)
+from metldata.submission_registry.submission_store import SubmissionStore
 
 from ghga_datasteward_kit.file_ingest import IngestConfig
 from ghga_datasteward_kit.models import OutputMetadata
+
+EXAMPLE_SUBMISSION = Submission(
+    title="test",
+    description="test",
+    content={"test_class": [{"alias": "test_alias"}]},
+    accession_map={"files": {"test_alias": "test_accession"}},
+    id="testsubmission001",
+    status_history=(
+        StatusChange(
+            timestamp=now_as_utc(),
+            new_status=SubmissionStatus.COMPLETED,
+        ),
+    ),
+)
 
 
 @dataclass
@@ -44,35 +65,50 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
     """Generate necessary data for file ingest."""
 
     with TemporaryDirectory() as input_dir:
-        token, token_hash = generate_token_and_hash()
-        keypair = generate_key_pair()
+        with TemporaryDirectory() as submission_store_dir:
+            token, token_hash = generate_token_and_hash()
+            keypair = generate_key_pair()
 
-        file_path = Path(input_dir) / "test.json"
+            file_path = Path(input_dir) / "test.json"
 
-        metadata = OutputMetadata(
-            alias="test",
-            file_uuid="happy_little_object",
-            original_path=file_path,
-            part_size=16 * 1024**2,
-            unencrypted_size=50 * 1024**2,
-            encrypted_size=50 * 1024**2 + 128,
-            file_secret=os.urandom(32),
-            unencrypted_checksum="def",
-            encrypted_md5_checksums=["a", "b", "c"],
-            encrypted_sha256_checksums=["a", "b", "c"],
-        )
+            metadata = OutputMetadata(
+                alias="test_alias",
+                file_uuid="happy_little_object",
+                original_path=file_path,
+                part_size=16 * 1024**2,
+                unencrypted_size=50 * 1024**2,
+                encrypted_size=50 * 1024**2 + 128,
+                file_secret=os.urandom(32),
+                unencrypted_checksum="def",
+                encrypted_md5_checksums=["a", "b", "c"],
+                encrypted_sha256_checksums=["a", "b", "c"],
+            )
 
-        metadata.serialize(file_path)
+            metadata.serialize(file_path)
 
-        config = IngestConfig(
-            file_ingest_url="https://not-a-valid-url",
-            file_ingest_pubkey=encode_key(keypair.public),
-            input_dir=Path(input_dir),
-        )
-        yield IngestFixture(
-            config=config,
-            file_path=file_path,
-            token=token,
-            token_hash=token_hash,
-            keypair=keypair,
-        )
+            config = IngestConfig(
+                file_ingest_url="https://not-a-valid-url",
+                file_ingest_pubkey=encode_key(keypair.public),
+                input_dir=Path(input_dir),
+                submission_store_dir=Path(submission_store_dir),
+            )
+
+            submission_store = SubmissionStore(config=config)
+            submission_store.insert_new(submission=EXAMPLE_SUBMISSION)
+            submission_2 = EXAMPLE_SUBMISSION.copy(
+                update={
+                    "title": "test2",
+                    "content": {"test_class": [{"alias": "test_alias2"}]},
+                    "accession_map": {"files": {"test_alias2": "test_accession2"}},
+                    "id": "testsubmission002",
+                }
+            )
+            submission_store.insert_new(submission=submission_2)
+
+            yield IngestFixture(
+                config=config,
+                file_path=file_path,
+                token=token,
+                token_hash=token_hash,
+                keypair=keypair,
+            )
