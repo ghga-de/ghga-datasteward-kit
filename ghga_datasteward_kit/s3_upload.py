@@ -35,9 +35,8 @@ from uuid import uuid4
 import crypt4gh.header  # type: ignore
 import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
-import requests  # type: ignore
+from ghga_connector.core.client import HttpxClientState, httpx_client
 from ghga_connector.core.file_operations import read_file_parts
-from ghga_connector.core.session import RequestsSession
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from nacl.bindings import crypto_aead_chacha20poly1305_ietf_encrypt
 from pydantic import BaseSettings, Field, SecretStr, validator
@@ -46,15 +45,13 @@ from ghga_datasteward_kit import models
 from ghga_datasteward_kit.utils import load_config_yaml
 
 
-def configure_session() -> requests.Session:
+def configure_session():
     """Configure session with exponential backoff retry"""
-    RequestsSession.configure(6)
-    return RequestsSession.session
+    HttpxClientState.configure(6)
 
 
 LOGGER = logging.getLogger("s3_upload")
 PART_SIZE = 16 * 1024**2
-SESSION = configure_session()
 
 
 def expand_env_vars_in_path(path: Path) -> Path:
@@ -187,7 +184,8 @@ class ChunkedDownloader:
         ):
             headers = {"Range": f"bytes={start}-{stop}"}
             LOGGER.debug("Downloading part number %i. %s", part_no, headers)
-            response = SESSION.get(download_url, timeout=60, headers=headers)
+            with httpx_client() as client:
+                response = client.get(download_url, timeout=60, headers=headers)
             yield response.content
 
     async def download(self):
@@ -399,7 +397,8 @@ class MultipartUpload:
                 object_id=self.file_id,
                 part_number=part_number,
             )
-            SESSION.put(url=upload_url, data=part)
+            with httpx_client() as client:
+                client.put(url=upload_url, data=part)
         except (  # pylint: disable=broad-except
             Exception,
             KeyboardInterrupt,

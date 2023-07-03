@@ -14,17 +14,20 @@
 # limitations under the License.
 """Interaction with file ingest service"""
 
-from itertools import islice
 from pathlib import Path
 from typing import Callable
 
 import httpx
-from pydantic import BaseSettings, Field, ValidationError
+from metldata.submission_registry.submission_store import (
+    SubmissionStore,
+    SubmissionStoreConfig,
+)
+from pydantic import Field, ValidationError
 
 from ghga_datasteward_kit import models, utils
 
 
-class IngestConfig(BaseSettings):
+class IngestConfig(SubmissionStoreConfig):
     """Config options for calling the file ingest endpoint"""
 
     file_ingest_url: str = Field(
@@ -40,9 +43,30 @@ class IngestConfig(BaseSettings):
     )
 
 
+def alias_to_accession(alias: str, submission_store: SubmissionStore) -> str:
+    """Get all submissions to retrieve valid accessions from corresponding file aliases"""
+
+    submission_ids = submission_store.get_all_submission_ids()
+
+    all_submission_map = {}
+
+    for submission_id in submission_ids:
+        all_submission_map.update(
+            submission_store.get_by_id(submission_id=submission_id).accession_map[
+                "files"
+            ]
+        )
+
+    accession = all_submission_map.get(alias)
+
+    if accession is None:
+        raise ValueError(f"No accession exists for file alias {alias}")
+
+    return accession
+
+
 def main(
     config_path: Path,
-    id_generator: Callable[[], str],
 ):
     """Handle ingestion of a folder of s3 upload file metadata"""
 
@@ -51,23 +75,11 @@ def main(
 
     errors = {}
 
-    # pre generate paths/ids to make sure generator procudes a sufficient amount of ids
-    file_paths = [
-        file_path
-        for file_path in config.input_dir.iterdir()
-        if file_path.suffix == ".json"
-    ]
-    file_ids = list(islice(id_generator(), len(file_paths)))
-
-    if len(file_paths) != len(file_ids):
-        raise ValueError(
-            "Provided ID generator function does not create the correct amount of IDs."
-            + f"\nRequired: {len(file_paths)}, generated {len(file_ids)}"
-        )
-
-    for in_path, file_id in zip(file_paths, file_ids):
+    for in_path in config.input_dir.iterdir():
+        if in_path.suffix != ".json":
+            continue
         try:
-            file_ingest(in_path=in_path, file_id=file_id, token=token, config=config)
+            file_ingest(in_path=in_path, token=token, config=config)
         except (ValidationError, ValueError) as error:
             errors[in_path.resolve()] = str(error)
             continue
@@ -75,13 +87,21 @@ def main(
     return errors
 
 
-def file_ingest(in_path: Path, file_id: str, token: str, config: IngestConfig):
+def file_ingest(
+    in_path: Path,
+    token: str,
+    config: IngestConfig,
+    alias_to_id: Callable[[str, SubmissionStore], str] = alias_to_accession,
+):
     """
     Transform from s3 upload output representation to what the file ingest service expects.
     Then call the ingest endpoint
     """
 
+    submission_store = SubmissionStore(config=config)
+
     output_metadata = models.OutputMetadata.load(input_path=in_path)
+    file_id = alias_to_id(output_metadata.alias, submission_store)
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
     encrypted = upload_metadata.encrypt_metadata(pubkey=config.file_ingest_pubkey)
 
