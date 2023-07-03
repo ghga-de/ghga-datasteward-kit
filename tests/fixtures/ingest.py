@@ -95,15 +95,6 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
 
             submission_store = SubmissionStore(config=config)
             submission_store.insert_new(submission=EXAMPLE_SUBMISSION)
-            submission_2 = EXAMPLE_SUBMISSION.copy(
-                update={
-                    "title": "test2",
-                    "content": {"test_class": [{"alias": "test_alias2"}]},
-                    "accession_map": {"files": {"test_alias2": "test_accession2"}},
-                    "id": "testsubmission002",
-                }
-            )
-            submission_store.insert_new(submission=submission_2)
 
             yield IngestFixture(
                 config=config,
