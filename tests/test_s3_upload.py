@@ -19,7 +19,6 @@ import sys
 from pathlib import Path
 
 import pytest
-from ghga_connector.core.client import HttpxClientState
 from ghga_service_commons.utils.temp_files import big_temp_file  # type: ignore
 from hexkit.providers.s3.testutils import (  # type: ignore
     config_from_localstack_container,
@@ -37,8 +36,6 @@ BUCKET_ID = "test-bucket"
 @pytest.mark.asyncio
 async def test_process(config_fixture: Config):  # noqa: F811
     """Test whole upload/download process for s3_upload script"""
-
-    HttpxClientState.configure(3)
 
     with LocalStackContainer(image="localstack/localstack:0.14.2").with_services(
         "s3"

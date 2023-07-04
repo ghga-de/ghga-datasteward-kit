@@ -44,12 +44,6 @@ from pydantic import BaseSettings, Field, SecretStr, validator
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.utils import load_config_yaml
 
-
-def configure_session():
-    """Configure session with exponential backoff retry"""
-    HttpxClientState.configure(6)
-
-
 LOGGER = logging.getLogger("s3_upload")
 PART_SIZE = 16 * 1024**2
 
@@ -398,7 +392,7 @@ class MultipartUpload:
                 part_number=part_number,
             )
             with httpx_client() as client:
-                client.put(url=upload_url, data=part)
+                client.put(url=upload_url, content=part)
         except (  # pylint: disable=broad-except
             Exception,
             KeyboardInterrupt,
@@ -525,6 +519,9 @@ async def async_main(input_path: Path, alias: str, config: Config):
 
     file_size = input_path.stat().st_size
     check_adjust_part_size(config=config, file_size=file_size)
+
+    # set retry policy
+    HttpxClientState.configure(5)
 
     uploader = ChunkedUploader(
         input_path=input_path,
