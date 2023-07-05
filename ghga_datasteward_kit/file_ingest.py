@@ -41,14 +41,15 @@ class IngestConfig(SubmissionStoreConfig):
         description="Path to directory containing output files from the "
         + "upload/batch_upload command.",
     )
-    map_files_field: str = Field(
+    map_files_fields: list[str] = Field(
         "study_files",
-        description="Name of the accession map field for looking up the alias->accession mapping",
+        description="Names of the accession map fields for looking up the"
+        + " alias->accession mapping.",
     )
 
 
 def alias_to_accession(
-    alias: str, map_field: str, submission_store: SubmissionStore
+    alias: str, map_fields: list[str], submission_store: SubmissionStore
 ) -> str:
     """Get all submissions to retrieve valid accessions from corresponding file aliases"""
 
@@ -57,11 +58,13 @@ def alias_to_accession(
     all_submission_map = {}
 
     for submission_id in submission_ids:
-        all_submission_map.update(
-            submission_store.get_by_id(submission_id=submission_id).accession_map[
-                map_field
-            ]
-        )
+        submission = submission_store.get_by_id(submission_id=submission_id)
+        for field in map_fields:
+            if field not in submission.accession_map:
+                raise ValueError(
+                    f"Configured field {field} not found in accession map."
+                )
+            all_submission_map.update(submission.accession_map[field])
 
     accession = all_submission_map.get(alias)
 
@@ -97,7 +100,7 @@ def file_ingest(
     in_path: Path,
     token: str,
     config: IngestConfig,
-    alias_to_id: Callable[[str, str, SubmissionStore], str] = alias_to_accession,
+    alias_to_id: Callable[[str, list[str], SubmissionStore], str] = alias_to_accession,
 ):
     """
     Transform from s3 upload output representation to what the file ingest service expects.
@@ -108,7 +111,7 @@ def file_ingest(
 
     output_metadata = models.OutputMetadata.load(input_path=in_path)
     file_id = alias_to_id(
-        output_metadata.alias, config.map_files_field, submission_store
+        output_metadata.alias, config.map_files_fields, submission_store
     )
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
     encrypted = upload_metadata.encrypt_metadata(pubkey=config.file_ingest_pubkey)

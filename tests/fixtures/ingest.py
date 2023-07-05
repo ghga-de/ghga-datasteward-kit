@@ -90,7 +90,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
                 file_ingest_url="https://not-a-valid-url",
                 file_ingest_pubkey=encode_key(keypair.public),
                 input_dir=Path(input_dir),
-                map_files_field="study_files",
+                map_files_fields=["study_files"],
                 submission_store_dir=Path(submission_store_dir),
             )
 
