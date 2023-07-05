@@ -14,3 +14,5 @@
 - **`file_ingest_pubkey`** *(string)*: Public key used for encryption of the payload.
 
 - **`input_dir`** *(string)*: Path to directory containing output files from the upload/batch_upload command.
+
+- **`map_files_field`** *(string)*: Name of the accession map field for looking up the alias->accession mapping. Default: `study_files`.

@@ -38,7 +38,7 @@ EXAMPLE_SUBMISSION = Submission(
     title="test",
     description="test",
     content={"test_class": [{"alias": "test_alias"}]},
-    accession_map={"files": {"test_alias": "test_accession"}},
+    accession_map={"study_files": {"test_alias": "test_accession"}},
     id="testsubmission001",
     status_history=(
         StatusChange(
@@ -90,6 +90,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
                 file_ingest_url="https://not-a-valid-url",
                 file_ingest_pubkey=encode_key(keypair.public),
                 input_dir=Path(input_dir),
+                map_files_field="study_files",
                 submission_store_dir=Path(submission_store_dir),
             )
 
