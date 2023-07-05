@@ -42,7 +42,7 @@ class IngestConfig(SubmissionStoreConfig):
         + "upload/batch_upload command.",
     )
     map_files_fields: list[str] = Field(
-        "study_files",
+        ["study_files"],
         description="Names of the accession map fields for looking up the"
         + " alias->accession mapping.",
     )
