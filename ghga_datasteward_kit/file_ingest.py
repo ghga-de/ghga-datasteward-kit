@@ -41,9 +41,16 @@ class IngestConfig(SubmissionStoreConfig):
         description="Path to directory containing output files from the "
         + "upload/batch_upload command.",
     )
+    map_files_fields: list[str] = Field(
+        ["study_files"],
+        description="Names of the accession map fields for looking up the"
+        + " alias->accession mapping.",
+    )
 
 
-def alias_to_accession(alias: str, submission_store: SubmissionStore) -> str:
+def alias_to_accession(
+    alias: str, map_fields: list[str], submission_store: SubmissionStore
+) -> str:
     """Get all submissions to retrieve valid accessions from corresponding file aliases"""
 
     submission_ids = submission_store.get_all_submission_ids()
@@ -51,11 +58,13 @@ def alias_to_accession(alias: str, submission_store: SubmissionStore) -> str:
     all_submission_map = {}
 
     for submission_id in submission_ids:
-        all_submission_map.update(
-            submission_store.get_by_id(submission_id=submission_id).accession_map[
-                "files"
-            ]
-        )
+        submission = submission_store.get_by_id(submission_id=submission_id)
+        for field in map_fields:
+            if field not in submission.accession_map:
+                raise ValueError(
+                    f"Configured field {field} not found in accession map."
+                )
+            all_submission_map.update(submission.accession_map[field])
 
     accession = all_submission_map.get(alias)
 
@@ -91,7 +100,7 @@ def file_ingest(
     in_path: Path,
     token: str,
     config: IngestConfig,
-    alias_to_id: Callable[[str, SubmissionStore], str] = alias_to_accession,
+    alias_to_id: Callable[[str, list[str], SubmissionStore], str] = alias_to_accession,
 ):
     """
     Transform from s3 upload output representation to what the file ingest service expects.
@@ -101,7 +110,9 @@ def file_ingest(
     submission_store = SubmissionStore(config=config)
 
     output_metadata = models.OutputMetadata.load(input_path=in_path)
-    file_id = alias_to_id(output_metadata.alias, submission_store)
+    file_id = alias_to_id(
+        output_metadata.alias, config.map_files_fields, submission_store
+    )
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
     encrypted = upload_metadata.encrypt_metadata(pubkey=config.file_ingest_pubkey)
 

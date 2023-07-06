@@ -36,12 +36,31 @@ async def test_alias_to_accession(ingest_fixture: IngestFixture):  # noqa: F811
     submission_store = SubmissionStore(config=ingest_fixture.config)
     metadata = models.OutputMetadata.load(input_path=ingest_fixture.file_path)
 
-    accession = alias_to_accession(metadata.alias, submission_store=submission_store)
-    example_accession = list(EXAMPLE_SUBMISSION.accession_map["files"].values())[0]
+    accession = alias_to_accession(
+        alias=metadata.alias,
+        map_fields=ingest_fixture.config.map_files_fields,
+        submission_store=submission_store,
+    )
+    example_accession = list(
+        EXAMPLE_SUBMISSION.accession_map[
+            ingest_fixture.config.map_files_fields[0]
+        ].values()
+    )[0]
     assert accession == example_accession
 
     with pytest.raises(ValueError):
-        alias_to_accession("invalid_alias", submission_store=submission_store)
+        alias_to_accession(
+            alias="invalid_alias",
+            map_fields=ingest_fixture.config.map_files_fields,
+            submission_store=submission_store,
+        )
+
+    with pytest.raises(ValueError):
+        alias_to_accession(
+            alias=metadata.alias,
+            map_fields=["study_files", "sample_files"],
+            submission_store=submission_store,
+        )
 
 
 @pytest.mark.asyncio
