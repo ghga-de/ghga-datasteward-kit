@@ -25,18 +25,18 @@ import math
 import os
 import subprocess  # nosec
 import sys
+from contextlib import contextmanager
 from functools import partial
 from io import BufferedReader
 from pathlib import Path
 from time import time
-from typing import Generator
+from typing import Generator, Iterator
 from uuid import uuid4
 
 import crypt4gh.header  # type: ignore
 import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
-from ghga_connector.core.client import HttpxClientState, httpx_client
-from ghga_connector.core.file_operations import read_file_parts
+import httpx
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from nacl.bindings import crypto_aead_chacha20poly1305_ietf_encrypt
 from pydantic import BaseSettings, Field, SecretStr, validator
@@ -403,6 +403,54 @@ class MultipartUpload:
                 object_id=self.file_id,
             )
             raise exc
+
+
+class HttpxClientState:
+    """Helper class to make max_retries user configurable"""
+
+    max_retries: int
+
+    @classmethod
+    def configure(cls, max_retries: int):
+        """Configure client with exponential backoff retry (using httpx's 0.5 default)"""
+
+        # can't be negative - should we log this?
+        cls.max_retries = max(0, max_retries)
+
+
+@contextmanager
+def httpx_client():
+    """Yields a context manager httpx client and closes it afterward"""
+
+    transport = httpx.HTTPTransport(retries=HttpxClientState.max_retries)
+
+    with httpx.Client(transport=transport) as client:
+        yield client
+
+
+def read_file_parts(
+    file: BufferedReader, *, part_size: int, from_part: int = 1
+) -> Iterator[bytes]:
+    """
+    Returns an iterator to iterate through file parts of the given size (in bytes).
+
+    By default it start with the first part but you may also start from a specific part
+    in the middle of the file using the `from_part` argument. This might be useful to
+    resume an interrupted reading process.
+
+    Please note: opening and closing of the file MUST happen outside of this function.
+    """
+
+    initial_offset = part_size * (from_part - 1)
+    file.seek(initial_offset)
+
+    while True:
+        file_part = file.read(part_size)
+
+        if len(file_part) == 0:
+            return
+
+        yield file_part
 
 
 def objectstorage(config: Config):
