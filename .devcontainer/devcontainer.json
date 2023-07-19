@@ -43,7 +43,7 @@
 			88
 		],
 		"licenser.license": "AL2",
-		"licenser.author": "Universität Tübingen, DKFZ and EMBL\nfor the German Human Genome-Phenome Archive (GHGA)",
+		"licenser.author": "/workspace/.devcontainer/license_header.txt"
 	},
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
