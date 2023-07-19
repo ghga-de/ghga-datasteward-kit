@@ -1,3 +1,5 @@
 # requirements for development and testing this service
 
 -r requirements-dev-common.txt
+
+testcontainers==3.4.1
