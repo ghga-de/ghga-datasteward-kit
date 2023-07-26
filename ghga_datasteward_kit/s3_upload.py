@@ -37,6 +37,7 @@ import crypt4gh.header  # type: ignore
 import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
 import httpx
+import typer
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from nacl.bindings import crypto_aead_chacha20poly1305_ietf_encrypt
 from pydantic import BaseSettings, Field, SecretStr, validator
@@ -612,7 +613,11 @@ async def async_main(input_path: Path, alias: str, config: Config):
     metadata.serialize(output_path)
 
 
-def main(input_path, alias: str, config_path: Path):
+def main(
+    input_path: Path = typer.Option(..., help="Local path of the input file"),
+    alias: str = typer.Option(..., help="A human readable file alias"),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+):
     """
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     objectstorage.
@@ -620,3 +625,8 @@ def main(input_path, alias: str, config_path: Path):
 
     config = load_config_yaml(config_path, Config)
     asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    typer.run(main)
