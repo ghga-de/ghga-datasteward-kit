@@ -66,15 +66,7 @@ def ingest_upload_metadata(
 ):
     """Upload all output metdata files from the given directory to the file ingest service"""
 
-    def dummy_generator():
-        """Placeholder, needs replacement with actual implementation"""
-        while True:
-            yield "test_id"
-
-    errors = file_ingest.main(
-        config_path=config_path,
-        id_generator=dummy_generator,
-    )
+    errors = file_ingest.main(config_path=config_path)
 
     if errors:
         print(f"Encountered {len(errors)} errors during processing.")

@@ -36,6 +36,7 @@ BUCKET_ID = "test-bucket"
 @pytest.mark.asyncio
 async def test_process(config_fixture: Config):  # noqa: F811
     """Test whole upload/download process for s3_upload script"""
+
     with LocalStackContainer(image="localstack/localstack:0.14.2").with_services(
         "s3"
     ) as localstack:

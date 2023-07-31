@@ -25,19 +25,19 @@ import math
 import os
 import subprocess  # nosec
 import sys
+from contextlib import contextmanager
 from functools import partial
 from io import BufferedReader
 from pathlib import Path
 from time import time
-from typing import Generator
+from typing import Generator, Iterator
 from uuid import uuid4
 
 import crypt4gh.header  # type: ignore
 import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
-import requests  # type: ignore
-from ghga_connector.core.file_operations import read_file_parts
-from ghga_connector.core.session import RequestsSession
+import httpx
+import typer
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from nacl.bindings import crypto_aead_chacha20poly1305_ietf_encrypt
 from pydantic import BaseSettings, Field, SecretStr, validator
@@ -45,16 +45,8 @@ from pydantic import BaseSettings, Field, SecretStr, validator
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.utils import load_config_yaml
 
-
-def configure_session() -> requests.Session:
-    """Configure session with exponential backoff retry"""
-    RequestsSession.configure(6)
-    return RequestsSession.session
-
-
 LOGGER = logging.getLogger("s3_upload")
 PART_SIZE = 16 * 1024**2
-SESSION = configure_session()
 
 
 def expand_env_vars_in_path(path: Path) -> Path:
@@ -187,7 +179,8 @@ class ChunkedDownloader:
         ):
             headers = {"Range": f"bytes={start}-{stop}"}
             LOGGER.debug("Downloading part number %i. %s", part_no, headers)
-            response = SESSION.get(download_url, timeout=60, headers=headers)
+            with httpx_client() as client:
+                response = client.get(download_url, timeout=60, headers=headers)
             yield response.content
 
     async def download(self):
@@ -399,7 +392,8 @@ class MultipartUpload:
                 object_id=self.file_id,
                 part_number=part_number,
             )
-            SESSION.put(url=upload_url, data=part)
+            with httpx_client() as client:
+                client.put(url=upload_url, content=part)
         except (  # pylint: disable=broad-except
             Exception,
             KeyboardInterrupt,
@@ -410,6 +404,54 @@ class MultipartUpload:
                 object_id=self.file_id,
             )
             raise exc
+
+
+class HttpxClientState:
+    """Helper class to make max_retries user configurable"""
+
+    max_retries: int
+
+    @classmethod
+    def configure(cls, max_retries: int):
+        """Configure client with exponential backoff retry (using httpx's 0.5 default)"""
+
+        # can't be negative - should we log this?
+        cls.max_retries = max(0, max_retries)
+
+
+@contextmanager
+def httpx_client():
+    """Yields a context manager httpx client and closes it afterward"""
+
+    transport = httpx.HTTPTransport(retries=HttpxClientState.max_retries)
+
+    with httpx.Client(transport=transport) as client:
+        yield client
+
+
+def read_file_parts(
+    file: BufferedReader, *, part_size: int, from_part: int = 1
+) -> Iterator[bytes]:
+    """
+    Returns an iterator to iterate through file parts of the given size (in bytes).
+
+    By default it start with the first part but you may also start from a specific part
+    in the middle of the file using the `from_part` argument. This might be useful to
+    resume an interrupted reading process.
+
+    Please note: opening and closing of the file MUST happen outside of this function.
+    """
+
+    initial_offset = part_size * (from_part - 1)
+    file.seek(initial_offset)
+
+    while True:
+        file_part = file.read(part_size)
+
+        if len(file_part) == 0:
+            return
+
+        yield file_part
 
 
 def objectstorage(config: Config):
@@ -527,6 +569,9 @@ async def async_main(input_path: Path, alias: str, config: Config):
     file_size = input_path.stat().st_size
     check_adjust_part_size(config=config, file_size=file_size)
 
+    # set retry policy
+    HttpxClientState.configure(5)
+
     uploader = ChunkedUploader(
         input_path=input_path,
         alias=alias,
@@ -568,7 +613,11 @@ async def async_main(input_path: Path, alias: str, config: Config):
     metadata.serialize(output_path)
 
 
-def main(input_path, alias: str, config_path: Path):
+def main(
+    input_path: Path = typer.Option(..., help="Local path of the input file"),
+    alias: str = typer.Option(..., help="A human readable file alias"),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+):
     """
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     objectstorage.
@@ -576,3 +625,8 @@ def main(input_path, alias: str, config_path: Path):
 
     config = load_config_yaml(config_path, Config)
     asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    typer.run(main)

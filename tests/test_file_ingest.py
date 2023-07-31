@@ -16,17 +16,51 @@
 import pytest
 import yaml
 from ghga_service_commons.utils.simple_token import generate_token
+from metldata.submission_registry.submission_store import SubmissionStore
 from pytest_httpx import HTTPXMock
 
+from ghga_datasteward_kit import models
 from ghga_datasteward_kit.cli.file import ingest_upload_metadata
-from ghga_datasteward_kit.file_ingest import file_ingest
-from tests.fixtures.ingest import IngestFixture, ingest_fixture  # noqa: F401
+from ghga_datasteward_kit.file_ingest import alias_to_accession, file_ingest
+from tests.fixtures.ingest import (  # noqa: F401
+    EXAMPLE_SUBMISSION,
+    IngestFixture,
+    ingest_fixture,
+)
 
 
-def id_generator():
-    """Generate dummy IDs."""
-    for i in [1, 2]:
-        yield f"test_{i}"
+@pytest.mark.asyncio
+async def test_alias_to_accession(ingest_fixture: IngestFixture):  # noqa: F811
+    """Test alias->accession mapping"""
+
+    submission_store = SubmissionStore(config=ingest_fixture.config)
+    metadata = models.OutputMetadata.load(input_path=ingest_fixture.file_path)
+
+    accession = alias_to_accession(
+        alias=metadata.alias,
+        map_fields=ingest_fixture.config.map_files_fields,
+        submission_store=submission_store,
+    )
+    example_accession = list(
+        EXAMPLE_SUBMISSION.accession_map[
+            ingest_fixture.config.map_files_fields[0]
+        ].values()
+    )[0]
+    assert accession == example_accession
+
+    with pytest.raises(ValueError):
+        alias_to_accession(
+            alias="invalid_alias",
+            map_fields=ingest_fixture.config.map_files_fields,
+            submission_store=submission_store,
+        )
+
+    with pytest.raises(ValueError):
+        alias_to_accession(
+            alias=metadata.alias,
+            map_fields=["study_files", "sample_files"],
+            submission_store=submission_store,
+        )
 
 
 @pytest.mark.asyncio
@@ -40,7 +74,6 @@ async def test_ingest_directly(
     httpx_mock.add_response(url=ingest_fixture.config.file_ingest_url, status_code=202)
     file_ingest(
         in_path=ingest_fixture.file_path,
-        file_id="test",
         token=token,
         config=ingest_fixture.config,
     )
@@ -53,7 +86,6 @@ async def test_ingest_directly(
     with pytest.raises(ValueError, match="Unauthorized"):
         file_ingest(
             in_path=ingest_fixture.file_path,
-            file_id="test",
             token=token,
             config=ingest_fixture.config,
         )
@@ -68,7 +100,6 @@ async def test_ingest_directly(
     ):
         file_ingest(
             in_path=ingest_fixture.file_path,
-            file_id="test",
             token=token,
             config=ingest_fixture.config,
         )
@@ -87,9 +118,10 @@ async def test_main(
 
     config = ingest_fixture.config.dict()
     config["input_dir"] = str(config["input_dir"])
+    config["submission_store_dir"] = str(config["submission_store_dir"])
 
     with config_path.open("w") as config_file:
-        yaml.dump(config, config_file)
+        yaml.safe_dump(config, config_file)
 
     monkeypatch.setattr("ghga_datasteward_kit.utils.read_token", generate_token)
 
