@@ -35,7 +35,7 @@ ghga-datasteward-kit files upload \
     --alias SEQ_FILE_A_R1.fastq.gz \
     --config-path ./config/file_config.yaml
 
-rm ./store/file_uploads/SEQ_FILE_A_R1.fastq.gz.json
+rm -f ./store/file_uploads/SEQ_FILE_A_R1.fastq.gz.json
 
 ghga-datasteward-kit files batch-upload \
     --tsv ./input/files.tsv \
@@ -56,6 +56,3 @@ ghga-datasteward-kit metadata submit \
 ghga-datasteward-kit metadata transform --config-path ./config/metadata_config.yaml
 
 ghga-datasteward-kit load --config-path ./config/loader_config.yaml
-
-rm -rf ./store
-rm ./input/metadata.json
