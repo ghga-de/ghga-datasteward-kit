@@ -466,33 +466,25 @@ def objectstorage(config: Config):
 
 def get_segments(part: bytes, segment_size: int):
     """Chunk part into cipher segments"""
-    num_segments = len(part) / segment_size
-    full_segments = int(num_segments)
+    full_segments = len(part) // segment_size
     segments = [
         part[i * segment_size : (i + 1) * segment_size] for i in range(full_segments)
     ]
-
-    # check if we have a remainder of bytes that we need to handle,
-    # i.e. non-matching boundaries between part and cipher segment size
-    incomplete_segment = b""
-    partial_segment_idx = math.ceil(num_segments)
-    if partial_segment_idx != full_segments:
-        incomplete_segment = part[full_segments * segment_size :]
+    # get potential remainder of bytes that we need to handle
+    # for non-matching boundaries between part and cipher segment size
+    incomplete_segment = part[full_segments * segment_size :]
     return segments, incomplete_segment
 
 
 def get_ranges(file_size: int, part_size: int):
     """Calculate part ranges"""
-    num_parts = file_size / part_size
-    num_parts_floor = int(num_parts)
-
+    num_parts = file_size // part_size
     byte_ranges = [
         (part_size * part_no, part_size * (part_no + 1) - 1)
-        for part_no in range(num_parts_floor)
+        for part_no in range(num_parts)
     ]
-    if math.ceil(num_parts) != num_parts_floor:
-        byte_ranges.append((part_size * num_parts_floor, file_size - 1))
-
+    if part_size * num_parts != file_size:
+        byte_ranges.append((part_size * num_parts, file_size - 1))
     return byte_ranges
 
 
@@ -517,7 +509,7 @@ def check_adjust_part_size(config: Config, file_size: int):
     elif part_size > upper_bound:
         part_size = upper_bound
 
-    # fixed list for now, maybe change to somthing more meaningful
+    # fixed list for now, maybe change to something more meaningful
     sizes_mib = [2**x for x in range(3, 13)]
     sizes = [size * 1024**2 for size in sizes_mib]
 
@@ -533,7 +525,7 @@ def check_adjust_part_size(config: Config, file_size: int):
                 "Could not find a valid part size that would allow to upload all file parts"
             )
 
-    if part_size != config.part_size:
+    if part_size != config.part_size * 1024**2:
         LOGGER.info(
             "Part size was adjusted from %iMiB to %iMiB.",
             config.part_size,
@@ -545,7 +537,7 @@ def check_adjust_part_size(config: Config, file_size: int):
 
 
 def check_output_path(output_path: Path):
-    """Check if we accidentally try to overwrite an alread existing metadata file"""
+    """Check if we accidentally try to overwrite an already existing metadata file"""
     if output_path.exists():
         msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
         handle_superficial_error(msg=msg)
