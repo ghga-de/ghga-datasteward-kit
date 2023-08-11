@@ -14,13 +14,18 @@
 # limitations under the License.
 
 """Metadata related CLI"""
+
+import logging
 from pathlib import Path
 
 import typer
+from ghga_transpiler.cli import transpile
 
 from ghga_datasteward_kit import metadata
 
 cli = typer.Typer()
+
+cli.command()(transpile)
 
 
 @cli.command()
@@ -48,12 +53,30 @@ def submit(
 ):
     """Submit metadata to local submission registry (no upload takes place)."""
 
+    logging.basicConfig(level=logging.CRITICAL)
     metadata.submit_metadata_from_path(
         submission_title=submission_title,
         submission_description=submission_description,
         metadata_path=metadata_path,
         config_path=config_path,
     )
+
+
+@cli.command()
+def generate_artifact_models(
+    config_path: Path = typer.Option(
+        ...,
+        help="Path to a config YAML.",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+    )
+):
+    """Run transformation workflow to generate artifact models."""
+
+    logging.basicConfig(level=logging.CRITICAL)
+    metadata.generate_artifact_models_from_path(config_path=config_path)
 
 
 @cli.command()
@@ -68,4 +91,6 @@ def transform(
     )
 ):
     """Run transformation workflow on submitted metadata to produce artifacts."""
+
+    logging.basicConfig(level=logging.CRITICAL)
     metadata.transform_metadata_from_path(config_path=config_path)

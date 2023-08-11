@@ -56,7 +56,7 @@ def save_token_and_hash():
 def read_token():
     """Read token from file"""
     assert_token_exist()
-    return TOKEN_PATH.read_text()
+    return TOKEN_PATH.read_text().strip()
 
 
 def assert_token_exist():

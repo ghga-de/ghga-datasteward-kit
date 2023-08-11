@@ -12,6 +12,7 @@ prefix_mapping:
 suffix_length: 14
 metadata_model_path: original_model.yaml
 submission_store_dir: submission_store
+artifact_model_dir: artifact_model
 workflow_config:
   add_accessions:
     accession_slot_name: accession

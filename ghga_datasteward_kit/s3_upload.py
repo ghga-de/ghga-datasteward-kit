@@ -20,44 +20,33 @@ objectstorage.
 """
 
 import asyncio
-import base64
-import hashlib
-import json
 import logging
 import math
 import os
 import subprocess  # nosec
 import sys
-from dataclasses import dataclass
+from contextlib import contextmanager
 from functools import partial
 from io import BufferedReader
 from pathlib import Path
 from time import time
-from typing import Any, Generator
+from typing import Generator, Iterator
 from uuid import uuid4
 
 import crypt4gh.header  # type: ignore
 import crypt4gh.keys  # type: ignore
 import crypt4gh.lib  # type: ignore
-import requests  # type: ignore
-from ghga_connector.core.file_operations import read_file_parts
-from ghga_connector.core.session import RequestsSession
+import httpx
+import typer
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
 from nacl.bindings import crypto_aead_chacha20poly1305_ietf_encrypt
 from pydantic import BaseSettings, Field, SecretStr, validator
 
+from ghga_datasteward_kit import models
 from ghga_datasteward_kit.utils import load_config_yaml
-
-
-def configure_session() -> requests.Session:
-    """Configure session with exponential backoff retry"""
-    RequestsSession.configure(6)
-    return RequestsSession.session
-
 
 LOGGER = logging.getLogger("s3_upload")
 PART_SIZE = 16 * 1024**2
-SESSION = configure_session()
 
 
 def expand_env_vars_in_path(path: Path) -> Path:
@@ -103,39 +92,6 @@ class Config(BaseSettings):
     ):  # pylint: disable=no-self-argument
         """Expand vars in path"""
         return expand_env_vars_in_path(output_dir)
-
-
-class Checksums:
-    """Container for checksum calculation"""
-
-    def __init__(self):
-        self.unencrypted_sha256 = hashlib.sha256()
-        self.encrypted_md5: list[str] = []
-        self.encrypted_sha256: list[str] = []
-
-    def __repr__(self) -> str:
-        return (
-            f"Unencrypted: {self.unencrypted_sha256.hexdigest()}\n"
-            + f"Encrypted MD5: {self.encrypted_md5}\n"
-            + f"Encrypted SHA256: {self.encrypted_sha256}"
-        )
-
-    def get(self):
-        """Return all checksums at the end of processing"""
-        return (
-            self.unencrypted_sha256.hexdigest(),
-            self.encrypted_md5,
-            self.encrypted_sha256,
-        )
-
-    def update_unencrypted(self, part: bytes):
-        """Update checksum for unencrypted file"""
-        self.unencrypted_sha256.update(part)
-
-    def update_encrypted(self, part: bytes):
-        """Update encrypted part checksums"""
-        self.encrypted_md5.append(hashlib.md5(part, usedforsecurity=False).hexdigest())
-        self.encrypted_sha256.append(hashlib.sha256(part).hexdigest())
 
 
 class ChunkedUploader:
@@ -204,7 +160,7 @@ class ChunkedDownloader:
         encrypted_file_size: int,
         file_secret: bytes,
         part_size: int,
-        target_checksums: Checksums,
+        target_checksums: models.Checksums,
     ) -> None:
         self.config = config
         self.storage = objectstorage(self.config)
@@ -223,7 +179,8 @@ class ChunkedDownloader:
         ):
             headers = {"Range": f"bytes={start}-{stop}"}
             LOGGER.debug("Downloading part number %i. %s", part_no, headers)
-            response = SESSION.get(download_url, timeout=60, headers=headers)
+            with httpx_client() as client:
+                response = client.get(download_url, timeout=60, headers=headers)
             yield response.content
 
     async def download(self):
@@ -240,7 +197,7 @@ class ChunkedDownloader:
         decryptor.process_parts(download_func)
         self.validate_checksums(checkums=decryptor.checksums)
 
-    def validate_checksums(self, checkums: Checksums):
+    def validate_checksums(self, checkums: models.Checksums):
         """Confirm checksums for upload and download match"""
         if not self.target_checksums.get() == checkums.get():
             raise ValueError(
@@ -253,7 +210,7 @@ class Decryptor:
     """Handles on the fly decryption and checksum calculation"""
 
     def __init__(self, file_secret: bytes, num_parts: int, part_size: int) -> None:
-        self.checksums = Checksums()
+        self.checksums = models.Checksums()
         self.file_secret = file_secret
         self.num_parts = num_parts
         self.part_size = part_size
@@ -324,7 +281,7 @@ class Encryptor:
 
     def __init__(self, part_size: int):
         self.part_size = part_size
-        self.checksums = Checksums()
+        self.checksums = models.Checksums()
         self.file_secret = os.urandom(32)
         self.encrypted_file_size = 0
 
@@ -388,53 +345,6 @@ class Encryptor:
             yield upload_buffer
 
 
-@dataclass
-class Metadata:  # pylint: disable=too-many-instance-attributes
-    """Container class for output metadata"""
-
-    alias: str
-    file_uuid: str
-    original_path: Path
-    part_size: int
-    file_secret: bytes
-    checksums: Checksums
-    unencrypted_size: int
-    encrypted_size: int
-
-    def serialize(self, output_dir: Path):
-        """Serialize metadata to file"""
-
-        output: dict[str, Any] = {}
-        output["Alias"] = self.alias
-        output["File UUID"] = self.file_uuid
-        output["Original filesystem path"] = str(self.original_path.resolve())
-        output["Part Size"] = f"{self.part_size // 1024**2} MiB"
-        output["Unencrypted file size"] = self.unencrypted_size
-        output["Encrypted file size"] = self.encrypted_size
-        output["Symmetric file encryption secret"] = base64.b64encode(
-            self.file_secret
-        ).decode("utf-8")
-        (
-            unencrypted_checksum,
-            encrypted_md5_checksums,
-            encrypted_sha256_checksums,
-        ) = self.checksums.get()
-        output["Unencrypted file checksum"] = unencrypted_checksum
-        output["Encrypted file part checksums (MD5)"] = encrypted_md5_checksums
-        output["Encrypted file part checksums (SHA256)"] = encrypted_sha256_checksums
-
-        if not output_dir.exists():
-            output_dir.mkdir(parents=True)
-
-        output_path = output_dir / f"{self.alias}.json"
-
-        LOGGER.info("(7/7) Writing metadata to %s.", output_path)
-        # owner read-only
-        with output_path.open("w") as file:
-            json.dump(output, file, indent=2)
-        os.chmod(path=output_path, mode=0o400)
-
-
 class MultipartUpload:
     """Context manager to handle init + complete/abort for S3 multipart upload"""
 
@@ -482,7 +392,8 @@ class MultipartUpload:
                 object_id=self.file_id,
                 part_number=part_number,
             )
-            SESSION.put(url=upload_url, data=part)
+            with httpx_client() as client:
+                client.put(url=upload_url, content=part)
         except (  # pylint: disable=broad-except
             Exception,
             KeyboardInterrupt,
@@ -493,6 +404,54 @@ class MultipartUpload:
                 object_id=self.file_id,
             )
             raise exc
+
+
+class HttpxClientState:
+    """Helper class to make max_retries user configurable"""
+
+    max_retries: int
+
+    @classmethod
+    def configure(cls, max_retries: int):
+        """Configure client with exponential backoff retry (using httpx's 0.5 default)"""
+
+        # can't be negative - should we log this?
+        cls.max_retries = max(0, max_retries)
+
+
+@contextmanager
+def httpx_client():
+    """Yields a context manager httpx client and closes it afterward"""
+
+    transport = httpx.HTTPTransport(retries=HttpxClientState.max_retries)
+
+    with httpx.Client(transport=transport) as client:
+        yield client
+
+
+def read_file_parts(
+    file: BufferedReader, *, part_size: int, from_part: int = 1
+) -> Iterator[bytes]:
+    """
+    Returns an iterator to iterate through file parts of the given size (in bytes).
+
+    By default it start with the first part but you may also start from a specific part
+    in the middle of the file using the `from_part` argument. This might be useful to
+    resume an interrupted reading process.
+
+    Please note: opening and closing of the file MUST happen outside of this function.
+    """
+
+    initial_offset = part_size * (from_part - 1)
+    file.seek(initial_offset)
+
+    while True:
+        file_part = file.read(part_size)
+
+        if len(file_part) == 0:
+            return
+
+        yield file_part
 
 
 def objectstorage(config: Config):
@@ -507,33 +466,25 @@ def objectstorage(config: Config):
 
 def get_segments(part: bytes, segment_size: int):
     """Chunk part into cipher segments"""
-    num_segments = len(part) / segment_size
-    full_segments = int(num_segments)
+    full_segments = len(part) // segment_size
     segments = [
         part[i * segment_size : (i + 1) * segment_size] for i in range(full_segments)
     ]
-
-    # check if we have a remainder of bytes that we need to handle,
-    # i.e. non-matching boundaries between part and cipher segment size
-    incomplete_segment = b""
-    partial_segment_idx = math.ceil(num_segments)
-    if partial_segment_idx != full_segments:
-        incomplete_segment = part[full_segments * segment_size :]
+    # get potential remainder of bytes that we need to handle
+    # for non-matching boundaries between part and cipher segment size
+    incomplete_segment = part[full_segments * segment_size :]
     return segments, incomplete_segment
 
 
 def get_ranges(file_size: int, part_size: int):
     """Calculate part ranges"""
-    num_parts = file_size / part_size
-    num_parts_floor = int(num_parts)
-
+    num_parts = file_size // part_size
     byte_ranges = [
         (part_size * part_no, part_size * (part_no + 1) - 1)
-        for part_no in range(num_parts_floor)
+        for part_no in range(num_parts)
     ]
-    if math.ceil(num_parts) != num_parts_floor:
-        byte_ranges.append((part_size * num_parts_floor, file_size - 1))
-
+    if part_size * num_parts != file_size:
+        byte_ranges.append((part_size * num_parts, file_size - 1))
     return byte_ranges
 
 
@@ -558,7 +509,7 @@ def check_adjust_part_size(config: Config, file_size: int):
     elif part_size > upper_bound:
         part_size = upper_bound
 
-    # fixed list for now, maybe change to somthing more meaningful
+    # fixed list for now, maybe change to something more meaningful
     sizes_mib = [2**x for x in range(3, 13)]
     sizes = [size * 1024**2 for size in sizes_mib]
 
@@ -574,7 +525,7 @@ def check_adjust_part_size(config: Config, file_size: int):
                 "Could not find a valid part size that would allow to upload all file parts"
             )
 
-    if part_size != config.part_size:
+    if part_size != config.part_size * 1024**2:
         LOGGER.info(
             "Part size was adjusted from %iMiB to %iMiB.",
             config.part_size,
@@ -586,7 +537,7 @@ def check_adjust_part_size(config: Config, file_size: int):
 
 
 def check_output_path(output_path: Path):
-    """Check if we accidentally try to overwrite an alread existing metadata file"""
+    """Check if we accidentally try to overwrite an already existing metadata file"""
     if output_path.exists():
         msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
         handle_superficial_error(msg=msg)
@@ -610,6 +561,9 @@ async def async_main(input_path: Path, alias: str, config: Config):
     file_size = input_path.stat().st_size
     check_adjust_part_size(config=config, file_size=file_size)
 
+    # set retry policy
+    HttpxClientState.configure(5)
+
     uploader = ChunkedUploader(
         input_path=input_path,
         alias=alias,
@@ -628,20 +582,34 @@ async def async_main(input_path: Path, alias: str, config: Config):
     )
     await downloader.download()
 
-    metadata = Metadata(
+    (
+        unencrypted_checksum,
+        encrypted_md5_checksums,
+        encrypted_sha256_checksums,
+    ) = uploader.encryptor.checksums.get()
+
+    metadata = models.OutputMetadata(
         alias=uploader.alias,
         file_uuid=uploader.file_id,
         original_path=input_path,
         part_size=config.part_size,
         file_secret=uploader.encryptor.file_secret,
-        checksums=uploader.encryptor.checksums,
+        unencrypted_checksum=unencrypted_checksum,
+        encrypted_md5_checksums=encrypted_md5_checksums,
+        encrypted_sha256_checksums=encrypted_sha256_checksums,
         unencrypted_size=file_size,
         encrypted_size=uploader.encryptor.encrypted_file_size,
     )
-    metadata.serialize(config.output_dir)
+    output_path = config.output_dir / f"{uploader.alias}.json"
+    LOGGER.info("(7/7) Writing metadata to %s.", output_path)
+    metadata.serialize(output_path)
 
 
-def main(input_path, alias: str, config_path: Path):
+def main(
+    input_path: Path = typer.Option(..., help="Local path of the input file"),
+    alias: str = typer.Option(..., help="A human readable file alias"),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+):
     """
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     objectstorage.
@@ -649,3 +617,8 @@ def main(input_path, alias: str, config_path: Path):
 
     config = load_config_yaml(config_path, Config)
     asyncio.run(async_main(input_path=input_path, alias=alias, config=config))
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    typer.run(main)
