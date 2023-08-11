@@ -133,3 +133,6 @@ dmypy.json
 
 # ingore vscode settings:
 .vscode/
+
+# Mac
+.DS_Store
