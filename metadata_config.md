@@ -34,6 +34,8 @@
 ## Definitions
 
 
+- **`NormalizationConfig`** *(object)*: The normalization transformation does not require configuration.
+
 - **`AccessionAdditionConfig`** *(object)*: Config to add accessions to a model and associated metadata. Cannot contain additional properties.
 
   - **`accession_slot_name`** *(string)*: The name of the slot to contain the accessions to. Default: `accession`.
@@ -107,7 +109,40 @@ a list of InferredReferences. Cannot contain additional properties.
 
       - **Items** *(string)*
 
+- **`AggregationOperation`** *(object)*: A model for a single aggregation operation executed on one or multiple
+branches in the data described by a path in the model.
+
+  - **`input_paths`** *(array)*
+
+    - **Items** *(string)*
+
+  - **`output_path`** *(string)*
+
+  - **`visit_only_once`** *(array)*
+
+    - **Items** *(string)*
+
+  - **`function`**
+
+- **`Aggregation`** *(object)*: Model for an aggregation.
+
+  - **`input`** *(string)*
+
+  - **`output`** *(string)*
+
+  - **`operations`** *(array)*
+
+    - **Items**: Refer to *#/definitions/AggregationOperation*.
+
+- **`AggregateConfig`** *(object)*: A model for the configuration of the aggregate transformation. Cannot contain additional properties.
+
+  - **`aggregations`** *(array)*
+
+    - **Items**: Refer to *#/definitions/Aggregation*.
+
 - **`SpecificWorkflowConfig`** *(object)*: A base class for workflow configs.
+
+  - **`normalize_model`**: Refer to *#/definitions/NormalizationConfig*.
 
   - **`add_accessions`**: Refer to *#/definitions/AccessionAdditionConfig*.
 
@@ -118,5 +153,7 @@ a list of InferredReferences. Cannot contain additional properties.
   - **`merge_dataset_file_lists`**: Refer to *#/definitions/SlotMergingConfig*.
 
   - **`remove_restricted_metadata`**: Refer to *#/definitions/SlotDeletionConfig*.
+
+  - **`aggregate_stats`**: Refer to *#/definitions/AggregateConfig*.
 
   - **`embed_public`**: Refer to *#/definitions/CustomEmbeddingConfig*.

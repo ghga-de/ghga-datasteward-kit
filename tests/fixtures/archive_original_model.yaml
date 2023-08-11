@@ -2,7 +2,7 @@ id: https://w3id.org/GHGA-Submission-Metadata-Schema
 name: GHGA-Submission-Metadata-Schema
 description: >-
   The submission centric metadata schema for the German Human Genome-Phenome Archive (GHGA).
-version: 0.10.0
+version: 1.1.1
 imports:
   - linkml:types
 
@@ -10,13 +10,13 @@ prefixes:
   COB: http://purl.obolibrary.org/obo/COB_
   EFO: http://www.ebi.ac.uk/efo/EFO_
   GHGA: https://w3id.org/GHGA/
+  HANCESTRO: http://purl.obolibrary.org/obo/HANCESTRO_
   SIO: http://semanticscience.org/resource/SIO_
   biolink: https://w3id.org/biolink/vocab/
   linkml: https://w3id.org/linkml/
   GSSO: http://purl.obolibrary.org/obo/gsso/releases/2.0.5/gsso.owl
   DUO: http://purl.obolibrary.org/obo/duo/releases/2021-02-23/duo.owl
-  HANCESTRO: http://purl.obolibrary.org/obo/hancestro/releases/2022-05-12/hancestro.owl
-  SNOMED: http://snomed.info/sct/900000000000207008/version/20200131
+  NCIT: http://purl.obolibrary.org/obo/ncit/releases/2022-08-19/ncit.owl
 
 default_prefix: GHGA
 default_range: string
@@ -168,7 +168,6 @@ classes:
       - title
       - description
       - name
-      - description
       - disease_or_healthy
       - case_control_status
       - mutant_or_wildtype
@@ -255,7 +254,6 @@ classes:
       - instrument_model
       - sequencing_center
       - sequencing_read_length
-      - forward_or_reverse
       - target_coverage
       - flow_cell_id
       - flow_cell_type
@@ -266,17 +264,15 @@ classes:
       - cell_barcode_offset
       - cell_barcode_size
       - sample_barcode_read
-      - index_sequence
-      - lane_number
     slot_usage:
       instrument_model:
         required: true
       type:
         description: >-
-          Name of the library_preparation Protocol (eg: mRNA-seq,Whole exome long-read sequencing etc).
+          Type of the sequencing Protocol (eg: mRNA-seq, Whole exome long-read sequencing etc).
       description:
         description: >-
-          Description about the sequencing Protocol (eg: mRNA-seq,Whole exome long-read sequencing etc).
+          Description about the sequencing Protocol (eg: mRNA-seq, Whole exome long-read sequencing etc).
         required: true
       attributes:
         description: >-
@@ -284,19 +280,10 @@ classes:
       sequencing_center:
         required: false
         recommended: true
-      forward_or_reverse:
-        required: false
-        recommended: true
       sequencing_read_length:
         required: false
-      index_sequence:
-        required: false
-        recommended: true
       target_coverage:
         required: false
-      lane_number:
-        required: false
-        recommended: true
       flow_cell_id:
         required: false
         recommended: true
@@ -335,11 +322,12 @@ classes:
       - title
       - description
       - name
-      - description
       - sequencing_run_id
       - sequencing_lane_id
       - sequencing_machine_id
       - sequencing_experiment
+      - index_sequence
+      - lane_number
       - sample
     slot_usage:
       name:
@@ -361,6 +349,13 @@ classes:
       sequencing_experiment:
         required: true
         inlined: false
+      lane_number:
+        required: false
+        recommended: true
+      index_sequence:
+        required: false
+        recommended: true
+
       sample:
         required: true
         inlined: false
@@ -381,6 +376,7 @@ classes:
       - isolation
       - storage
       - individual
+      - age_at_sampling
       - vital_status_at_sampling
       - tissue
     slot_usage:
@@ -404,6 +400,8 @@ classes:
         description: >-
           The Individual entity from which this Biospecimen was derived.
         inlined: false
+        required: true
+      age_at_sampling:
         required: true
       vital_status_at_sampling:
         required: false
@@ -440,6 +438,8 @@ classes:
         description: >-
           The type of sample.
         range: SampleTypeEnum
+        in_subset:
+          - ontology
         required: false
       description:
         description: >-
@@ -448,6 +448,9 @@ classes:
           Protocol followed for processing the sample etc).
         required: true
       storage:
+        required: false
+        recommended: true
+      isolation:
         required: false
         recommended: true
       xref:
@@ -473,8 +476,6 @@ classes:
     slots:
       - sex
       - karyotype
-      - age_at_sampling
-      - vital_status
       - geographical_region
       - ancestries
       - phenotypic_features
@@ -483,11 +484,6 @@ classes:
         required: true
       karyotype:
         required: false
-      age_at_sampling:
-        required: true
-      vital_status:
-        description: Last known Vital Status of an Individual.
-        required: true
       geographical_region:
         required: false
       ancestries:
@@ -531,6 +527,7 @@ classes:
       - format
       - size
       - checksum
+      - forward_or_reverse
       - checksum_type
       - dataset
     slot_usage:
@@ -549,6 +546,9 @@ classes:
       dataset:
         inlined: false
         required: true
+      forward_or_reverse:
+        required: false
+        recommended: true
 
   StudyFile:
     is_a: File
@@ -608,9 +608,6 @@ classes:
       - reference_genome
       - reference_chromosome
     slot_usage:
-      alias:
-        description: >-
-          An alias uniquely identifying this Analysis entitiy.
       type:
         description: >-
           The type of the Analysis. Either Reference Alignment (BAM) or Sequence Variation (VCF)
@@ -640,13 +637,13 @@ classes:
         required: true
       study_input_files:
         inlined: false
-        required: true
+        required: false
       sample_input_files:
         inlined: false
-        required: true
+        required: false
       sequencing_process_input_files:
         inlined: false
-        required: true
+        required: false
 
   Dataset:
     mixins:
@@ -721,7 +718,6 @@ classes:
           Data use permission associated with a policy. Typically one or more terms from DUO
           and should be descendants of 'DUO:0000001 data use permission'.
         required: true
-        recommended: true
       data_use_modifiers:
         description: >-
           Modifier for Data use permission associated with a policy.
@@ -1060,7 +1056,8 @@ slots:
 
   phenotypic_features:
     description: Phenotypic feature concepts that the entity is associated with.
-    pattern: .*
+    in_subset:
+      - ontology
     # range: PhenotypicFeaturesEnum
     multivalued: true
 
@@ -1079,7 +1076,8 @@ slots:
   ancestries:
     description: >-
       A person's descent or lineage, from a person or from a population.
-    pattern: HANCESTRO:.*
+    in_subset:
+      - ontology
     # range: AncestryEnum
     multivalued: true
 
@@ -1360,7 +1358,8 @@ slots:
   isolation:
     description: >-
       Method or device employed for collecting/isolating a biospecimen or a sample.
-    pattern: SNOMED:.*
+    in_subset:
+      - ontology
     # range: IsolationEnum
 
   storage:
@@ -1392,7 +1391,8 @@ slots:
     description: >-
       The geographical region where the Individual is located.
       Any demarcated area of the Earth; may be determined by both natural and human boundaries.
-    pattern: HANCESTRO:.*
+    in_subset:
+      - ontology
     # range: GeographicalRegionEnum
 
   vital_status:
@@ -1400,6 +1400,7 @@ slots:
       The state or condition of being living or deceased;
       also includes the case where the vital status is unknown.
     range: VitalStatusEnum
+    deprecated: redundant, solved by use of vital_status_at_sampling at the Biospecimen level
 
   sex:
     description: >-
@@ -1477,13 +1478,20 @@ slots:
       DOI identifier of a publication.
 
   tissue:
-    pattern: BTO:.*
+    in_subset:
+      - ontology
     # range: TissueEnum
 
   trios:
     description: The Trios associated with an entity.
     range: Trio
     multivalued: true
+
+subsets:
+  ontology:
+    description: >-
+      This slot is part of an ontology which is currently not otherwise encoded
+      in the schema.
 
 enums:
   DataUseModifierEnum:
