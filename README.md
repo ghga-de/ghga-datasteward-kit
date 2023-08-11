@@ -20,7 +20,7 @@ ghga-datasteward-kit --help
 
 The following paragraphs provide additional help for using the different commands:
 
-### s3-upload
+### files (batch-)upload
 
 This command facilitates encrypting files using Crypt4GH and uploading the encrypted
 content to a (remote) S3-compatible object storage.
@@ -36,15 +36,10 @@ This process consists of multiple steps:
 The user needs to provide a config yaml containing information as described
 [here](./s3_upload_config.md).
 
-In addition to these general configuration options, each invocation of this script needs
-2 additional parameters passed to the command line:
-1. The path to the file on the local file system
-2. A human readable alias for the file (choose a unique one)
+An overview of important information about each the upload is written to a file called
+\<alias\>.json in the output directory.
 
-An output file is written to the specified output directory under \<alias\>.json.
-If such a file already exists, an error is thrown.
-
-The resulting file is owner read-only and contains the following information:
+It contains the following information:
 1. The file alias
 2. A unique identifier for the file
 3. The local file path
@@ -56,9 +51,20 @@ The resulting file is owner read-only and contains the following information:
 Attention: Keep this output file in a safe, private location.
 If this file is lost, the uploaded file content becomes inaccessible.
 
+## metadata
+
+The metadata label groups metadata related commands.
+
+Some of them require a configuration file as described [here](./metadata_config.md).
+
+# load
+
+The load command makes files and metadata available to user in the running system.
+
+It needs a configuration parameters as described [here](./load_config.md).
 ### generate-catalog-accessions
 
-A command for generating accessions for the metadata catalog. Accessions wiil be
+A command for generating accessions for the metadata catalog. Accessions will be
 stored in a text file.
 
 ## Development

@@ -27,3 +27,37 @@ services:
     user: vscode
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+
+
+  localstack:
+    image: localstack/localstack
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: eu-west-1
+      AWS_DEFAULT_REGION: eu-west-1
+      # accessible at localhost
+      HOSTNAME_EXTERNAL: localhost
+      USE_SSL: "false"
+      DATA_DIR: /var/lib/localstack/data
+      DEBUG: 1
+    volumes:
+      - type: volume
+        source: s3_fs
+        target: /var/lib/localstack
+        volume:
+          nocopy: true
+    ports:
+      - "4566:4566"
+    expose:
+      - "4566"
+
+  mongodb:
+    image: mongo:5.0.4
+    restart: unless-stopped
+    volumes:
+      - mongo_fs:/data/db
+
+volumes:
+  s3_fs: {}
+  mongo_fs: {}

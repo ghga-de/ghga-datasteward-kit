@@ -69,6 +69,7 @@ EXCLUDE = [
     ".mandatory_files_ignore",
     ".deprecated_files",
     ".deprecated_files_ignore",
+    "demo",
 ]
 
 # exclude file by file ending from license header check:

@@ -24,27 +24,41 @@ import pytest
 
 from ghga_datasteward_kit.cli.metadata import submit, transform
 from tests.fixtures.metadata import (
+    ARCHIVE_METADATA_CONFIG_PATH,
+    ARCHIVE_ORIGINAL_METADATA_PATH,
+    ARCHIVE_ORIGINAL_MODEL_PATH,
     METADATA_CONFIG_PATH,
     ORIGINAL_METADATA_PATH,
     ORIGINAL_MODEL_PATH,
 )
 
 
-@pytest.fixture
-def workdir(tmp_path: Path) -> Generator[Path, None, None]:
-    """Prepare a work directory for"""
-    tmp_path.joinpath("event_store").mkdir()
-    tmp_path.joinpath("submission_store").mkdir()
-    tmp_path.joinpath("accession_store").touch()
-    shutil.copyfile(ORIGINAL_MODEL_PATH, tmp_path / "original_model.yaml")
-    cwd = os.getcwd()
-    os.chdir(tmp_path)
-    yield tmp_path
-    os.chdir(cwd)
+def workdir_factory(original_model_path: Path):
+    """Prepare a work directory for the provided model."""
+
+    @pytest.fixture
+    def workdir(tmp_path: Path) -> Generator[Path, None, None]:
+        """Prepare a work directory for"""
+        tmp_path.joinpath("event_store").mkdir()
+        tmp_path.joinpath("submission_store").mkdir()
+        tmp_path.joinpath("accession_store").touch()
+        tmp_path.joinpath("artifact_model").touch()
+        shutil.copyfile(original_model_path, tmp_path / "original_model.yaml")
+        cwd = os.getcwd()
+        os.chdir(tmp_path)
+        yield tmp_path
+        os.chdir(cwd)
+
+    return workdir
 
 
-def test_happy(workdir):
+example_workdir = workdir_factory(ORIGINAL_MODEL_PATH)
+archive_workdir = workdir_factory(ARCHIVE_ORIGINAL_MODEL_PATH)
+
+
+def test_happy(example_workdir: Path):
     """Test the 'happy' test case that is expected to run through without errors"""
+
     submit(
         submission_title="Test Title",
         submission_description="Test Description",
@@ -53,3 +67,16 @@ def test_happy(workdir):
     )
 
     transform(config_path=METADATA_CONFIG_PATH)
+
+
+def test_archive_happy(archive_workdir: Path):
+    """Test the 'happy' test case that is expected to run through without errors"""
+
+    submit(
+        submission_title="Test Title",
+        submission_description="Test Description",
+        metadata_path=ARCHIVE_ORIGINAL_METADATA_PATH,
+        config_path=ARCHIVE_METADATA_CONFIG_PATH,
+    )
+
+    transform(config_path=ARCHIVE_METADATA_CONFIG_PATH)

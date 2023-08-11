@@ -27,6 +27,8 @@
 
 - **`submission_store_dir`** *(string)*: The directory where the submission JSONs will be stored.
 
+- **`artifact_model_dir`** *(string)*: Path to save the artifact models and artifact infos to.
+
 - **`workflow_config`**: Configuration for the metadata transfornation workflow.
 
 ## Definitions

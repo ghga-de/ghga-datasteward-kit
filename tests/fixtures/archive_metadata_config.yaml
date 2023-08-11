@@ -1,0 +1,96 @@
+source_event_topic: source_events
+source_event_type: source_event
+event_store_path: event_store
+artifact_topic_prefix: artifact
+accession_store_path: accession_store
+prefix_mapping:
+  Study: GHGAS
+  StudyFile: GHGAF
+  SampleFile: GHGAF
+  SequencingProcessFile: GHGAF
+  AnalysisProcessOutputFile: GHGAF
+  DataAccessPolicy: GHGAP
+  DataAccessCommittee: GHGAC
+  Analysis: GHGAZ
+  Publication: GHGAU
+  AnalysisProcess: GHGAR
+  SequencingExperiment: GHGAX
+  Condition: GHGAK
+  LibraryPreparationProtocol: GHGAL
+  SequencingProtocol: GHGAQ
+  SequencingProcess: GHGAO
+  Individual: GHGAI
+  Trio: GHGAT
+  Biospecimen: GHGAM
+  Sample: GHGAN
+  Dataset: GHGAD
+suffix_length: 14
+metadata_model_path: original_model.yaml
+submission_store_dir: submission_store
+artifact_model_dir: artifact_model
+workflow_config:
+  add_accessions:
+    accession_slot_name: accession
+    accession_slot_description: The accession for an entity.
+  embed_restricted:
+    embedding_profiles:
+      - target_class: EmbeddedDataset
+        source_class: Dataset
+        description: "Fully embedded dataset."
+        embedded_references:
+          data_access_policy:
+            target_class: EmbeddedDataAccessPolicy
+            source_class: DataAccessPolicy
+            description: "Fully embedded data access policy."
+            embedded_references:
+              data_access_committee: DataAccessCommittee
+  infer_multiway_references:
+    inferred_ref_map:
+      Dataset:
+        study_files:
+          path: "Dataset<(dataset)StudyFile"
+          multivalued: true
+        studies:
+          path: "Dataset<(dataset)StudyFile(study)>Study"
+          multivalued: true
+        sample_files:
+          path: "Dataset<(dataset)SampleFile"
+          multivalued: true
+        samples:
+          path: "Dataset<(dataset)SampleFile(sample)>Sample"
+          multivalued: true
+  merge_dataset_file_lists:
+    merge_instructions:
+      - class_name: Dataset
+        source_slots: [study_files, sample_files]
+        target_slot: files
+        target_description: >-
+          All files associated with the dataset.
+  remove_restricted_metadata:
+    slots_to_delete: {}
+  embed_public:
+    embedding_profiles:
+      - target_class: EmbeddedDataset
+        source_class: Dataset
+        description: "Fully embedded dataset."
+        embedded_references:
+          data_access_policy:
+            target_class: EmbeddedDataAccessPolicy
+            source_class: DataAccessPolicy
+            description: "Fully embedded data access policy."
+            embedded_references:
+              data_access_committee: DataAccessCommittee
+          studies: Study
+          study_files:
+            target_class: EmbeddedStudyFile
+            source_class: StudyFile
+            description: "Fully embedded study file."
+            embedded_references:
+              study: Study
+          samples: Sample
+          sample_files:
+            target_class: EmbeddedSampleFile
+            source_class: SampleFile
+            description: "Fully embedded sample file."
+            embedded_references:
+              sample: Sample

@@ -20,3 +20,7 @@ from tests.fixtures.utils import BASE_DIR
 METADATA_CONFIG_PATH = BASE_DIR / "metadata_config.yaml"
 ORIGINAL_METADATA_PATH = BASE_DIR / "original_metadata.yaml"
 ORIGINAL_MODEL_PATH = BASE_DIR / "original_model.yaml"
+
+ARCHIVE_METADATA_CONFIG_PATH = BASE_DIR / "archive_metadata_config.yaml"
+ARCHIVE_ORIGINAL_METADATA_PATH = BASE_DIR / "archive_original_metadata.yaml"
+ARCHIVE_ORIGINAL_MODEL_PATH = BASE_DIR / "archive_original_model.yaml"
