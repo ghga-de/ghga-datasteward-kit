@@ -134,5 +134,7 @@ dmypy.json
 # ingore vscode settings:
 .vscode/
 
-# Mac
+# desktop settings and thumbnails
 .DS_Store
+desktop.ini
+thumbs.db
