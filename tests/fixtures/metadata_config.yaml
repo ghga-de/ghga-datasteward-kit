@@ -14,6 +14,9 @@ metadata_model_path: original_model.yaml
 submission_store_dir: submission_store
 artifact_model_dir: artifact_model
 workflow_config:
+  normalize_model: {}
+  aggregate_stats:
+    aggregations: []
   add_accessions:
     accession_slot_name: accession
     accession_slot_description: The accession for an entity.

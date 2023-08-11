@@ -3,6 +3,9 @@ source_event_type: source_event
 event_store_path: event_store
 artifact_topic_prefix: artifact
 accession_store_path: accession_store
+metadata_model_path: original_model.yaml
+submission_store_dir: submission_store
+artifact_model_dir: artifact_model
 prefix_mapping:
   Study: GHGAS
   StudyFile: GHGAF
@@ -25,10 +28,110 @@ prefix_mapping:
   Sample: GHGAN
   Dataset: GHGAD
 suffix_length: 14
-metadata_model_path: original_model.yaml
-submission_store_dir: submission_store
-artifact_model_dir: artifact_model
 workflow_config:
+  normalize_model: {}
+  aggregate_stats:
+    aggregations:
+      - input: Dataset
+        output: DatasetStats
+        operations:
+          - output_path: title
+            input_paths:
+              - title
+            function: StringCopy
+          - output_path: types
+            input_paths:
+              - types
+            function: StringListCopy
+          - output_path: dac_email
+            input_paths:
+              - data_access_policy.data_access_committee.email
+            function: StringCopy
+          - output_path: sample_summary.count
+            input_paths:
+              - study_files.study.conditions.samples
+              - sample_files.sample
+              - sequencing_process_files.sequencing_process.sample
+              - analysis_process_output_files.analysis_process.study_input_files.study.conditions.samples
+              - analysis_process_output_files.analysis_process.sample_input_files.sample
+              - analysis_process_output_files.analysis_process.sequencing_process_input_files.sequencing_process.sample
+            function: Count
+            visit_only_once:
+              - Sample
+          - output_path: sample_summary.stats.sex
+            input_paths:
+              - study_files.study.conditions.samples.biospecimen.individual.sex
+              - sample_files.sample.biospecimen.individual.sex
+              - sequencing_process_files.sequencing_process.sample.biospecimen.individual.sex
+            function: StringElementCount
+            visit_only_once:
+              - Individual
+          - output_path: sample_summary.stats.tissues
+            input_paths:
+              - study_files.study.conditions.samples.biospecimen.tissue
+              - sample_files.sample.biospecimen.tissue
+              - sequencing_process_files.sequencing_process.sample.biospecimen.tissue
+            function: StringElementCount
+            visit_only_once:
+              - Biospecimen
+          - output_path: sample_summary.stats.phenotypes
+            input_paths:
+              - study_files.study.conditions.samples.biospecimen.individual.phenotypic_features
+              - sample_files.sample.biospecimen.individual.phenotypic_features
+              - sequencing_process_files.sequencing_process.sample.biospecimen.individual.phenotypic_features
+            function: StringElementCount
+            visit_only_once:
+              - Biospecimen
+          - output_path: study_summary.count
+            input_paths:
+              - study_files.study
+              - sample_files.sample.condition.study
+              - sequencing_process_files.sequencing_process.sample.condition.study
+            function: Count
+            visit_only_once:
+              - Study
+          - output_path: study_summary.stats.accession
+            input_paths:
+              - study_files.study.accession
+              - sample_files.sample.condition.study.accession
+              - sequencing_process_files.sequencing_process.sample.condition.study.accession
+            function: StringCopy
+            visit_only_once:
+              - Study
+          - output_path: study_summary.stats.title
+            input_paths:
+              - study_files.study.title
+              - sample_files.sample.condition.study.title
+              - sequencing_process_files.sequencing_process.sample.condition.study.title
+            function: StringCopy
+            visit_only_once:
+              - Study
+          - output_path: experiment_summary.count
+            input_paths:
+              - sequencing_process_files.sequencing_process.sequencing_experiment
+            function: Count
+            visit_only_once:
+              - SequencingExperiment
+          - output_path: experiment_summary.stats.protocol
+            input_paths:
+              - sequencing_process_files.sequencing_process.sequencing_experiment.sequencing_protocol.instrument_model
+            function: StringElementCount
+            visit_only_once:
+              - SequencingProtocol
+          - output_path: file_summary.count
+            input_paths:
+              - sequencing_process_files
+              - sample_files
+              - study_files
+              - analysis_process_output_files
+            function: Count
+          - output_path: file_summary.stats.format
+            input_paths:
+              - sequencing_process_files.format
+              - sample_files.format
+              - study_files.format
+              - analysis_process_output_files.format
+            function: StringElementCount
   add_accessions:
     accession_slot_name: accession
     accession_slot_description: The accession for an entity.
@@ -46,7 +149,66 @@ workflow_config:
               data_access_committee: DataAccessCommittee
   infer_multiway_references:
     inferred_ref_map:
+      Analysis:
+        analysis_processes:
+          path: "Analysis<(analysis)AnalysisProcess"
+          multivalued: True
+      AnalysisProcess:
+        analysis_process_output_files:
+          path: "AnalysisProcess<(analysis_process)AnalysisProcessOutputFile"
+          multivalued: True
+      SequencingProtocol:
+        sequencing_experiments:
+          path: "SequencingProtocol<(sequencing_protocol)SequencingExperiment"
+          multivalued: True
+      SequencingProcess:
+        sequencing_process_files:
+          path: "SequencingProcess<(sequencing_process)SequencingProcessFile"
+          multivalued: True
+      SequencingExperiment:
+        sequencing_processes:
+          path: "SequencingExperiment<(sequencing_experiment)SequencingProcess"
+          multivalued: True
+      LibraryPreparationProtocol:
+        sequencing_experiments:
+          path: "LibraryPreparationProtocol<(library_preparation_protocol)SequencingExperiment"
+          multivalued: True
+      Condition:
+        samples:
+          path: "Condition<(condition)Sample"
+          multivalued: True
+      Sample:
+        sample_files:
+          path: "Sample<(sample)SampleFile"
+          multivalued: True
+        sequencing_processes:
+          path: "Sample<(sample)SequencingProcess"
+          multivalued: True
+      Study:
+        conditions:
+          path: "Study<(study)Condition"
+          multivalued: True
+        study_files:
+          path: "Study<(study)StudyFile"
+          multivalued: True
+        publications:
+          path: "Study<(study)Publication"
+          multivalued: True
+      Biospecimen:
+        samples:
+          path: "Biospecimen<(biospecimen)Sample"
+          multivalued: True
+      Individual:
+        biospecimens:
+          path: "Individual<(individual)Biospecimen"
+          multivalued: True
       Dataset:
+        analysis_process_output_files:
+          path: "Dataset<(dataset)AnalysisProcessOutputFile"
+          multivalued: true
+        sequencing_process_files:
+          path: "Dataset<(dataset)SequencingProcessFile"
+          multivalued: true
         study_files:
           path: "Dataset<(dataset)StudyFile"
           multivalued: true
@@ -94,3 +256,15 @@ workflow_config:
             description: "Fully embedded sample file."
             embedded_references:
               sample: Sample
+          sequencing_process_files:
+            target_class: EmbeddedSequencingProcessFile
+            source_class: SequencingProcessFile
+            description: "Fully embedded sequencing process file."
+            embedded_references:
+              sequencing_process: SequencingProcess
+          analysis_process_output_files:
+            target_class: EmbeddedAnalysisProcessOutputFile
+            source_class: AnalysisProcessOutputFile
+            description: "Fully embedded analysis process output file."
+            embedded_references:
+              analysis_process: AnalysisProcess
