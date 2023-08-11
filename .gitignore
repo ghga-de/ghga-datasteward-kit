@@ -133,3 +133,8 @@ dmypy.json
 
 # ingore vscode settings:
 .vscode/
+
+# desktop settings and thumbnails
+.DS_Store
+desktop.ini
+thumbs.db
