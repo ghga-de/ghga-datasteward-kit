@@ -24,6 +24,17 @@ cli = typer.Typer()
 
 
 @cli.command()
+def legacy_upload(
+    input_path: Path = typer.Option(..., help="Local path of the input file"),
+    alias: str = typer.Option(..., help="A human readable file alias"),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+):
+    """Upload a single file to S3."""
+
+    s3_upload.legacy_main(input_path=input_path, alias=alias, config_path=config_path)
+
+
+@cli.command()
 def upload(
     input_path: Path = typer.Option(..., help="Local path of the input file"),
     alias: str = typer.Option(..., help="A human readable file alias"),
@@ -32,6 +43,32 @@ def upload(
     """Upload a single file to S3."""
 
     s3_upload.main(input_path=input_path, alias=alias, config_path=config_path)
+
+
+@cli.command()
+def legacy_batch_upload(
+    tsv: Path = typer.Option(
+        ...,
+        help=(
+            "Path to a tsv file with the first column containing the file path and the"
+            + " second column containing the file alias."
+        ),
+    ),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+    parallel_processes: int = typer.Option(..., help="Number of parallel uploads."),
+    dry_run: bool = typer.Option(
+        False,
+        help=("Only print commands for each file." + " No uploads are performed."),
+    ),
+):
+    """Upload multiple files to S3."""
+
+    batch_s3_upload.main(
+        file_overview_tsv=tsv,
+        config_path=config_path,
+        parallel_processes=parallel_processes,
+        dry_run=dry_run,
+    )
 
 
 @cli.command()
@@ -58,6 +95,22 @@ def batch_upload(
         parallel_processes=parallel_processes,
         dry_run=dry_run,
     )
+
+
+@cli.command()
+def legacy_ingest_upload_metadata(
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+):
+    """Upload all output metdata files from the given directory to the file ingest service"""
+
+    errors = file_ingest.main(config_path=config_path)
+
+    if errors:
+        print(f"Encountered {len(errors)} errors during processing.")
+        for file_path, cause in errors.items():
+            print(f" -{file_path}: {cause}")
+    else:
+        print("Sucessfully sent all file upload metadata for ingest.")
 
 
 @cli.command()

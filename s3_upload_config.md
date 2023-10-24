@@ -18,3 +18,7 @@
 - **`part_size`** *(integer)*: Upload part size in MiB. Has to be between 5 and 5120. Default: `16`.
 
 - **`output_dir`** *(string)*: Directory for the output metadata file.
+
+- **`secret_ingest_pubkey`** *(string)*: Public key used for encryption of the payload.
+
+- **`secret_ingest_url`** *(string)*: Base URL under which the /ingest_secret endpoint is available.
