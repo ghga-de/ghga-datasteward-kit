@@ -18,6 +18,7 @@ import base64
 import hashlib
 import json
 import os
+from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -59,6 +60,40 @@ class Checksums:
         self.encrypted_sha256.append(hashlib.sha256(part).hexdigest())
 
 
+class FileUploadMetadataBase(BaseModel):
+    """Decrypted payload model for S3 upload script output"""
+
+    # get all data for now, optimize later if we don't need all of it
+    file_id: str
+    object_id: str
+    part_size: int
+    unencrypted_size: int
+    encrypted_size: int
+    unencrypted_checksum: str
+    encrypted_md5_checksums: list[str]
+    encrypted_sha256_checksums: list[str]
+
+    def encrypt_metadata(self, pubkey: str):
+        """Create payload by encryption FileUploadMetadata"""
+
+        payload = self.json()
+        encrypted = encrypt(data=payload, key=pubkey)
+
+        return EncryptedPayload(payload=encrypted)
+
+
+class LegacyFileUploadMetadata(FileUploadMetadataBase):
+    """Decrypted payload model for S3 upload script output"""
+
+    file_secret: str
+
+
+class FileUploadMetadata(FileUploadMetadataBase):
+    """Decrypted payload model for S3 upload script output"""
+
+    secret_id: str
+
+
 @dataclass
 class OutputMetadataBase:  # pylint: disable=too-many-instance-attributes
     """Container class for output metadata"""
@@ -72,6 +107,10 @@ class OutputMetadataBase:  # pylint: disable=too-many-instance-attributes
     encrypted_sha256_checksums: list[str]
     unencrypted_size: int
     encrypted_size: int
+
+    @abstractmethod
+    def to_upload_metadata(self, file_id: str) -> FileUploadMetadataBase:
+        """Convert internal output file representation to unencrypted request model"""
 
 
 @dataclass
@@ -216,40 +255,6 @@ class OutputMetadata(
             unencrypted_size=int(data["Unencrypted file size"]),
             encrypted_size=int(data["Encrypted file size"]),
         )
-
-
-class FileUploadMetadataBase(BaseModel):
-    """Decrypted payload model for S3 upload script output"""
-
-    # get all data for now, optimize later if we don't need all of it
-    file_id: str
-    object_id: str
-    part_size: int
-    unencrypted_size: int
-    encrypted_size: int
-    unencrypted_checksum: str
-    encrypted_md5_checksums: list[str]
-    encrypted_sha256_checksums: list[str]
-
-    def encrypt_metadata(self, pubkey: str):
-        """Create payload by encryption FileUploadMetadata"""
-
-        payload = self.json()
-        encrypted = encrypt(data=payload, key=pubkey)
-
-        return EncryptedPayload(payload=encrypted)
-
-
-class LegacyFileUploadMetadata(FileUploadMetadataBase):
-    """Decrypted payload model for S3 upload script output"""
-
-    file_secret: str
-
-
-class FileUploadMetadata(FileUploadMetadataBase):
-    """Decrypted payload model for S3 upload script output"""
-
-    secret_id: str
 
 
 class EncryptedPayload(BaseModel):

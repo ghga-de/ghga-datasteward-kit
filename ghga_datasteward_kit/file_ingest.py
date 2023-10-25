@@ -96,6 +96,26 @@ def main(
     return errors
 
 
+def legacy_file_ingest(
+    in_path: Path,
+    token: str,
+    config: IngestConfig,
+    alias_to_id: Callable[[str, list[str], SubmissionStore], str] = alias_to_accession,
+):
+    """
+    Transform from s3 upload output representation to what the file ingest service expects.
+    Then call the ingest endpoint
+    """
+
+    output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
+    shared_ingest_path(
+        token=token,
+        config=config,
+        alias_to_id=alias_to_id,
+        output_metadata=output_metadata,
+    )
+
+
 def file_ingest(
     in_path: Path,
     token: str,
@@ -107,9 +127,27 @@ def file_ingest(
     Then call the ingest endpoint
     """
 
+    output_metadata = models.OutputMetadata.load(input_path=in_path)
+    shared_ingest_path(
+        token=token,
+        config=config,
+        alias_to_id=alias_to_id,
+        output_metadata=output_metadata,
+    )
+
+
+def shared_ingest_path(
+    token: str,
+    config: IngestConfig,
+    alias_to_id: Callable[[str, list[str], SubmissionStore], str],
+    output_metadata: models.OutputMetadataBase,
+):
+    """
+    TODO
+    """
+
     submission_store = SubmissionStore(config=config)
 
-    output_metadata = models.OutputMetadata.load(input_path=in_path)
     file_id = alias_to_id(
         output_metadata.alias, config.map_files_fields, submission_store
     )

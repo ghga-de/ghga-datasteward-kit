@@ -20,7 +20,6 @@ object storage.
 """
 
 import asyncio
-import json
 import logging
 from pathlib import Path
 
@@ -40,7 +39,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
     httpx_client,
     objectstorage,
 )
-from ghga_datasteward_kit.utils import load_config_yaml
+from ghga_datasteward_kit.utils import load_config_yaml, read_token
 
 
 async def shared_path(input_path: Path, alias: str, config: LegacyConfig):
@@ -115,9 +114,10 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
                 bucket_id=config.bucket_id, object_id=uploader.file_id
             )
             raise ValueError(
-                f"Failed to deposit secret for {alias}. Removed uploaded file."
+                f"Failed to deposit secret for {alias} with response code"
+                + f"{response.status_code}. Removed uploaded file."
             )
-        secret_id = json.loads(response.content)["secret_id"]
+        secret_id = response.json()["secret_id"]
 
     metadata = models.OutputMetadata(
         alias=uploader.alias,
@@ -180,8 +180,8 @@ def main(
     """
 
     config = load_config_yaml(config_path, Config)
-    # todo: query user for authentication token
-    token = ""
+
+    token = read_token()
     asyncio.run(
         async_main(input_path=input_path, alias=alias, config=config, token=token)
     )
