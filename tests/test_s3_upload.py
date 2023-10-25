@@ -26,7 +26,9 @@ from hexkit.providers.s3.testutils import (  # type: ignore
 from pydantic import SecretStr
 from testcontainers.localstack import LocalStackContainer  # type: ignore
 
-from ghga_datasteward_kit.s3_upload import Config, async_main, objectstorage
+from ghga_datasteward_kit.s3_upload import Config
+from ghga_datasteward_kit.s3_upload.main import legacy_async_main
+from ghga_datasteward_kit.s3_upload.utils import objectstorage
 from tests.fixtures.config import config_fixture  # noqa: F401
 
 ALIAS = "test_file"
@@ -54,6 +56,8 @@ async def test_process(config_fixture: Config):  # noqa: F811
         await storage.create_bucket(bucket_id=config.bucket_id)
         sys.set_int_max_str_digits(50 * 1024**2)
         with big_temp_file(50 * 1024**2) as file:
-            await async_main(input_path=Path(file.name), alias=ALIAS, config=config)
+            await legacy_async_main(
+                input_path=Path(file.name), alias=ALIAS, config=config
+            )
         # output file exists?
         assert (config.output_dir / ALIAS).with_suffix(".json").exists()

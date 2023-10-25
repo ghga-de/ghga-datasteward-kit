@@ -15,7 +15,8 @@
 
 """Test adjustment code for part size"""
 
-from ghga_datasteward_kit.s3_upload import Config, check_adjust_part_size
+from ghga_datasteward_kit.s3_upload import Config
+from ghga_datasteward_kit.s3_upload.utils import check_adjust_part_size
 from tests.fixtures.config import config_fixture  # noqa: F401
 
 

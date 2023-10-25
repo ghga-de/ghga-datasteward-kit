@@ -14,4 +14,6 @@
 # limitations under the License.
 #
 
-from ghga_datasteward_kit.s3_upload.main import legacy_main, main
+from ghga_datasteward_kit.s3_upload.config import Config, LegacyConfig  # noqa: F401
+from ghga_datasteward_kit.s3_upload.main import legacy_main, main  # noqa: F401
+from ghga_datasteward_kit.utils import load_config_yaml  # noqa: F401

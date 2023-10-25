@@ -74,15 +74,17 @@ def check_file_upload(file: FileMetadata, output_dir: Path) -> bool:
 
 
 def prepare_upload_command_line(
-    file: FileMetadata, output_dir: Path, config_path: Path
+    file: FileMetadata, output_dir: Path, config_path: Path, legacy_mode: bool
 ) -> str:
     """Returns a command line for uploading the specified file."""
 
     log_file_path = output_dir / f"{file.alias}.log"
     python_interpreter_path = Path(sys.executable)
 
+    subcommand = "legacy_upload" if legacy_mode else "upload"
+
     return (
-        f"{python_interpreter_path} -m ghga_datasteward_kit files upload"
+        f"{python_interpreter_path} -m ghga_datasteward_kit files {subcommand}"
         + f" --input-path {file.path}"
         + f" --alias {file.alias} --config-path {config_path}"
         + f" > {log_file_path} 2>&1"
@@ -90,7 +92,11 @@ def prepare_upload_command_line(
 
 
 def trigger_file_upload(
-    file: FileMetadata, output_dir: Path, config_path: Path, dry_run: bool
+    file: FileMetadata,
+    output_dir: Path,
+    config_path: Path,
+    dry_run: bool,
+    legacy_mode: bool,
 ) -> Optional[subprocess.Popen]:
     """
     Checks whether the file was already uploaded, if not, the upload is triggered
@@ -102,7 +108,10 @@ def trigger_file_upload(
         return None
 
     command_line = prepare_upload_command_line(
-        file=file, output_dir=output_dir, config_path=config_path
+        file=file,
+        output_dir=output_dir,
+        config_path=config_path,
+        legacy_mode=legacy_mode,
     )
 
     if dry_run:
@@ -113,13 +122,14 @@ def trigger_file_upload(
     return subprocess.Popen(command_line, shell=True, executable="/bin/bash")  # nosec
 
 
-# pylint: disable=too-many-nested-blocks,too-many-branches
-def handle_file_uploads(  # noqa: C901
+# pylint: disable=too-many-nested-blocks,too-many-branches, too-many-arguments
+def handle_file_uploads(  # noqa: R0913,C901
     files: list[FileMetadata],
     output_dir: Path,
     config_path: Path,
     parallel_processes: int,
     dry_run: bool,
+    legacy_mode: bool,
 ):
     """Handles the upload of multiple files in parallel."""
 
@@ -140,6 +150,7 @@ def handle_file_uploads(  # noqa: C901
                     output_dir=output_dir,
                     config_path=config_path,
                     dry_run=dry_run,
+                    legacy_mode=legacy_mode,
                 )
 
                 if process:
@@ -189,6 +200,7 @@ def main(
     config_path: Path,
     parallel_processes: int,
     dry_run: bool,
+    legacy_mode: bool,
 ):
     """
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
@@ -204,4 +216,5 @@ def main(
         config_path=config_path,
         parallel_processes=parallel_processes,
         dry_run=dry_run,
+        legacy_mode=legacy_mode,
     )
