@@ -101,7 +101,10 @@ async def exchange_secret_for_id(
     with httpx_client() as client:
         headers = {"Authorization": f"Bearer {token}"}
         response = client.post(
-            url=config.secret_ingest_url, json=encrypted_secret.dict(), headers=headers
+            url=config.secret_ingest_url,
+            json=encrypted_secret.dict(),
+            headers=headers,
+            timeout=60,
         )
 
         if response.status_code != 200:

@@ -124,13 +124,20 @@ def file_ingest(
 
     with httpx.Client() as client:
         response = client.post(
-            f"{config.file_ingest_url}", json=encrypted.dict(), headers=headers
+            f"{config.file_ingest_url}",
+            json=encrypted.dict(),
+            headers=headers,
+            timeout=60,
         )
 
         if response.status_code != 202:
-            if response.status_code in (403, 422, 500):
-                raise ValueError(response.json()["detail"])
+            if response.status_code == 403:
+                raise ValueError("Not authorized to access ingest endpoint.")
+            if response.status_code == 422:
+                raise ValueError("Payload provided to ingest endpoint was malformed.")
+            if response.status_code == 500:
+                raise ValueError(
+                    "Internal file ingest service error or communication with vault failed."
+                )
 
-            raise ValueError(
-                f"Unxpected server response: {response.status_code}: {response.text}"
-            )
+            raise ValueError(f"Unexpected server response: {response.status_code}.")
