@@ -15,11 +15,11 @@
 # limitations under the License.
 
 """
-Custom script to encrypt data using Crypt4GH and directly uploading it to S3
-object storage.
+Contains functionality to actually run the S3 upload.
 """
 
 import asyncio
+import base64
 import logging
 from pathlib import Path
 
@@ -44,7 +44,7 @@ from ghga_datasteward_kit.utils import load_config_yaml, read_token
 
 async def shared_path(input_path: Path, alias: str, config: LegacyConfig):
     """
-    TODO
+    Functionality shared between legacy and non-legacy upload path
     """
     if not input_path.exists():
         msg = f"No such file: {input_path.resolve()}"
@@ -68,6 +68,7 @@ async def shared_path(input_path: Path, alias: str, config: LegacyConfig):
         config=config,
         unencrypted_file_size=file_size,
     )
+    await uploader.encrypt_and_upload()
 
     downloader = ChunkedDownloader(
         config=config,
@@ -80,6 +81,39 @@ async def shared_path(input_path: Path, alias: str, config: LegacyConfig):
     await downloader.download()
 
     return uploader, file_size
+
+
+async def exchange_secret_for_id(
+    *, file_id: str, alias: str, secret: bytes, token: str, config: Config
+) -> str:
+    """
+    Call file ingest service to store the file secret and obtain a secret ID by which
+    it can be retrieved.
+
+    If storing the secret fails, the uploaded file is deleted from object storage and
+    a ValueError is raised containing the file alias and response status code.
+    """
+
+    file_secret = base64.b64encode(secret).decode("utf-8")
+    payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
+    encrypted_secret = models.EncryptedPayload(payload=payload)
+
+    with httpx_client() as client:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = client.post(
+            url=config.secret_ingest_url, json=encrypted_secret.dict(), headers=headers
+        )
+
+        if response.status_code != 200:
+            object_storage = objectstorage(config=config)
+            await object_storage.delete_object(
+                bucket_id=config.bucket_id, object_id=file_id
+            )
+            raise ValueError(
+                f"Failed to deposit secret for {alias} with response code"
+                + f"{response.status_code}. Removed uploaded file."
+            )
+        return response.json()["secret_id"]
 
 
 async def async_main(input_path: Path, alias: str, config: Config, token: str):
@@ -98,26 +132,13 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
         encrypted_sha256_checksums,
     ) = uploader.encryptor.checksums.get()
 
-    file_secret = uploader.encryptor.file_secret.decode("utf-8")
-    payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
-    encrypted_secret = models.EncryptedPayload(payload=payload)
-
-    with httpx_client() as client:
-        headers = {"Authorization": f"Bearer {token}"}
-        response = client.post(
-            url=config.secret_ingest_url, json=encrypted_secret.dict(), headers=headers
-        )
-
-        if response.status_code != 200:
-            object_storage = objectstorage(config=config)
-            await object_storage.delete_object(
-                bucket_id=config.bucket_id, object_id=uploader.file_id
-            )
-            raise ValueError(
-                f"Failed to deposit secret for {alias} with response code"
-                + f"{response.status_code}. Removed uploaded file."
-            )
-        secret_id = response.json()["secret_id"]
+    secret_id = await exchange_secret_for_id(
+        file_id=uploader.file_id,
+        alias=alias,
+        secret=uploader.encryptor.file_secret,
+        token=token,
+        config=config,
+    )
 
     metadata = models.OutputMetadata(
         alias=uploader.alias,

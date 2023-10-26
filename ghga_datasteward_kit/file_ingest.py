@@ -109,7 +109,7 @@ def file_ingest(
 
     try:
         output_metadata = models.OutputMetadata.load(input_path=in_path)
-    except ValidationError:
+    except (KeyError, ValidationError):
         output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
 
     submission_store = SubmissionStore(config=config)

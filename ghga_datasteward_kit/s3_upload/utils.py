@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""Helper functions used across different modules in the s3_upload package."""
 
 import logging
 import sys

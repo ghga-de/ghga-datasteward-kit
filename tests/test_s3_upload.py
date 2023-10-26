@@ -26,18 +26,51 @@ from hexkit.providers.s3.testutils import (  # type: ignore
 from pydantic import SecretStr
 from testcontainers.localstack import LocalStackContainer  # type: ignore
 
-from ghga_datasteward_kit.s3_upload import Config
-from ghga_datasteward_kit.s3_upload.main import legacy_async_main
+from ghga_datasteward_kit.s3_upload import Config, LegacyConfig
+from ghga_datasteward_kit.s3_upload.entrypoint import async_main, legacy_async_main
 from ghga_datasteward_kit.s3_upload.utils import objectstorage
-from tests.fixtures.config import config_fixture  # noqa: F401
+from tests.fixtures.config import config_fixture, legacy_config_fixture  # noqa: F401
 
 ALIAS = "test_file"
 BUCKET_ID = "test-bucket"
 
 
 @pytest.mark.asyncio
-async def test_process(config_fixture: Config):  # noqa: F811
+async def test_legacy_process(legacy_config_fixture: LegacyConfig):  # noqa: F811
     """Test whole upload/download process for s3_upload script"""
+
+    with LocalStackContainer(image="localstack/localstack:0.14.2").with_services(
+        "s3"
+    ) as localstack:
+        s3_config = config_from_localstack_container(localstack)
+
+        config = legacy_config_fixture.copy(
+            update={
+                "s3_endpoint_url": SecretStr(s3_config.s3_endpoint_url),
+                "s3_access_key_id": SecretStr(s3_config.s3_access_key_id),
+                "s3_secret_access_key": s3_config.s3_secret_access_key,
+                "bucket_id": BUCKET_ID,
+            }
+        )
+        storage = objectstorage(config=config)
+        await storage.create_bucket(bucket_id=config.bucket_id)
+        sys.set_int_max_str_digits(50 * 1024**2)
+        with big_temp_file(50 * 1024**2) as file:
+            await legacy_async_main(
+                input_path=Path(file.name), alias=ALIAS, config=config
+            )
+        # output file exists?
+        assert (config.output_dir / ALIAS).with_suffix(".json").exists()
+
+
+@pytest.mark.asyncio
+async def test_process(config_fixture: Config, monkeypatch):  # noqa: F811
+    """Test whole upload/download process for s3_upload script"""
+
+    async def secret_exchange_dummy(
+        *, file_id: str, alias: str, secret: bytes, token: str, config: Config
+    ):
+        return "test-secret-id"
 
     with LocalStackContainer(image="localstack/localstack:0.14.2").with_services(
         "s3"
@@ -55,9 +88,18 @@ async def test_process(config_fixture: Config):  # noqa: F811
         storage = objectstorage(config=config)
         await storage.create_bucket(bucket_id=config.bucket_id)
         sys.set_int_max_str_digits(50 * 1024**2)
+
         with big_temp_file(50 * 1024**2) as file:
-            await legacy_async_main(
-                input_path=Path(file.name), alias=ALIAS, config=config
-            )
+            with monkeypatch.context() as patch:
+                patch.setattr(
+                    "ghga_datasteward_kit.s3_upload.entrypoint.exchange_secret_for_id",
+                    secret_exchange_dummy,
+                )
+                await async_main(
+                    input_path=Path(file.name),
+                    alias=ALIAS,
+                    config=config,
+                    token="dummy-token",
+                )
         # output file exists?
         assert (config.output_dir / ALIAS).with_suffix(".json").exists()

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""Functionality to upload encrypted file chunks using multipart upload."""
 
 import math
 from pathlib import Path

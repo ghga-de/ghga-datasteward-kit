@@ -26,24 +26,27 @@ from tests.fixtures.ingest import (  # noqa: F401
     EXAMPLE_SUBMISSION,
     IngestFixture,
     ingest_fixture,
+    legacy_ingest_fixture,
 )
 
 
 @pytest.mark.asyncio
-async def test_alias_to_accession(ingest_fixture: IngestFixture):  # noqa: F811
+async def test_alias_to_accession(legacy_ingest_fixture: IngestFixture):  # noqa: F811
     """Test alias->accession mapping"""
 
-    submission_store = SubmissionStore(config=ingest_fixture.config)
-    metadata = models.OutputMetadata.load(input_path=ingest_fixture.file_path)
+    submission_store = SubmissionStore(config=legacy_ingest_fixture.config)
+    metadata = models.LegacyOutputMetadata.load(
+        input_path=legacy_ingest_fixture.file_path
+    )
 
     accession = alias_to_accession(
         alias=metadata.alias,
-        map_fields=ingest_fixture.config.map_files_fields,
+        map_fields=legacy_ingest_fixture.config.map_files_fields,
         submission_store=submission_store,
     )
     example_accession = list(
         EXAMPLE_SUBMISSION.accession_map[
-            ingest_fixture.config.map_files_fields[0]
+            legacy_ingest_fixture.config.map_files_fields[0]
         ].values()
     )[0]
     assert accession == example_accession
@@ -51,7 +54,7 @@ async def test_alias_to_accession(ingest_fixture: IngestFixture):  # noqa: F811
     with pytest.raises(ValueError):
         alias_to_accession(
             alias="invalid_alias",
-            map_fields=ingest_fixture.config.map_files_fields,
+            map_fields=legacy_ingest_fixture.config.map_files_fields,
             submission_store=submission_store,
         )
 
@@ -60,6 +63,50 @@ async def test_alias_to_accession(ingest_fixture: IngestFixture):  # noqa: F811
             alias=metadata.alias,
             map_fields=["study_files", "sample_files"],
             submission_store=submission_store,
+        )
+
+
+@pytest.mark.asyncio
+async def test_legacy_ingest_directly(
+    legacy_ingest_fixture: IngestFixture, httpx_mock: HTTPXMock  # noqa: F811
+):
+    """Test file_ingest function directly"""
+
+    token = generate_token()
+
+    httpx_mock.add_response(
+        url=legacy_ingest_fixture.config.file_ingest_url, status_code=202
+    )
+    file_ingest(
+        in_path=legacy_ingest_fixture.file_path,
+        token=token,
+        config=legacy_ingest_fixture.config,
+    )
+
+    httpx_mock.add_response(
+        url=legacy_ingest_fixture.config.file_ingest_url,
+        json={"detail": "Unauthorized"},
+        status_code=403,
+    )
+    with pytest.raises(ValueError, match="Unauthorized"):
+        file_ingest(
+            in_path=legacy_ingest_fixture.file_path,
+            token=token,
+            config=legacy_ingest_fixture.config,
+        )
+
+    httpx_mock.add_response(
+        url=legacy_ingest_fixture.config.file_ingest_url,
+        json={"detail": "Could not decrypt received payload with the given key."},
+        status_code=422,
+    )
+    with pytest.raises(
+        ValueError, match="Could not decrypt received payload with the given key."
+    ):
+        file_ingest(
+            in_path=legacy_ingest_fixture.file_path,
+            token=token,
+            config=legacy_ingest_fixture.config,
         )
 
 
@@ -106,17 +153,17 @@ async def test_ingest_directly(
 
 
 @pytest.mark.asyncio
-async def test_main(
+async def test_legacy_main(
     capfd,
     monkeypatch,
-    ingest_fixture: IngestFixture,  # noqa: F811
+    legacy_ingest_fixture: IngestFixture,  # noqa: F811
     httpx_mock: HTTPXMock,
 ):
     """Test if main file ingest function works correctly"""
 
-    config_path = ingest_fixture.config.input_dir / "config.yaml"
+    config_path = legacy_ingest_fixture.config.input_dir / "config.yaml"
 
-    config = ingest_fixture.config.dict()
+    config = legacy_ingest_fixture.config.dict()
     config["input_dir"] = str(config["input_dir"])
     config["submission_store_dir"] = str(config["submission_store_dir"])
 
@@ -125,14 +172,16 @@ async def test_main(
 
     monkeypatch.setattr("ghga_datasteward_kit.utils.read_token", generate_token)
 
-    httpx_mock.add_response(url=ingest_fixture.config.file_ingest_url, status_code=202)
+    httpx_mock.add_response(
+        url=legacy_ingest_fixture.config.file_ingest_url, status_code=202
+    )
     ingest_upload_metadata(config_path=config_path)
     out, _ = capfd.readouterr()
 
     assert "Sucessfully sent all file upload metadata for ingest" in out
 
     httpx_mock.add_response(
-        url=ingest_fixture.config.file_ingest_url,
+        url=legacy_ingest_fixture.config.file_ingest_url,
         json={"detail": "Unauthorized"},
         status_code=403,
     )

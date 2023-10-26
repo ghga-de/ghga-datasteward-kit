@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""Contains functionality to encrypt data using Crypt4GH and directly uploading it to S3
+object storage."""
 
 from ghga_datasteward_kit.s3_upload.config import Config, LegacyConfig  # noqa: F401
-from ghga_datasteward_kit.s3_upload.main import legacy_main, main  # noqa: F401
+from ghga_datasteward_kit.s3_upload.entrypoint import legacy_main, main  # noqa: F401
 from ghga_datasteward_kit.utils import load_config_yaml  # noqa: F401

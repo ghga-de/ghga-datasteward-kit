@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+"""Functionality to decrypt Crypt4GH encrypted files on-the-fly for validation purposes."""
 
 from functools import partial
 from time import time

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+"""S3 upload specific configuration."""
 
 import subprocess  # nosec
 from pathlib import Path
