@@ -88,7 +88,7 @@ async def test_legacy_ingest_directly(
         json={"detail": "Unauthorized"},
         status_code=403,
     )
-    with pytest.raises(ValueError, match="Unauthorized"):
+    with pytest.raises(ValueError, match="Not authorized"):
         file_ingest(
             in_path=legacy_ingest_fixture.file_path,
             token=token,
@@ -130,7 +130,7 @@ async def test_ingest_directly(
         json={"detail": "Unauthorized"},
         status_code=403,
     )
-    with pytest.raises(ValueError, match="Unauthorized"):
+    with pytest.raises(ValueError, match="Not authorized"):
         file_ingest(
             in_path=ingest_fixture.file_path,
             token=token,
