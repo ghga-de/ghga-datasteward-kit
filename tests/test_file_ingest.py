@@ -85,10 +85,10 @@ async def test_legacy_ingest_directly(
 
     httpx_mock.add_response(
         url=legacy_ingest_fixture.config.file_ingest_url,
-        json={"detail": "Unauthorized"},
+        json={"detail": "Not authorized to access ingest endpoint."},
         status_code=403,
     )
-    with pytest.raises(ValueError, match="Not authorized"):
+    with pytest.raises(ValueError, match="Not authorized to access ingest endpoint."):
         file_ingest(
             in_path=legacy_ingest_fixture.file_path,
             token=token,
@@ -97,12 +97,10 @@ async def test_legacy_ingest_directly(
 
     httpx_mock.add_response(
         url=legacy_ingest_fixture.config.file_ingest_url,
-        json={"detail": "Could not decrypt received payload with the given key."},
+        json={"detail": "Could not decrypt received payload."},
         status_code=422,
     )
-    with pytest.raises(
-        ValueError, match="Could not decrypt received payload with the given key."
-    ):
+    with pytest.raises(ValueError, match="Could not decrypt received payload."):
         file_ingest(
             in_path=legacy_ingest_fixture.file_path,
             token=token,
@@ -127,10 +125,10 @@ async def test_ingest_directly(
 
     httpx_mock.add_response(
         url=ingest_fixture.config.file_ingest_url,
-        json={"detail": "Unauthorized"},
+        json={"detail": "Not authorized to access ingest endpoint."},
         status_code=403,
     )
-    with pytest.raises(ValueError, match="Not authorized"):
+    with pytest.raises(ValueError, match="Not authorized to access ingest endpoint."):
         file_ingest(
             in_path=ingest_fixture.file_path,
             token=token,
@@ -139,12 +137,10 @@ async def test_ingest_directly(
 
     httpx_mock.add_response(
         url=ingest_fixture.config.file_ingest_url,
-        json={"detail": "Could not decrypt received payload with the given key."},
+        json={"detail": "Could not decrypt received payload."},
         status_code=422,
     )
-    with pytest.raises(
-        ValueError, match="Could not decrypt received payload with the given key."
-    ):
+    with pytest.raises(ValueError, match="Could not decrypt received payload."):
         file_ingest(
             in_path=ingest_fixture.file_path,
             token=token,
