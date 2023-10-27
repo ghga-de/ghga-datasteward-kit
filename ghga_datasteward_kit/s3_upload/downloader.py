@@ -84,7 +84,8 @@ class ChunkedDownloader:
                 bucket_id=self.config.bucket_id, object_id=self.file_id
             )
             raise ValueError(
-                f"Checksum mismatch:\nUpload:\n{checkums}\nDownload:\n{self.target_checksums}"
+                "Checksum mismatch:\n"
+                + f"Upload:\n{checkums}\nDownload:\n{self.target_checksums}\n"
                 + "Uploaded file was deleted due to validation failure."
             )
         LOGGER.info("(6/7) Succesfully validated checksums for %s.", self.file_id)
