@@ -114,7 +114,7 @@ async def exchange_secret_for_id(
             )
             raise ValueError(
                 f"Failed to deposit secret for {alias} with response code"
-                + f"{response.status_code}. Removed uploaded file."
+                + f" {response.status_code}. Removed uploaded file."
             )
         return response.json()["secret_id"]
 
