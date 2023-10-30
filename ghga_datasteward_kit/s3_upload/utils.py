@@ -215,7 +215,7 @@ class StorageCleaner:
         def __init__(self, *, bucket_id: str, object_id: str):
             self.bucket_id = bucket_id
             self.object_id = object_id
-            message = f"Failed downloading file part for ''{object_id}''."
+            message = f"Failed writing output file for ''{object_id}''."
             super().__init__(message)
 
     def __init__(self, *, config: LegacyConfig) -> None:
