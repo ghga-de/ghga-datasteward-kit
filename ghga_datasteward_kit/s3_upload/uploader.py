@@ -24,18 +24,24 @@ import crypt4gh.lib  # type: ignore
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
-from ghga_datasteward_kit.s3_upload.utils import LOGGER, get_objectstorage, httpx_client
+from ghga_datasteward_kit.s3_upload.utils import (
+    LOGGER,
+    StorageCleaner,
+    get_object_storage,
+    httpx_client,
+)
 
 
-class ChunkedUploader:
+class ChunkedUploader:  # pylint: disable=too-many-instance-attributes
     """Handler class dealing with upload functionality"""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         input_path: Path,
         alias: str,
         config: LegacyConfig,
         unencrypted_file_size: int,
+        storage_cleaner: StorageCleaner,
     ) -> None:
         self.alias = alias
         self.config = config
@@ -44,6 +50,7 @@ class ChunkedUploader:
         self.file_id = str(uuid4())
         self.unencrypted_file_size = unencrypted_file_size
         self.encrypted_file_size = 0
+        self._storage_cleaner = storage_cleaner
 
     async def encrypt_and_upload(self):
         """Delegate encryption and perform multipart upload"""
@@ -61,6 +68,7 @@ class ChunkedUploader:
                 file_id=self.file_id,
                 encrypted_file_size=encrypted_file_size,
                 part_size=self.config.part_size,
+                storage_cleaner=self._storage_cleaner,
             ) as upload:
                 LOGGER.info("(1/7) Initialized file upload for %s.", upload.file_id)
                 for part_number, part in enumerate(
@@ -90,19 +98,21 @@ class ChunkedUploader:
 class MultipartUpload:
     """Context manager to handle init + complete/abort for S3 multipart upload"""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         config: LegacyConfig,
         file_id: str,
         encrypted_file_size: int,
         part_size: int,
+        storage_cleaner: StorageCleaner,
     ) -> None:
         self.config = config
-        self.storage = get_objectstorage(config=self.config)
+        self.storage = get_object_storage(config=self.config)
         self.file_id = file_id
         self.file_size = encrypted_file_size
         self.part_size = part_size
         self.upload_id = ""
+        self.storage_cleaner = storage_cleaner
 
     async def __aenter__(self):
         """Start multipart upload"""
@@ -122,12 +132,11 @@ class MultipartUpload:
                 anticipated_part_size=self.part_size,
             )
         except (Exception, KeyboardInterrupt) as exc:  # pylint: disable=broad-except
-            await self.storage.abort_multipart_upload(
-                upload_id=self.upload_id,
+            raise self.storage_cleaner.MultipartUploadCompletionError(
                 bucket_id=self.config.bucket_id,
                 object_id=self.file_id,
-            )
-            raise exc
+                upload_id=self.upload_id,
+            ) from exc
 
     async def send_part(self, part: bytes, part_number: int):
         """Handle upload of one file part"""
@@ -144,9 +153,8 @@ class MultipartUpload:
             Exception,
             KeyboardInterrupt,
         ) as exc:
-            await self.storage.abort_multipart_upload(
-                upload_id=self.upload_id,
+            raise self.storage_cleaner.PartUploadError(
                 bucket_id=self.config.bucket_id,
                 object_id=self.file_id,
-            )
-            raise exc
+                upload_id=self.upload_id,
+            ) from exc

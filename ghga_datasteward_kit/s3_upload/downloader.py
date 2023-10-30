@@ -23,13 +23,14 @@ from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
 from ghga_datasteward_kit.s3_upload.utils import (
     LOGGER,
-    get_objectstorage,
+    StorageCleaner,
+    get_object_storage,
     get_ranges,
     httpx_client,
 )
 
 
-class ChunkedDownloader:
+class ChunkedDownloader:  # pylint: disable=too-many-instance-attributes
     """Handler class dealing with download functionality"""
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -40,14 +41,16 @@ class ChunkedDownloader:
         file_secret: bytes,
         part_size: int,
         target_checksums: models.Checksums,
+        storage_cleaner: StorageCleaner,
     ) -> None:
         self.config = config
-        self.storage = get_objectstorage(self.config)
+        self.storage = get_object_storage(self.config)
         self.file_id = file_id
         self.file_size = encrypted_file_size
         self.file_secret = file_secret
         self.part_size = part_size
         self.target_checksums = target_checksums
+        self.storage_cleaner = storage_cleaner
 
     def _download_parts(self, download_url):
         """Download file parts"""
@@ -58,9 +61,17 @@ class ChunkedDownloader:
         ):
             headers = {"Range": f"bytes={start}-{stop}"}
             LOGGER.debug("Downloading part number %i. %s", part_no, headers)
-            with httpx_client() as client:
-                response = client.get(download_url, timeout=60, headers=headers)
-            yield response.content
+            try:
+                with httpx_client() as client:
+                    response = client.get(download_url, timeout=60, headers=headers)
+                    yield response.content
+            except (  # pylint: disable=broad-except
+                Exception,
+                KeyboardInterrupt,
+            ) as exc:
+                raise self.storage_cleaner.PartDownloadError(
+                    bucket_id=self.config.bucket_id, object_id=self.file_id
+                ) from exc
 
     async def download(self):
         """Download file in parts and validate checksums"""
@@ -79,13 +90,12 @@ class ChunkedDownloader:
     async def validate_checksums(self, checkums: models.Checksums):
         """Confirm checksums for upload and download match"""
         if not self.target_checksums.get() == checkums.get():
-            object_storage = get_objectstorage(config=self.config)
-            await object_storage.delete_object(
-                bucket_id=self.config.bucket_id, object_id=self.file_id
-            )
-            raise ValueError(
+            message = (
                 "Checksum mismatch:\n"
                 + f"Upload:\n{checkums}\nDownload:\n{self.target_checksums}\n"
                 + "Uploaded file was deleted due to validation failure."
+            )
+            raise self.storage_cleaner.ChecksumValidationError(
+                bucket_id=self.config.bucket_id, object_id=self.file_id, message=message
             )
         LOGGER.info("(6/7) Succesfully validated checksums for %s.", self.file_id)

@@ -33,16 +33,19 @@ from ghga_datasteward_kit.s3_upload.uploader import ChunkedUploader
 from ghga_datasteward_kit.s3_upload.utils import (
     LOGGER,
     HttpxClientState,
+    StorageCleaner,
     check_adjust_part_size,
     check_output_path,
-    get_objectstorage,
+    get_object_storage,
     handle_superficial_error,
     httpx_client,
 )
 from ghga_datasteward_kit.utils import load_config_yaml, read_token
 
 
-async def shared_path(input_path: Path, alias: str, config: LegacyConfig):
+async def shared_path(
+    input_path: Path, alias: str, config: LegacyConfig, storage_cleaner: StorageCleaner
+):
     """
     Functionality shared between legacy and non-legacy upload path
     """
@@ -67,6 +70,7 @@ async def shared_path(input_path: Path, alias: str, config: LegacyConfig):
         alias=alias,
         config=config,
         unencrypted_file_size=file_size,
+        storage_cleaner=storage_cleaner,
     )
     await uploader.encrypt_and_upload()
 
@@ -77,6 +81,7 @@ async def shared_path(input_path: Path, alias: str, config: LegacyConfig):
         file_secret=uploader.encryptor.file_secret,
         part_size=config.part_size,
         target_checksums=uploader.encryptor.checksums,
+        storage_cleaner=storage_cleaner,
     )
     await downloader.download()
 
@@ -109,7 +114,7 @@ async def exchange_secret_for_id(
         )
 
         if response.status_code != 200:
-            object_storage = get_objectstorage(config=config)
+            object_storage = get_object_storage(config=config)
             await object_storage.delete_object(
                 bucket_id=config.bucket_id, object_id=file_id
             )
@@ -125,40 +130,51 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
     Run encryption, upload and validation.
     Prints metadata to <alias>.json in the specified output directory
     """
+    async with StorageCleaner(config=config) as storage_cleaner:
+        uploader, file_size = await shared_path(
+            input_path=input_path,
+            alias=alias,
+            config=config,
+            storage_cleaner=storage_cleaner,
+        )
 
-    uploader, file_size = await shared_path(
-        input_path=input_path, alias=alias, config=config
-    )
+        (
+            unencrypted_checksum,
+            encrypted_md5_checksums,
+            encrypted_sha256_checksums,
+        ) = uploader.encryptor.checksums.get()
 
-    (
-        unencrypted_checksum,
-        encrypted_md5_checksums,
-        encrypted_sha256_checksums,
-    ) = uploader.encryptor.checksums.get()
+        secret_id = await exchange_secret_for_id(
+            file_id=uploader.file_id,
+            alias=alias,
+            secret=uploader.encryptor.file_secret,
+            token=token,
+            config=config,
+        )
 
-    secret_id = await exchange_secret_for_id(
-        file_id=uploader.file_id,
-        alias=alias,
-        secret=uploader.encryptor.file_secret,
-        token=token,
-        config=config,
-    )
-
-    metadata = models.OutputMetadata(
-        alias=uploader.alias,
-        file_uuid=uploader.file_id,
-        original_path=input_path,
-        part_size=config.part_size,
-        secret_id=secret_id,
-        unencrypted_checksum=unencrypted_checksum,
-        encrypted_md5_checksums=encrypted_md5_checksums,
-        encrypted_sha256_checksums=encrypted_sha256_checksums,
-        unencrypted_size=file_size,
-        encrypted_size=uploader.encryptor.encrypted_file_size,
-    )
-    output_path = config.output_dir / f"{uploader.alias}.json"
-    LOGGER.info("(7/7) Writing metadata to %s.", output_path)
-    metadata.serialize(output_path)
+        metadata = models.OutputMetadata(
+            alias=uploader.alias,
+            file_uuid=uploader.file_id,
+            original_path=input_path,
+            part_size=config.part_size,
+            secret_id=secret_id,
+            unencrypted_checksum=unencrypted_checksum,
+            encrypted_md5_checksums=encrypted_md5_checksums,
+            encrypted_sha256_checksums=encrypted_sha256_checksums,
+            unencrypted_size=file_size,
+            encrypted_size=uploader.encryptor.encrypted_file_size,
+        )
+        output_path = config.output_dir / f"{uploader.alias}.json"
+        LOGGER.info("(7/7) Writing metadata to %s.", output_path)
+        try:
+            metadata.serialize(output_path)
+        except (  # pylint: disable=broad-except
+            Exception,
+            KeyboardInterrupt,
+        ) as exc:
+            raise storage_cleaner.WritingOutputError(
+                bucket_id=config.bucket_id, object_id=uploader.file_id
+            ) from exc
 
 
 async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
@@ -166,32 +182,43 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
     Run encryption, upload and validation.
     Prints metadata to <alias>.json in the specified output directory
     """
+    async with StorageCleaner(config=config) as storage_cleaner:
+        uploader, file_size = await shared_path(
+            input_path=input_path,
+            alias=alias,
+            config=config,
+            storage_cleaner=storage_cleaner,
+        )
 
-    uploader, file_size = await shared_path(
-        input_path=input_path, alias=alias, config=config
-    )
+        (
+            unencrypted_checksum,
+            encrypted_md5_checksums,
+            encrypted_sha256_checksums,
+        ) = uploader.encryptor.checksums.get()
 
-    (
-        unencrypted_checksum,
-        encrypted_md5_checksums,
-        encrypted_sha256_checksums,
-    ) = uploader.encryptor.checksums.get()
-
-    metadata = models.LegacyOutputMetadata(
-        alias=uploader.alias,
-        file_uuid=uploader.file_id,
-        original_path=input_path,
-        part_size=config.part_size,
-        file_secret=uploader.encryptor.file_secret,
-        unencrypted_checksum=unencrypted_checksum,
-        encrypted_md5_checksums=encrypted_md5_checksums,
-        encrypted_sha256_checksums=encrypted_sha256_checksums,
-        unencrypted_size=file_size,
-        encrypted_size=uploader.encryptor.encrypted_file_size,
-    )
-    output_path = config.output_dir / f"{uploader.alias}.json"
-    LOGGER.info("(7/7) Writing metadata to %s.", output_path)
-    metadata.serialize(output_path)
+        metadata = models.LegacyOutputMetadata(
+            alias=uploader.alias,
+            file_uuid=uploader.file_id,
+            original_path=input_path,
+            part_size=config.part_size,
+            file_secret=uploader.encryptor.file_secret,
+            unencrypted_checksum=unencrypted_checksum,
+            encrypted_md5_checksums=encrypted_md5_checksums,
+            encrypted_sha256_checksums=encrypted_sha256_checksums,
+            unencrypted_size=file_size,
+            encrypted_size=uploader.encryptor.encrypted_file_size,
+        )
+        output_path = config.output_dir / f"{uploader.alias}.json"
+        LOGGER.info("(7/7) Writing metadata to %s.", output_path)
+        try:
+            metadata.serialize(output_path)
+        except (  # pylint: disable=broad-except
+            Exception,
+            KeyboardInterrupt,
+        ) as exc:
+            raise storage_cleaner.WritingOutputError(
+                bucket_id=config.bucket_id, object_id=uploader.file_id
+            ) from exc
 
 
 def main(

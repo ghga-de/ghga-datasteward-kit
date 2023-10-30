@@ -21,4 +21,4 @@
 
 - **`secret_ingest_pubkey`** *(string)*: Public key used for encryption of the payload.
 
-- **`secret_ingest_url`** *(string)*: Base URL under which the /ingest_secret endpoint is available.
+- **`secret_ingest_baseurl`** *(string)*: Base URL under which the /ingest_secret endpoint is available.
