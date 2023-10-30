@@ -36,7 +36,6 @@ from ghga_datasteward_kit.s3_upload.utils import (
     StorageCleaner,
     check_adjust_part_size,
     check_output_path,
-    get_object_storage,
     handle_superficial_error,
     httpx_client,
 )
@@ -93,7 +92,12 @@ async def validate_and_transfer_content(
 
 
 async def exchange_secret_for_id(
-    *, file_id: str, alias: str, secret: bytes, token: str, config: Config
+    *,
+    file_id: str,
+    secret: bytes,
+    token: str,
+    config: Config,
+    storage_cleaner: StorageCleaner,
 ) -> str:
     """
     Call file ingest service to store the file secret and obtain a secret ID by which
@@ -118,13 +122,12 @@ async def exchange_secret_for_id(
         )
 
         if response.status_code != 200:
-            object_storage = get_object_storage(config=config)
-            await object_storage.delete_object(
-                bucket_id=config.bucket_id, object_id=file_id
+            message = (
+                f"Failed to deposit secret for {file_id} with response code"
+                + f" {response.status_code}."
             )
-            raise ValueError(
-                f"Failed to deposit secret for {alias} with response code"
-                + f" {response.status_code}. Removed uploaded file."
+            raise storage_cleaner.SecretExchangeError(
+                bucket_id=config.bucket_id, object_id=file_id, message=message
             )
         return response.json()["secret_id"]
 
@@ -150,10 +153,10 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
 
         secret_id = await exchange_secret_for_id(
             file_id=uploader.file_id,
-            alias=alias,
             secret=uploader.encryptor.file_secret,
             token=token,
             config=config,
+            storage_cleaner=storage_cleaner,
         )
 
         metadata = models.OutputMetadata(

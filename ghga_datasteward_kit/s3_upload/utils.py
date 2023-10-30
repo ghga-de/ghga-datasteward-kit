@@ -209,6 +209,14 @@ class StorageCleaner:
             message = f"Failed uploading file part for ''{object_id}''."
             super().__init__(message)
 
+    class SecretExchangeError(RuntimeError):
+        """Raised when secret exchange failed and the uploaded file needs removal."""
+
+        def __init__(self, *, bucket_id: str, object_id: str, message: str):
+            self.bucket_id = bucket_id
+            self.object_id = object_id
+            super().__init__(message)
+
     class WritingOutputError(RuntimeError):
         """Raised when output metadata could not be written and the uploaded file needs removal."""
 
@@ -241,6 +249,7 @@ class StorageCleaner:
             (
                 self.ChecksumValidationError,
                 self.PartDownloadError,
+                self.SecretExchangeError,
                 self.WritingOutputError,
             ),
         ):
