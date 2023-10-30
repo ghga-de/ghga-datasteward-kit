@@ -43,11 +43,15 @@ from ghga_datasteward_kit.s3_upload.utils import (
 from ghga_datasteward_kit.utils import load_config_yaml, read_token
 
 
-async def shared_path(
+async def validate_and_transfer_content(
     input_path: Path, alias: str, config: LegacyConfig, storage_cleaner: StorageCleaner
 ):
     """
-    Functionality shared between legacy and non-legacy upload path
+    Check and upload encrypted file content. This also includes a verification of the
+    upload by downloading the content again and performing a checksum validation.
+
+    Returns:
+        A tuple of the used uploader instance and the file size
     """
     if not input_path.exists():
         msg = f"No such file: {input_path.resolve()}"
@@ -131,7 +135,7 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
     Prints metadata to <alias>.json in the specified output directory
     """
     async with StorageCleaner(config=config) as storage_cleaner:
-        uploader, file_size = await shared_path(
+        uploader, file_size = await validate_and_transfer_content(
             input_path=input_path,
             alias=alias,
             config=config,
@@ -183,7 +187,7 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
     Prints metadata to <alias>.json in the specified output directory
     """
     async with StorageCleaner(config=config) as storage_cleaner:
-        uploader, file_size = await shared_path(
+        uploader, file_size = await validate_and_transfer_content(
             input_path=input_path,
             alias=alias,
             config=config,
