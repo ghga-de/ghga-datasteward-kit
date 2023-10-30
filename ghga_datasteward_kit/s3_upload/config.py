@@ -74,7 +74,7 @@ class Config(LegacyConfig):
     secret_ingest_pubkey: str = Field(
         ..., description="Public key used for encryption of the payload."
     )
-    secret_ingest_url: str = Field(
+    secret_ingest_baseurl: str = Field(
         ...,
         description="Base URL under which the /ingest_secret endpoint is available.",
     )

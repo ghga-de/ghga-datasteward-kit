@@ -88,7 +88,7 @@ def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
             metadata.serialize(file_path)
 
             config = IngestConfig(
-                file_ingest_url="https://not-a-valid-url",
+                file_ingest_baseurl="https://not-a-valid-url",
                 file_ingest_pubkey=encode_key(keypair.public),
                 input_dir=Path(input_dir),
                 map_files_fields=["study_files"],
@@ -134,7 +134,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
             metadata.serialize(file_path)
 
             config = IngestConfig(
-                file_ingest_url="https://not-a-valid-url",
+                file_ingest_baseurl="https://not-a-valid-url",
                 file_ingest_pubkey=encode_key(keypair.public),
                 input_dir=Path(input_dir),
                 map_files_fields=["study_files"],

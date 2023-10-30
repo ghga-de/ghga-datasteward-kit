@@ -28,7 +28,7 @@ from testcontainers.localstack import LocalStackContainer  # type: ignore
 
 from ghga_datasteward_kit.s3_upload import Config, LegacyConfig
 from ghga_datasteward_kit.s3_upload.entrypoint import async_main, legacy_async_main
-from ghga_datasteward_kit.s3_upload.utils import objectstorage
+from ghga_datasteward_kit.s3_upload.utils import get_objectstorage
 from tests.fixtures.config import config_fixture, legacy_config_fixture  # noqa: F401
 
 ALIAS = "test_file"
@@ -52,7 +52,7 @@ async def test_legacy_process(legacy_config_fixture: LegacyConfig):  # noqa: F81
                 "bucket_id": BUCKET_ID,
             }
         )
-        storage = objectstorage(config=config)
+        storage = get_objectstorage(config=config)
         await storage.create_bucket(bucket_id=config.bucket_id)
         sys.set_int_max_str_digits(50 * 1024**2)
         with big_temp_file(50 * 1024**2) as file:
@@ -85,7 +85,7 @@ async def test_process(config_fixture: Config, monkeypatch):  # noqa: F811
                 "bucket_id": BUCKET_ID,
             }
         )
-        storage = objectstorage(config=config)
+        storage = get_objectstorage(config=config)
         await storage.create_bucket(bucket_id=config.bucket_id)
         sys.set_int_max_str_digits(50 * 1024**2)
 

@@ -30,7 +30,7 @@ from ghga_datasteward_kit import models, utils
 class IngestConfig(SubmissionStoreConfig):
     """Config options for calling the file ingest endpoint"""
 
-    file_ingest_url: str = Field(
+    file_ingest_baseurl: str = Field(
         ..., description="Base URL under which the /ingest endpoint is available."
     )
     file_ingest_pubkey: str = Field(
@@ -109,8 +109,12 @@ def file_ingest(
 
     try:
         output_metadata = models.OutputMetadata.load(input_path=in_path)
+        endpoint = "/federated/ingest_metadata"
     except (KeyError, ValidationError):
         output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
+        endpoint = "/legacy/ingest"
+
+    endpoint_url = f"{config.file_ingest_baseurl}{endpoint}"
 
     submission_store = SubmissionStore(config=config)
 
@@ -124,7 +128,7 @@ def file_ingest(
 
     with httpx.Client() as client:
         response = client.post(
-            f"{config.file_ingest_url}",
+            f"{endpoint_url}",
             json=encrypted.dict(),
             headers=headers,
             timeout=60,

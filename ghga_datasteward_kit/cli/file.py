@@ -46,6 +46,33 @@ def upload(
 
 
 @cli.command()
+def legacy_batch_upload(
+    tsv: Path = typer.Option(
+        ...,
+        help=(
+            "Path to a tsv file with the first column containing the file path and the"
+            + " second column containing the file alias."
+        ),
+    ),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+    parallel_processes: int = typer.Option(..., help="Number of parallel uploads."),
+    dry_run: bool = typer.Option(
+        False,
+        help=("Only print commands for each file. No uploads are performed."),
+    ),
+):
+    """Upload multiple files to S3."""
+
+    batch_s3_upload.main(
+        file_overview_tsv=tsv,
+        config_path=config_path,
+        parallel_processes=parallel_processes,
+        dry_run=dry_run,
+        legacy_mode=True,
+    )
+
+
+@cli.command()
 def batch_upload(
     tsv: Path = typer.Option(
         ...,
@@ -60,11 +87,6 @@ def batch_upload(
         False,
         help=("Only print commands for each file. No uploads are performed."),
     ),
-    legacy_mode: bool = typer.Option(
-        False,
-        help="If true, run legacy upload code writing file_secret instead of secret_id "
-        + "to output metadata",
-    ),
 ):
     """Upload multiple files to S3."""
 
@@ -73,7 +95,7 @@ def batch_upload(
         config_path=config_path,
         parallel_processes=parallel_processes,
         dry_run=dry_run,
-        legacy_mode=legacy_mode,
+        legacy_mode=False,
     )
 
 

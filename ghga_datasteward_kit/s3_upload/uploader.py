@@ -24,7 +24,7 @@ import crypt4gh.lib  # type: ignore
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
-from ghga_datasteward_kit.s3_upload.utils import LOGGER, httpx_client, objectstorage
+from ghga_datasteward_kit.s3_upload.utils import LOGGER, get_objectstorage, httpx_client
 
 
 class ChunkedUploader:
@@ -98,7 +98,7 @@ class MultipartUpload:
         part_size: int,
     ) -> None:
         self.config = config
-        self.storage = objectstorage(config=self.config)
+        self.storage = get_objectstorage(config=self.config)
         self.file_id = file_id
         self.file_size = encrypted_file_size
         self.part_size = part_size

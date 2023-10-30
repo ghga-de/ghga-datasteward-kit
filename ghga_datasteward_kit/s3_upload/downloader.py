@@ -23,9 +23,9 @@ from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
 from ghga_datasteward_kit.s3_upload.utils import (
     LOGGER,
+    get_objectstorage,
     get_ranges,
     httpx_client,
-    objectstorage,
 )
 
 
@@ -42,7 +42,7 @@ class ChunkedDownloader:
         target_checksums: models.Checksums,
     ) -> None:
         self.config = config
-        self.storage = objectstorage(self.config)
+        self.storage = get_objectstorage(self.config)
         self.file_id = file_id
         self.file_size = encrypted_file_size
         self.file_secret = file_secret
@@ -79,7 +79,7 @@ class ChunkedDownloader:
     async def validate_checksums(self, checkums: models.Checksums):
         """Confirm checksums for upload and download match"""
         if not self.target_checksums.get() == checkums.get():
-            object_storage = objectstorage(config=self.config)
+            object_storage = get_objectstorage(config=self.config)
             await object_storage.delete_object(
                 bucket_id=self.config.bucket_id, object_id=self.file_id
             )

@@ -60,6 +60,12 @@ class Checksums:
         self.encrypted_sha256.append(hashlib.sha256(part).hexdigest())
 
 
+class EncryptedPayload(BaseModel):
+    """Contains encrypted upload metadata or secret as payload"""
+
+    payload: str
+
+
 class FileUploadMetadataBase(BaseModel):
     """Decrypted payload model for S3 upload script output"""
 
@@ -73,7 +79,7 @@ class FileUploadMetadataBase(BaseModel):
     encrypted_md5_checksums: list[str]
     encrypted_sha256_checksums: list[str]
 
-    def encrypt_metadata(self, pubkey: str):
+    def encrypt_metadata(self, pubkey: str) -> EncryptedPayload:
         """Create payload by encryption FileUploadMetadata"""
 
         payload = self.json()
@@ -255,9 +261,3 @@ class OutputMetadata(
             unencrypted_size=int(data["Unencrypted file size"]),
             encrypted_size=int(data["Encrypted file size"]),
         )
-
-
-class EncryptedPayload(BaseModel):
-    """Contains encrypted upload metadata or secret as payload"""
-
-    payload: str

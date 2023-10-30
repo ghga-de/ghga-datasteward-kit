@@ -72,10 +72,12 @@ async def test_legacy_ingest_directly(
 ):
     """Test file_ingest function directly"""
 
+    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}/legacy/ingest"
     token = generate_token()
 
     httpx_mock.add_response(
-        url=legacy_ingest_fixture.config.file_ingest_url, status_code=202
+        url=endpoint_url,
+        status_code=202,
     )
     file_ingest(
         in_path=legacy_ingest_fixture.file_path,
@@ -84,7 +86,7 @@ async def test_legacy_ingest_directly(
     )
 
     httpx_mock.add_response(
-        url=legacy_ingest_fixture.config.file_ingest_url,
+        url=endpoint_url,
         json={"detail": "Not authorized to access ingest endpoint."},
         status_code=403,
     )
@@ -96,7 +98,7 @@ async def test_legacy_ingest_directly(
         )
 
     httpx_mock.add_response(
-        url=legacy_ingest_fixture.config.file_ingest_url,
+        url=endpoint_url,
         json={"detail": "Could not decrypt received payload."},
         status_code=422,
     )
@@ -114,9 +116,12 @@ async def test_ingest_directly(
 ):
     """Test file_ingest function directly"""
 
+    endpoint_url = (
+        f"{ingest_fixture.config.file_ingest_baseurl}/federated/ingest_metadata"
+    )
     token = generate_token()
 
-    httpx_mock.add_response(url=ingest_fixture.config.file_ingest_url, status_code=202)
+    httpx_mock.add_response(url=endpoint_url, status_code=202)
     file_ingest(
         in_path=ingest_fixture.file_path,
         token=token,
@@ -124,7 +129,7 @@ async def test_ingest_directly(
     )
 
     httpx_mock.add_response(
-        url=ingest_fixture.config.file_ingest_url,
+        url=endpoint_url,
         json={"detail": "Not authorized to access ingest endpoint."},
         status_code=403,
     )
@@ -136,7 +141,7 @@ async def test_ingest_directly(
         )
 
     httpx_mock.add_response(
-        url=ingest_fixture.config.file_ingest_url,
+        url=endpoint_url,
         json={"detail": "Could not decrypt received payload."},
         status_code=422,
     )
@@ -157,6 +162,7 @@ async def test_legacy_main(
 ):
     """Test if main file ingest function works correctly"""
 
+    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}/legacy/ingest"
     config_path = legacy_ingest_fixture.config.input_dir / "config.yaml"
 
     config = legacy_ingest_fixture.config.dict()
@@ -168,16 +174,14 @@ async def test_legacy_main(
 
     monkeypatch.setattr("ghga_datasteward_kit.utils.read_token", generate_token)
 
-    httpx_mock.add_response(
-        url=legacy_ingest_fixture.config.file_ingest_url, status_code=202
-    )
+    httpx_mock.add_response(url=endpoint_url, status_code=202)
     ingest_upload_metadata(config_path=config_path)
     out, _ = capfd.readouterr()
 
     assert "Sucessfully sent all file upload metadata for ingest" in out
 
     httpx_mock.add_response(
-        url=legacy_ingest_fixture.config.file_ingest_url,
+        url=endpoint_url,
         json={"detail": "Unauthorized"},
         status_code=403,
     )

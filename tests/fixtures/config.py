@@ -53,5 +53,5 @@ def config_fixture() -> Generator[Config, None, None]:
             bucket_id="test_bucket",
             output_dir=output_dir,
             secret_ingest_pubkey=public_key,
-            secret_ingest_url="https://not-a-real-url",
+            secret_ingest_baseurl="https://not-a-real-url",
         )

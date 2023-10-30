@@ -79,7 +79,7 @@ def read_file_parts(
         yield file_part
 
 
-def objectstorage(config: LegacyConfig):
+def get_objectstorage(config: LegacyConfig):
     """Configure S3 and return S3 DAO"""
     s3_config = S3Config(
         s3_endpoint_url=config.s3_endpoint_url.get_secret_value(),

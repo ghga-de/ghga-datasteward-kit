@@ -35,9 +35,9 @@ from ghga_datasteward_kit.s3_upload.utils import (
     HttpxClientState,
     check_adjust_part_size,
     check_output_path,
+    get_objectstorage,
     handle_superficial_error,
     httpx_client,
-    objectstorage,
 )
 from ghga_datasteward_kit.utils import load_config_yaml, read_token
 
@@ -94,6 +94,7 @@ async def exchange_secret_for_id(
     a ValueError is raised containing the file alias and response status code.
     """
 
+    endpoint_url = f"{config.secret_ingest_baseurl}/federated/ingest_secret"
     file_secret = base64.b64encode(secret).decode("utf-8")
     payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
     encrypted_secret = models.EncryptedPayload(payload=payload)
@@ -101,14 +102,14 @@ async def exchange_secret_for_id(
     with httpx_client() as client:
         headers = {"Authorization": f"Bearer {token}"}
         response = client.post(
-            url=config.secret_ingest_url,
+            url=endpoint_url,
             json=encrypted_secret.dict(),
             headers=headers,
             timeout=60,
         )
 
         if response.status_code != 200:
-            object_storage = objectstorage(config=config)
+            object_storage = get_objectstorage(config=config)
             await object_storage.delete_object(
                 bucket_id=config.bucket_id, object_id=file_id
             )
