@@ -28,7 +28,7 @@ from testcontainers.localstack import LocalStackContainer  # type: ignore
 
 from ghga_datasteward_kit.s3_upload import Config, LegacyConfig
 from ghga_datasteward_kit.s3_upload.entrypoint import async_main, legacy_async_main
-from ghga_datasteward_kit.s3_upload.utils import get_object_storage
+from ghga_datasteward_kit.s3_upload.utils import StorageCleaner, get_object_storage
 from tests.fixtures.config import config_fixture, legacy_config_fixture  # noqa: F401
 
 ALIAS = "test_file"
@@ -68,7 +68,12 @@ async def test_process(config_fixture: Config, monkeypatch):  # noqa: F811
     """Test whole upload/download process for s3_upload script"""
 
     async def secret_exchange_dummy(
-        *, file_id: str, alias: str, secret: bytes, token: str, config: Config
+        *,
+        file_id: str,
+        secret: bytes,
+        token: str,
+        config: Config,
+        storage_cleaner: StorageCleaner
     ):
         return "test-secret-id"
 
