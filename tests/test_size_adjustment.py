@@ -15,30 +15,35 @@
 
 """Test adjustment code for part size"""
 
-from ghga_datasteward_kit.s3_upload import Config, check_adjust_part_size
-from tests.fixtures.config import config_fixture  # noqa: F401
+from ghga_datasteward_kit.s3_upload import Config
+from ghga_datasteward_kit.s3_upload.utils import check_adjust_part_size
+from tests.fixtures.config import legacy_config_fixture  # noqa: F401
 
 
-def test_check_adjust_part_size(config_fixture: Config):  # noqa: F811
+def test_check_adjust_part_size(legacy_config_fixture: Config):  # noqa: F811
     """Test adaptive adjustment"""
-    config_fixture.part_size = 16
+    legacy_config_fixture.part_size = 16
     file_size = 16 * 80_000 * 1024**2
-    check_adjust_part_size(config=config_fixture, file_size=file_size)
-    adjusted_part_size = config_fixture.part_size / 1024**2
+    check_adjust_part_size(config=legacy_config_fixture, file_size=file_size)
+    adjusted_part_size = legacy_config_fixture.part_size / 1024**2
     assert adjusted_part_size == 256
 
 
-def test_check_adjust_part_size_lower_bound(config_fixture: Config):  # noqa: F811
+def test_check_adjust_part_size_lower_bound(
+    legacy_config_fixture: Config,  # noqa: F811
+):
     """Test lower bound"""
     lower_expect = 5 * 1024**2
-    config_fixture.part_size = 4
-    check_adjust_part_size(config=config_fixture, file_size=32 * 1024**2)
-    assert config_fixture.part_size == lower_expect
+    legacy_config_fixture.part_size = 4
+    check_adjust_part_size(config=legacy_config_fixture, file_size=32 * 1024**2)
+    assert legacy_config_fixture.part_size == lower_expect
 
 
-def test_check_adjust_part_size_upper_bound(config_fixture: Config):  # noqa: F811
+def test_check_adjust_part_size_upper_bound(
+    legacy_config_fixture: Config,  # noqa: F811
+):
     """Test upper bound"""
     upper_expect = 5 * 1024**3
-    config_fixture.part_size = int(5.1 * 1024)
-    check_adjust_part_size(config=config_fixture, file_size=32 * 1024**2)
-    assert config_fixture.part_size == upper_expect
+    legacy_config_fixture.part_size = int(5.1 * 1024)
+    check_adjust_part_size(config=legacy_config_fixture, file_size=32 * 1024**2)
+    assert legacy_config_fixture.part_size == upper_expect

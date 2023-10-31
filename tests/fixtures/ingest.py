@@ -14,6 +14,7 @@
 # limitations under the License.
 """FIS endpoint calling functionality"""
 
+import base64
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -32,7 +33,7 @@ from metldata.submission_registry.models import (
 from metldata.submission_registry.submission_store import SubmissionStore
 
 from ghga_datasteward_kit.file_ingest import IngestConfig
-from ghga_datasteward_kit.models import OutputMetadata
+from ghga_datasteward_kit.models import LegacyOutputMetadata, OutputMetadata
 
 EXAMPLE_SUBMISSION = Submission(
     title="test",
@@ -61,6 +62,52 @@ class IngestFixture:
 
 
 @pytest.fixture
+def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
+    """Generate necessary data for file ingest."""
+
+    with TemporaryDirectory() as input_dir:
+        with TemporaryDirectory() as submission_store_dir:
+            token, token_hash = generate_token_and_hash()
+            keypair = generate_key_pair()
+
+            file_path = Path(input_dir) / "test.json"
+
+            metadata = LegacyOutputMetadata(
+                alias="test_alias",
+                file_uuid="happy_little_object",
+                original_path=file_path,
+                part_size=16 * 1024**2,
+                unencrypted_size=50 * 1024**2,
+                encrypted_size=50 * 1024**2 + 128,
+                file_secret=os.urandom(32),
+                unencrypted_checksum="def",
+                encrypted_md5_checksums=["a", "b", "c"],
+                encrypted_sha256_checksums=["a", "b", "c"],
+            )
+
+            metadata.serialize(file_path)
+
+            config = IngestConfig(
+                file_ingest_baseurl="https://not-a-valid-url",
+                file_ingest_pubkey=encode_key(keypair.public),
+                input_dir=Path(input_dir),
+                map_files_fields=["study_files"],
+                submission_store_dir=Path(submission_store_dir),
+            )
+
+            submission_store = SubmissionStore(config=config)
+            submission_store.insert_new(submission=EXAMPLE_SUBMISSION)
+
+            yield IngestFixture(
+                config=config,
+                file_path=file_path,
+                token=token,
+                token_hash=token_hash,
+                keypair=keypair,
+            )
+
+
+@pytest.fixture
 def ingest_fixture() -> Generator[IngestFixture, None, None]:
     """Generate necessary data for file ingest."""
 
@@ -78,7 +125,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
                 part_size=16 * 1024**2,
                 unencrypted_size=50 * 1024**2,
                 encrypted_size=50 * 1024**2 + 128,
-                file_secret=os.urandom(32),
+                secret_id=base64.b64encode(os.urandom(32)).decode("utf-8"),
                 unencrypted_checksum="def",
                 encrypted_md5_checksums=["a", "b", "c"],
                 encrypted_sha256_checksums=["a", "b", "c"],
@@ -87,7 +134,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
             metadata.serialize(file_path)
 
             config = IngestConfig(
-                file_ingest_url="https://not-a-valid-url",
+                file_ingest_baseurl="https://not-a-valid-url",
                 file_ingest_pubkey=encode_key(keypair.public),
                 input_dir=Path(input_dir),
                 map_files_fields=["study_files"],

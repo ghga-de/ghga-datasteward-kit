@@ -30,7 +30,7 @@ from ghga_datasteward_kit import models, utils
 class IngestConfig(SubmissionStoreConfig):
     """Config options for calling the file ingest endpoint"""
 
-    file_ingest_url: str = Field(
+    file_ingest_baseurl: str = Field(
         ..., description="Base URL under which the /ingest endpoint is available."
     )
     file_ingest_pubkey: str = Field(
@@ -107,9 +107,17 @@ def file_ingest(
     Then call the ingest endpoint
     """
 
+    try:
+        output_metadata = models.OutputMetadata.load(input_path=in_path)
+        endpoint = "/federated/ingest_metadata"
+    except (KeyError, ValidationError):
+        output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
+        endpoint = "/legacy/ingest"
+
+    endpoint_url = f"{config.file_ingest_baseurl}{endpoint}"
+
     submission_store = SubmissionStore(config=config)
 
-    output_metadata = models.OutputMetadata.load(input_path=in_path)
     file_id = alias_to_id(
         output_metadata.alias, config.map_files_fields, submission_store
     )
@@ -120,13 +128,20 @@ def file_ingest(
 
     with httpx.Client() as client:
         response = client.post(
-            f"{config.file_ingest_url}", json=encrypted.dict(), headers=headers
+            f"{endpoint_url}",
+            json=encrypted.dict(),
+            headers=headers,
+            timeout=60,
         )
 
         if response.status_code != 202:
-            if response.status_code in (403, 422, 500):
-                raise ValueError(response.json()["detail"])
+            if response.status_code == 403:
+                raise ValueError("Not authorized to access ingest endpoint.")
+            if response.status_code == 422:
+                raise ValueError("Could not decrypt received payload.")
+            if response.status_code == 500:
+                raise ValueError(
+                    "Internal file ingest service error or communication with vault failed."
+                )
 
-            raise ValueError(
-                f"Unxpected server response: {response.status_code}: {response.text}"
-            )
+            raise ValueError(f"Unexpected server response: {response.status_code}.")
