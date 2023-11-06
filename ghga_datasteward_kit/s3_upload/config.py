@@ -40,22 +40,41 @@ class LegacyConfig(BaseSettings):
     Required options for legacy file uploads.
     """
 
-    s3_endpoint_url: SecretStr = Field(..., description="URL of the S3 server")
+    s3_endpoint_url: SecretStr = Field(
+        ..., description="URL of the local data hub's S3 server."
+    )
     s3_access_key_id: SecretStr = Field(
-        ..., description="Access key ID for the S3 server"
+        ...,
+        description=(
+            "Access key ID for the local data hub's S3 server. The corresponding"
+            + " account need to have s3:GetObject and s3:PutObject privileges for the"
+            + " internal staging bucket (as in `bucket_id`). These credentials should"
+            + " never be shared with GHGA Central."
+        ),
     )
     s3_secret_access_key: SecretStr = Field(
-        ..., description="Secret access key for the S3 server"
+        ...,
+        description=("Secret access key corresponding to the `s3_access_key_id`."),
     )
     bucket_id: str = Field(
-        ..., description="Bucket id where the encrypted, uploaded file is stored"
+        ...,
+        description=(
+            "Bucket ID of the internal staging bucket of the local data hub's S3 system"
+            "where the encrypted files are uploaded to."
+        ),
     )
     part_size: int = Field(
         16, description="Upload part size in MiB. Has to be between 5 and 5120."
     )
     output_dir: Path = Field(
         ...,
-        description="Directory for the output metadata file",
+        description=(
+            "Directory for the output metadata files. For each file upload one metadata"
+            + " file in yaml format will be generated. It contains details on the files"
+            + " such as checksums, the original file path, the auto generated object ID"
+            + " used on the S3 system, and the ID of the secret (the secret itself is"
+            + " automatically communicated to GHGA Central) used to encrypt the file."
+        ),
     )
 
     @validator("output_dir")
@@ -72,9 +91,17 @@ class Config(LegacyConfig):
     """
 
     secret_ingest_pubkey: str = Field(
-        ..., description="Public key used for encryption of the payload."
+        ...,
+        description=(
+            "Public key provided by GHGA Central used to encrypt the communication with"
+            + " GHGA Central."
+        ),
     )
     secret_ingest_baseurl: str = Field(
         ...,
-        description="Base URL under which the /ingest_secret endpoint is available.",
+        description=(
+            "Base URL under which the /ingest_secret endpoint is available."
+            + " This is an endpoint exposed by GHGA Central. This value is provided by"
+            + " GHGA Central on demand."
+        ),
     )

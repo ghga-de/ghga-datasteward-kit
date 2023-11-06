@@ -31,10 +31,19 @@ class IngestConfig(SubmissionStoreConfig):
     """Config options for calling the file ingest endpoint"""
 
     file_ingest_baseurl: str = Field(
-        ..., description="Base URL under which the /ingest endpoint is available."
+        ...,
+        description=(
+            "Base URL under which the /ingest endpoint is available."
+            + " This is an endpoint exposed by GHGA Central. This value is provided by"
+            + " GHGA Central on demand."
+        ),
     )
     file_ingest_pubkey: str = Field(
-        ..., description="Public key used for encryption of the payload."
+        ...,
+        description=(
+            "Public key provided by GHGA Central used to encrypt the communication with"
+            + " GHGA Central."
+        ),
     )
     input_dir: Path = Field(
         ...,
