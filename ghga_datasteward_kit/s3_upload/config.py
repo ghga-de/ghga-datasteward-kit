@@ -46,9 +46,10 @@ class LegacyConfig(BaseSettings):
     s3_access_key_id: SecretStr = Field(
         ...,
         description=(
-            "Access key ID for the local data hub's S3 server. The corresponding"
-            + " account need to have s3:GetObject and s3:PutObject privileges for the"
-            + " internal staging bucket (as in `bucket_id`). These credentials should"
+            "This parameter plus the s3_secret_access_key serve as credentials for"
+            + " accessing the internal staging bucket (as in"
+            + " `bucket_id`) on the local data hub's S3 server with s3:GetObject and"
+            + " s3:PutObject privileges. These credentials should"
             + " never be shared with GHGA Central."
         ),
     )
