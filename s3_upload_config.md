@@ -9,7 +9,7 @@
 
 - **`s3_endpoint_url`** *(string)*: URL of the local data hub's S3 server.
 
-- **`s3_access_key_id`** *(string)*: Access key ID for the local data hub's S3 server. The corresponding account need to have s3:GetObject and s3:PutObject privileges for the internal staging bucket (as in `bucket_id`). These credentials should never be shared with GHGA Central.
+- **`s3_access_key_id`** *(string)*: This parameter plus the s3_secret_access_key serve as credentials for accessing the internal staging bucket (as in `bucket_id`) on the local data hub's S3 server with s3:GetObject and s3:PutObject privileges. These credentials should never be shared with GHGA Central.
 
 - **`s3_secret_access_key`** *(string)*: Secret access key corresponding to the `s3_access_key_id`.
 
