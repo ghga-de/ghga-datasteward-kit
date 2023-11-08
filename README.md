@@ -143,7 +143,7 @@ If this file is lost, the uploaded file content becomes inaccessible.
 
 ### files ingest-upload-metadata
 
-*To be performed by Central Data Stewards.*
+*To be performed by Central Data Stewards only.*
 
 Upload all file summary JSONs (produced using the
 [files (batch-)upload](#files-batch-upload) command) from the given directory to the
