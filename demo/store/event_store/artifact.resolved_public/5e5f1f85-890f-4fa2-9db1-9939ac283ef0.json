@@ -1,1020 +1,1020 @@
 {
-    "type_": "resolved_public",
-    "payload": {
-        "submission_id": "5e5f1f85-890f-4fa2-9db1-9939ac283ef0",
-        "content": {
-            "analysis_processes": [
-                {
-                    "accession": "GHGAR39274427357650",
-                    "alias": "ANALYSIS_PROCESS_1",
-                    "analysis": "GHGAZ27015623002226",
-                    "sequencing_process_input_files": [
-                        "GHGAF98787275505937"
-                    ],
-                    "analysis_process_output_files": [
-                        "GHGAF60227492784158"
-                    ]
-                },
-                {
-                    "accession": "GHGAR69880405010665",
-                    "alias": "ANALYSIS_PROCESS_2",
-                    "analysis": "GHGAZ27015623002226",
-                    "sequencing_process_input_files": [
-                        "GHGAF88846609319878"
-                    ],
-                    "analysis_process_output_files": [
-                        "GHGAF98095735942999"
-                    ]
-                },
-                {
-                    "accession": "GHGAR56199553295675",
-                    "alias": "ANALYSIS_PROCESS_3",
-                    "analysis": "GHGAZ27015623002226",
-                    "sequencing_process_input_files": [
-                        "GHGAF35359790750617"
-                    ],
-                    "analysis_process_output_files": [
-                        "GHGAF03542347431941"
-                    ]
-                },
-                {
-                    "accession": "GHGAR75043017740512",
-                    "alias": "ANALYSIS_PROCESS_4",
-                    "analysis": "GHGAZ27015623002226",
-                    "sequencing_process_input_files": [
-                        "GHGAF02723287849704"
-                    ],
-                    "analysis_process_output_files": [
-                        "GHGAF00240854404941"
-                    ]
-                },
-                {
-                    "accession": "GHGAR24081486884193",
-                    "alias": "ANALYSIS_PROCESS_5",
-                    "analysis": "GHGAZ27015623002226",
-                    "sequencing_process_input_files": [
-                        "GHGAF19339989618442"
-                    ],
-                    "analysis_process_output_files": [
-                        "GHGAF70399258952657"
-                    ]
-                },
-                {
-                    "accession": "GHGAR30835311417129",
-                    "alias": "ANALYSIS_PROCESS_6",
-                    "analysis": "GHGAZ27015623002226",
-                    "sequencing_process_input_files": [
-                        "GHGAF82574397155238"
-                    ],
-                    "analysis_process_output_files": [
-                        "GHGAF48722477903529"
-                    ]
-                },
-                {
-                    "accession": "GHGAR38458015046073",
-                    "alias": "ANALYSIS_PROCESS_7",
-                    "analysis": "GHGAZ27015623002226",
-                    "sequencing_process_input_files": [
-                        "GHGAF07328380425408"
-                    ],
-                    "analysis_process_output_files": [
-                        "GHGAF52403457644815"
-                    ]
-                },
-                {
-                    "accession": "GHGAR93850957626599",
-                    "alias": "ANALYSIS_PROCESS_8",
-                    "analysis": "GHGAZ27015623002226",
-                    "sequencing_process_input_files": [
-                        "GHGAF62118300340019"
-                    ],
-                    "analysis_process_output_files": [
-                        "GHGAF64039739056861"
-                    ]
-                },
-                {
-                    "accession": "GHGAR96450411800508",
-                    "alias": "ANALYSIS_PROCESS_9",
-                    "analysis": "GHGAZ27015623002226",
-                    "sequencing_process_input_files": [
-                        "GHGAF86681016295324"
-                    ],
-                    "analysis_process_output_files": [
-                        "GHGAF00202976705407"
-                    ]
-                }
-            ],
-            "conditions": [
-                {
-                    "accession": "GHGAK19290740394392",
-                    "alias": "COND_1",
-                    "title": "Condition A",
-                    "description": "Condition A is a condition",
-                    "name": "Condition A",
-                    "disease_or_healthy": "DISEASE",
-                    "case_control_status": "TRUE_CASE_STATUS",
-                    "mutant_or_wildtype": "MUTANT",
-                    "study": "GHGAS36422481396751",
-                    "samples": [
-                        "GHGAN13712948112566"
-                    ]
-                },
-                {
-                    "accession": "GHGAK13090423773754",
-                    "alias": "COND_2",
-                    "title": "Condition B",
-                    "description": "Condition B is another condition",
-                    "name": "Condition B",
-                    "disease_or_healthy": "HEALTHY",
-                    "case_control_status": "TRUE_CONTROL_STATUS",
-                    "mutant_or_wildtype": "WILDTYPE",
-                    "study": "GHGAS55941946021084",
-                    "samples": [
-                        "GHGAN46177740365005"
-                    ]
-                }
-            ],
-            "sequencing_process_files": [
-                {
-                    "accession": "GHGAF98787275505937",
-                    "alias": "SEQ_FILE_1",
-                    "sequencing_process": "GHGAO62191423783852",
-                    "name": "SAMPLE_1_SPECIMEN_1_FILE_1.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 90113,
-                    "checksum": "995254cf212686d88ea73cbaf49489c8dc2784dc31cb586452e0aa835498ab98",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD09598790897621"
-                },
-                {
-                    "accession": "GHGAF88846609319878",
-                    "alias": "SEQ_FILE_2",
-                    "sequencing_process": "GHGAO26926467690962",
-                    "name": "SAMPLE_1_SPECIMEN_1_FILE_2.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 104449,
-                    "checksum": "b8de1729ef9b8a424749ce85815c9eeb166cb7f5f5eca4b02f04e2f9277501c6",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD09598790897621"
-                },
-                {
-                    "accession": "GHGAF35359790750617",
-                    "alias": "SEQ_FILE_3",
-                    "sequencing_process": "GHGAO51030339704752",
-                    "name": "SAMPLE_1_SPECIMEN_1_FILE_3.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 51201,
-                    "checksum": "6b7f4b8fc774de4359c985835733c169f1731a109db7893dd35acd4afea3c5b4",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD09598790897621"
-                },
-                {
-                    "accession": "GHGAF02723287849704",
-                    "alias": "SEQ_FILE_4",
-                    "sequencing_process": "GHGAO97365634927261",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_4.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 96257,
-                    "checksum": "9aea8c99cc065836f1f2765a8590971c5b5d2a29c4c6569c475089c5b57d1180",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF19339989618442",
-                    "alias": "SEQ_FILE_5",
-                    "sequencing_process": "GHGAO06622800988515",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_5.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 63489,
-                    "checksum": "a13dfc276fe322cb1b7490441097662e60443fb8787b011eaec4621916842847",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF82574397155238",
-                    "alias": "SEQ_FILE_6",
-                    "sequencing_process": "GHGAO66715047871416",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_6.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 104449,
-                    "checksum": "e5c186653c619507cec6aa6b7affedeb5ec29a5e23d2814d2710076fa1f5000b",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF07328380425408",
-                    "alias": "SEQ_FILE_7",
-                    "sequencing_process": "GHGAO36629966744948",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_7.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 53249,
-                    "checksum": "f37c331e32ba71cfabbd88b9115eeb6a000c1085cc596dcee9db3c7552229049",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF62118300340019",
-                    "alias": "SEQ_FILE_8",
-                    "sequencing_process": "GHGAO59081664899908",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_8.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 96257,
-                    "checksum": "6c11379d7ce5625bdef86d2b72c0399280388f2532c26c3934f4ee88e7c25e4d",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF86681016295324",
-                    "alias": "SEQ_FILE_9",
-                    "sequencing_process": "GHGAO35933687766366",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_9.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 49153,
-                    "checksum": "23ba42aeef99bffae8f1f4409c64d1a2e19c49dc74c2c6ad6c7b98c5bf04dd1f",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                }
-            ],
-            "studies": [
-                {
-                    "accession": "GHGAS36422481396751",
-                    "alias": "STUDY_A",
-                    "title": "The A Study",
-                    "description": "A study that is the A study",
-                    "type": "SYNTHETIC_GENOMICS",
-                    "affiliations": [
-                        "Some Institute",
-                        "Some other Institute"
-                    ],
-                    "attributes": [
-                        {
-                            "key": "budget",
-                            "value": "3.5M"
-                        },
-                        {
-                            "key": "funding",
-                            "value": "EU"
-                        }
-                    ],
-                    "conditions": [
-                        "GHGAK19290740394392"
-                    ],
-                    "study_files": [
-                        "GHGAF29699992445931"
-                    ],
-                    "publications": [
-                        "GHGAU83435125182534"
-                    ]
-                },
-                {
-                    "accession": "GHGAS55941946021084",
-                    "alias": "STUDY_B",
-                    "title": "The B Study",
-                    "description": "A study that is the B study",
-                    "type": "WHOLE_GENOME_SEQUENCING",
-                    "affiliations": [
-                        "Some Institute"
-                    ],
-                    "conditions": [
-                        "GHGAK13090423773754"
-                    ],
-                    "study_files": [],
-                    "publications": [
-                        "GHGAU43563073899203"
-                    ]
-                }
-            ],
-            "individuals": [
-                {
-                    "accession": "GHGAI69689243593970",
-                    "alias": "INDV_1",
-                    "sex": "MALE_SEX_FOR_CLINICAL_USE",
-                    "karyotype": "OTHER",
-                    "geographical_region": "Italy",
-                    "ancestries": [
-                        "European"
-                    ],
-                    "phenotypic_features": [
-                        "Leukemia"
-                    ],
-                    "biospecimens": [
-                        "GHGAM09721498223028",
-                        "GHGAM87645148934949"
-                    ]
-                },
-                {
-                    "accession": "GHGAI67844275544626",
-                    "alias": "MOTHER_1",
-                    "sex": "FEMALE_SEX_FOR_CLINICAL_USE",
-                    "karyotype": "OTHER",
-                    "geographical_region": "Italy",
-                    "ancestries": [
-                        "European"
-                    ],
-                    "phenotypic_features": [
-                        "Leukemia"
-                    ],
-                    "biospecimens": []
-                },
-                {
-                    "accession": "GHGAI04639299227616",
-                    "alias": "FATHER_1",
-                    "sex": "MALE_SEX_FOR_CLINICAL_USE",
-                    "karyotype": "OTHER",
-                    "geographical_region": "Italy",
-                    "ancestries": [
-                        "European"
-                    ],
-                    "phenotypic_features": [
-                        "Leukemia"
-                    ],
-                    "biospecimens": []
-                }
-            ],
-            "samples": [
-                {
-                    "accession": "GHGAN13712948112566",
-                    "alias": "SAMPLE_1",
-                    "name": "GHGAS_blood_sample1",
-                    "type": "CF_DNA",
-                    "description": "Arterial blood sample 1",
-                    "isolation": "Blood collection tube holder/needle",
-                    "storage": "frozen at -20",
-                    "biospecimen": "GHGAM87645148934949",
-                    "condition": "GHGAK19290740394392",
-                    "sample_files": [],
-                    "sequencing_processes": [
-                        "GHGAO26926467690962",
-                        "GHGAO51030339704752",
-                        "GHGAO62191423783852"
-                    ]
-                },
-                {
-                    "accession": "GHGAN46177740365005",
-                    "alias": "SAMPLE_2",
-                    "name": "GHGAS_tissue_sample1",
-                    "type": "CF_DNA",
-                    "description": "white adipose tissue sample 1",
-                    "isolation": "Core needle biopsy",
-                    "storage": "frozen at -80",
-                    "biospecimen": "GHGAM09721498223028",
-                    "condition": "GHGAK13090423773754",
-                    "sample_files": [],
-                    "sequencing_processes": [
-                        "GHGAO06622800988515",
-                        "GHGAO35933687766366",
-                        "GHGAO36629966744948",
-                        "GHGAO59081664899908",
-                        "GHGAO66715047871416",
-                        "GHGAO97365634927261"
-                    ]
-                }
-            ],
-            "biospecimens": [
-                {
-                    "accession": "GHGAM87645148934949",
-                    "alias": "BIOSPECIMEN_1",
-                    "name": "Biospecmen material",
-                    "type": "Blood",
-                    "description": "Blood biospecimen",
-                    "isolation": "Arterial blood specimen",
-                    "storage": "refrigitation at 4 degree",
-                    "individual": "GHGAI69689243593970",
-                    "age_at_sampling": "66_TO_70",
-                    "tissue": "blood",
-                    "samples": [
-                        "GHGAN13712948112566"
-                    ]
-                },
-                {
-                    "accession": "GHGAM09721498223028",
-                    "alias": "BIOSPECIMEN_2",
-                    "name": "Another biospecimen material",
-                    "type": "Subcutaneous fat",
-                    "description": "Subcutaneous fat biospecimen",
-                    "isolation": "Biopsy of soft tissue\u00a0",
-                    "storage": "refrigitation at 4 degree",
-                    "individual": "GHGAI69689243593970",
-                    "age_at_sampling": "66_TO_70",
-                    "tissue": "subcutaneous adipose tissue",
-                    "samples": [
-                        "GHGAN46177740365005"
-                    ]
-                }
-            ],
-            "data_access_committees": [
-                {
-                    "accession": "GHGAC27979815690400",
-                    "alias": "DAC_1",
-                    "email": "dac_institute_a@dac.dac",
-                    "institute": "institute_a"
-                }
-            ],
-            "analysis_process_output_files": [
-                {
-                    "accession": "GHGAF60227492784158",
-                    "alias": "OUTPUT_1",
-                    "analysis_process": "GHGAR39274427357650",
-                    "name": "SAMPLE_1_SPECIMEN_1_FILE_1.vcf.gz",
-                    "format": "VCF",
-                    "size": 92161,
-                    "checksum": "653c42e051644f1d03fd8a73c55649b9bea6d36b354348e9dc33ce355af41289",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD09598790897621"
-                },
-                {
-                    "accession": "GHGAF98095735942999",
-                    "alias": "OUTPUT_2",
-                    "analysis_process": "GHGAR69880405010665",
-                    "name": "SAMPLE_1_SPECIMEN_1_FILE_2.vcf.gz",
-                    "format": "VCF",
-                    "size": 71681,
-                    "checksum": "5864b0ef8f3c25cd7da50fcb3b88f8884831ebbc87435dc3f84371437162d170",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD09598790897621"
-                },
-                {
-                    "accession": "GHGAF03542347431941",
-                    "alias": "OUTPUT_3",
-                    "analysis_process": "GHGAR56199553295675",
-                    "name": "SAMPLE_1_SPECIMEN_1_FILE_3.vcf.gz",
-                    "format": "VCF",
-                    "size": 122881,
-                    "checksum": "68568c92cc9f836f9a2a1b701327ac089b7ff3c52228c4038b9de54edca876e0",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD09598790897621"
-                },
-                {
-                    "accession": "GHGAF00240854404941",
-                    "alias": "OUTPUT_4",
-                    "analysis_process": "GHGAR75043017740512",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_4.vcf.gz",
-                    "format": "VCF",
-                    "size": 45057,
-                    "checksum": "ef2b7a9496ac3e8d90a6b2317a0ddc05fdc8e2cb616a14431544b0920cca2d41",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF70399258952657",
-                    "alias": "OUTPUT_5",
-                    "analysis_process": "GHGAR24081486884193",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_5.vcf.gz",
-                    "format": "VCF",
-                    "size": 65537,
-                    "checksum": "b446a4e9cd57e2446e113b603be5e761672e88c0b3d87de5f12ca6bfa73cf110",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF48722477903529",
-                    "alias": "OUTPUT_6",
-                    "analysis_process": "GHGAR30835311417129",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_6.vcf.gz",
-                    "format": "VCF",
-                    "size": 45057,
-                    "checksum": "c3f451348e9c5cb0acbacd2df071392d151f007554bc2c08de667a1349eb0a86",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF52403457644815",
-                    "alias": "OUTPUT_7",
-                    "analysis_process": "GHGAR38458015046073",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_7.vcf.gz",
-                    "format": "VCF",
-                    "size": 61441,
-                    "checksum": "b17e8d803fb62757d41ccbe26ed719e6aa95119ffd55fac64dc100ea985d42f0",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF64039739056861",
-                    "alias": "OUTPUT_8",
-                    "analysis_process": "GHGAR93850957626599",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_8.vcf.gz",
-                    "format": "VCF",
-                    "size": 92161,
-                    "checksum": "2912879766f9c619fdebb8f10ba4dad02a367ee30f52c1a55bb8cad4999efa53",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                },
-                {
-                    "accession": "GHGAF00202976705407",
-                    "alias": "OUTPUT_9",
-                    "analysis_process": "GHGAR96450411800508",
-                    "name": "SAMPLE_2_SPECIMEN_1_FILE_9.vcf.gz",
-                    "format": "VCF",
-                    "size": 43009,
-                    "checksum": "2935b5685772b2c2778dfc6facde4186d59e516cc6ad55e92f96b3e63d44b68a",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD13934222639683"
-                }
-            ],
-            "publications": [
-                {
-                    "accession": "GHGAU83435125182534",
-                    "alias": "PUB_1",
-                    "title": "A paper of a study",
-                    "abstract": "This study aims finding findings.",
-                    "author": "John Doe",
-                    "year": 1965,
-                    "journal": "Journal of Studies",
-                    "doi": "10.1234/abcd.5678",
-                    "study": "GHGAS36422481396751",
-                    "xref": [
-                        "abcd_pubmed_link.pubmed"
-                    ]
-                },
-                {
-                    "accession": "GHGAU43563073899203",
-                    "alias": "PUB_2",
-                    "title": "Another paper of the same study",
-                    "abstract": "This study aims finding more findings.",
-                    "author": "Joe Dohn",
-                    "year": 1967,
-                    "journal": "Journal of Studies",
-                    "doi": "10.9876/efgh.5432",
-                    "study": "GHGAS55941946021084",
-                    "xref": [
-                        "efgh_pubmed_link.pubmed"
-                    ]
-                }
-            ],
-            "trios": [
-                {
-                    "accession": "GHGAT29935793267059",
-                    "alias": "TRIO_1",
-                    "mother": "GHGAI67844275544626",
-                    "father": "GHGAI04639299227616",
-                    "child": "GHGAI69689243593970"
-                }
-            ],
-            "sequencing_processes": [
-                {
-                    "accession": "GHGAO62191423783852",
-                    "alias": "SEQ_PROCESS_1",
-                    "title": "Sequencing Process A",
-                    "description": "Sequencing process A is conducted like this.",
-                    "name": "Sequencing process A",
-                    "sequencing_run_id": "RUN_123",
-                    "sequencing_lane_id": "LANE_123",
-                    "sequencing_machine_id": "SEQ_MACHINE_123",
-                    "sequencing_experiment": "GHGAX83851934458528",
-                    "index_sequence": "AGTCGATCGTAC",
-                    "lane_number": "lane_1",
-                    "sample": "GHGAN13712948112566",
-                    "sequencing_process_files": [
-                        "GHGAF98787275505937"
-                    ]
-                },
-                {
-                    "accession": "GHGAO26926467690962",
-                    "alias": "SEQ_PROCESS_2",
-                    "title": "Sequencing Process B",
-                    "description": "Sequencing process B is conducted like this.",
-                    "name": "Sequencing process B",
-                    "sequencing_run_id": "RUN_124",
-                    "sequencing_lane_id": "LANE_124",
-                    "sequencing_machine_id": "SEQ_MACHINE_123",
-                    "sequencing_experiment": "GHGAX83851934458528",
-                    "index_sequence": "AGTCGATCGTAC",
-                    "lane_number": "lane_2",
-                    "sample": "GHGAN13712948112566",
-                    "sequencing_process_files": [
-                        "GHGAF88846609319878"
-                    ]
-                },
-                {
-                    "accession": "GHGAO51030339704752",
-                    "alias": "SEQ_PROCESS_3",
-                    "title": "Sequencing Process C",
-                    "description": "Sequencing process C is conducted like this.",
-                    "name": "Sequencing process C",
-                    "sequencing_run_id": "RUN_125",
-                    "sequencing_lane_id": "LANE_125",
-                    "sequencing_machine_id": "SEQ_MACHINE_123",
-                    "sequencing_experiment": "GHGAX83851934458528",
-                    "index_sequence": "AGTCGATCGTAC",
-                    "lane_number": "lane_3",
-                    "sample": "GHGAN13712948112566",
-                    "sequencing_process_files": [
-                        "GHGAF35359790750617"
-                    ]
-                },
-                {
-                    "accession": "GHGAO97365634927261",
-                    "alias": "SEQ_PROCESS_4",
-                    "title": "Sequencing Process D",
-                    "description": "Sequencing process D is conducted like this.",
-                    "name": "Sequencing process D",
-                    "sequencing_run_id": "RUN_126",
-                    "sequencing_lane_id": "LANE_126",
-                    "sequencing_machine_id": "SEQ_MACHINE_123",
-                    "sequencing_experiment": "GHGAX83851934458528",
-                    "index_sequence": "AGTCGATCGTAC",
-                    "lane_number": "lane_4",
-                    "sample": "GHGAN46177740365005",
-                    "sequencing_process_files": [
-                        "GHGAF02723287849704"
-                    ]
-                },
-                {
-                    "accession": "GHGAO06622800988515",
-                    "alias": "SEQ_PROCESS_5",
-                    "title": "Sequencing Process E",
-                    "description": "Sequencing process E is conducted like this.",
-                    "name": "Sequencing process E",
-                    "sequencing_run_id": "RUN_127",
-                    "sequencing_lane_id": "LANE_127",
-                    "sequencing_machine_id": "SEQ_MACHINE_123",
-                    "sequencing_experiment": "GHGAX83851934458528",
-                    "index_sequence": "AGTCGATCGTAC",
-                    "lane_number": "lane_5",
-                    "sample": "GHGAN46177740365005",
-                    "sequencing_process_files": [
-                        "GHGAF19339989618442"
-                    ]
-                },
-                {
-                    "accession": "GHGAO66715047871416",
-                    "alias": "SEQ_PROCESS_6",
-                    "title": "Sequencing Process F",
-                    "description": "Sequencing process F is conducted like this.",
-                    "name": "Sequencing process F",
-                    "sequencing_run_id": "RUN_128",
-                    "sequencing_lane_id": "LANE_128",
-                    "sequencing_machine_id": "SEQ_MACHINE_123",
-                    "sequencing_experiment": "GHGAX83851934458528",
-                    "index_sequence": "AGTCGATCGTAC",
-                    "lane_number": "lane_6",
-                    "sample": "GHGAN46177740365005",
-                    "sequencing_process_files": [
-                        "GHGAF82574397155238"
-                    ]
-                },
-                {
-                    "accession": "GHGAO36629966744948",
-                    "alias": "SEQ_PROCESS_7",
-                    "title": "Sequencing Process G",
-                    "description": "Sequencing process G is conducted like this.",
-                    "name": "Sequencing process G",
-                    "sequencing_run_id": "RUN_129",
-                    "sequencing_lane_id": "LANE_129",
-                    "sequencing_machine_id": "SEQ_MACHINE_123",
-                    "sequencing_experiment": "GHGAX83851934458528",
-                    "index_sequence": "AGTCGATCGTAC",
-                    "lane_number": "lane_7",
-                    "sample": "GHGAN46177740365005",
-                    "sequencing_process_files": [
-                        "GHGAF07328380425408"
-                    ]
-                },
-                {
-                    "accession": "GHGAO59081664899908",
-                    "alias": "SEQ_PROCESS_8",
-                    "title": "Sequencing Process H",
-                    "description": "Sequencing process H is conducted like this.",
-                    "name": "Sequencing process H",
-                    "sequencing_run_id": "RUN_130",
-                    "sequencing_lane_id": "LANE_130",
-                    "sequencing_machine_id": "SEQ_MACHINE_123",
-                    "sequencing_experiment": "GHGAX83851934458528",
-                    "index_sequence": "AGTCGATCGTAC",
-                    "lane_number": "lane_8",
-                    "sample": "GHGAN46177740365005",
-                    "sequencing_process_files": [
-                        "GHGAF62118300340019"
-                    ]
-                },
-                {
-                    "accession": "GHGAO35933687766366",
-                    "alias": "SEQ_PROCESS_9",
-                    "title": "Sequencing Process I",
-                    "description": "Sequencing process I is conducted like this.",
-                    "name": "Sequencing process I",
-                    "sequencing_run_id": "RUN_131",
-                    "sequencing_lane_id": "LANE_131",
-                    "sequencing_machine_id": "SEQ_MACHINE_123",
-                    "sequencing_experiment": "GHGAX83851934458528",
-                    "index_sequence": "AGTCGATCGTAC",
-                    "lane_number": "lane_9",
-                    "sample": "GHGAN46177740365005",
-                    "sequencing_process_files": [
-                        "GHGAF86681016295324"
-                    ]
-                }
-            ],
-            "analyses": [
-                {
-                    "accession": "GHGAZ27015623002226",
-                    "alias": "ANALYSIS_1",
-                    "title": "Analysis 1 ",
-                    "description": "Description of analysis 1",
-                    "type": "Sequence Variation",
-                    "reference_genome": "GRCh37",
-                    "reference_chromosome": "chr6",
-                    "analysis_processes": [
-                        "GHGAR24081486884193",
-                        "GHGAR30835311417129",
-                        "GHGAR38458015046073",
-                        "GHGAR39274427357650",
-                        "GHGAR56199553295675",
-                        "GHGAR69880405010665",
-                        "GHGAR75043017740512",
-                        "GHGAR93850957626599",
-                        "GHGAR96450411800508"
-                    ]
-                }
-            ],
-            "sequencing_protocols": [
-                {
-                    "accession": "GHGAQ91563202933697",
-                    "alias": "SEQ_PRO_1",
-                    "description": "Sequence protocol 1 is conducted like this. ",
-                    "type": "DNA-seq",
-                    "instrument_model": "ILLUMINA_NOVA_SEQ_6000",
-                    "sequencing_center": "Center A",
-                    "sequencing_read_length": "long",
-                    "target_coverage": "x50",
-                    "flow_cell_id": "ID_Cell 1_Lane_1",
-                    "flow_cell_type": "ILLUMINA_NOVA_SEQ_S4",
-                    "umi_barcode_read": "INDEX1",
-                    "umi_barcode_offset": "16",
-                    "umi_barcode_size": "10",
-                    "cell_barcode_read": "INDEX1",
-                    "cell_barcode_offset": "20",
-                    "cell_barcode_size": "18",
-                    "sample_barcode_read": "INDEX1",
-                    "sequencing_experiments": [
-                        "GHGAX83851934458528"
-                    ]
-                }
-            ],
-            "library_preparation_protocols": [
-                {
-                    "accession": "GHGAL47102665026041",
-                    "alias": "LIB_PREP_1",
-                    "description": "Sequence library is prepared like this. ",
-                    "library_name": "Library A",
-                    "library_layout": "PE",
-                    "library_type": "WGS",
-                    "library_selection": "UNSPECIFIED",
-                    "library_preparation": "PCR-amplification",
-                    "library_preparation_kit_retail_name": "ILLUMINA_TRU_SEQ_DNA",
-                    "library_preparation_kit_manufacturer": "Illumina",
-                    "primer": "GENE_SPECIFIC",
-                    "end_bias": "FULL_LENGTH",
-                    "target_regions": [
-                        "chr6:123456-12345678"
-                    ],
-                    "sequencing_experiments": [
-                        "GHGAX83851934458528"
-                    ]
-                }
-            ],
-            "sequencing_experiments": [
-                {
-                    "accession": "GHGAX83851934458528",
-                    "alias": "SEQ_EXP_1",
-                    "title": "GHGAE_SEQ_EXP_1",
-                    "description": "Experiment is done like this. ",
-                    "type": "Experiement type A",
-                    "sequencing_protocol": "GHGAQ91563202933697",
-                    "library_preparation_protocol": "GHGAL47102665026041",
-                    "sequencing_processes": [
-                        "GHGAO06622800988515",
-                        "GHGAO26926467690962",
-                        "GHGAO35933687766366",
-                        "GHGAO36629966744948",
-                        "GHGAO51030339704752",
-                        "GHGAO59081664899908",
-                        "GHGAO62191423783852",
-                        "GHGAO66715047871416",
-                        "GHGAO97365634927261"
-                    ]
-                }
-            ],
-            "sample_files": [],
-            "data_access_policies": [
-                {
-                    "accession": "GHGAP80911357088984",
-                    "alias": "DAP_1",
-                    "name": "DAP 1",
-                    "description": "A Data Access Policy 1",
-                    "policy_text": "This is a very permissible DAP",
-                    "policy_url": "http://some/policy",
-                    "data_access_committee": "GHGAC27979815690400",
-                    "data_use_permission": "disease specific research",
-                    "data_use_modifiers": [
-                        "clinical care use"
-                    ]
-                },
-                {
-                    "accession": "GHGAP60953192127193",
-                    "alias": "DAP_2",
-                    "name": "DAP 2",
-                    "description": "A Data Access Policy 2",
-                    "policy_text": "This is a very strict DAP",
-                    "policy_url": "http://some/other/policy",
-                    "data_access_committee": "GHGAC27979815690400",
-                    "data_use_permission": "no restriction",
-                    "data_use_modifiers": [
-                        "user specific restriction"
-                    ]
-                }
-            ],
-            "study_files": [
-                {
-                    "accession": "GHGAF29699992445931",
-                    "alias": "STUDY_FILE_1",
-                    "study": "GHGAS36422481396751",
-                    "name": "STUDY_1_SPECIMEN_1_FILE_1.fastq.gz",
-                    "format": "FASTQ",
-                    "size": 106497,
-                    "checksum": "7a586609dd8c7d6f53cbc2e82e1165de2c7aab6769c6dde9882b45048b0fdaa9",
-                    "forward_or_reverse": "REVERSE",
-                    "checksum_type": "SHA256",
-                    "dataset": "GHGAD09598790897621"
-                }
-            ],
-            "datasets": [
-                {
-                    "accession": "GHGAD09598790897621",
-                    "alias": "DS_1",
-                    "title": "The A dataset",
-                    "description": "An interesting dataset A",
-                    "types": [
-                        "A Type",
-                        "Another Type"
-                    ],
-                    "data_access_policy": "GHGAP80911357088984",
-                    "analysis_process_output_files": [
-                        "GHGAF03542347431941",
-                        "GHGAF60227492784158",
-                        "GHGAF98095735942999"
-                    ],
-                    "sequencing_process_files": [
-                        "GHGAF35359790750617",
-                        "GHGAF88846609319878",
-                        "GHGAF98787275505937"
-                    ],
-                    "study_files": [
-                        "GHGAF29699992445931"
-                    ],
-                    "studies": [
-                        "GHGAS36422481396751"
-                    ],
-                    "sample_files": [],
-                    "samples": [],
-                    "files": [
-                        "GHGAF29699992445931"
-                    ]
-                },
-                {
-                    "accession": "GHGAD13934222639683",
-                    "alias": "DS_2",
-                    "title": "The B dataset",
-                    "description": "An interesting dataset B",
-                    "types": [
-                        "And another Type"
-                    ],
-                    "data_access_policy": "GHGAP60953192127193",
-                    "analysis_process_output_files": [
-                        "GHGAF00202976705407",
-                        "GHGAF00240854404941",
-                        "GHGAF48722477903529",
-                        "GHGAF52403457644815",
-                        "GHGAF64039739056861",
-                        "GHGAF70399258952657"
-                    ],
-                    "sequencing_process_files": [
-                        "GHGAF02723287849704",
-                        "GHGAF07328380425408",
-                        "GHGAF19339989618442",
-                        "GHGAF62118300340019",
-                        "GHGAF82574397155238",
-                        "GHGAF86681016295324"
-                    ],
-                    "study_files": [],
-                    "studies": [],
-                    "sample_files": [],
-                    "samples": [],
-                    "files": []
-                }
-            ]
+  "payload": {
+    "annotation": {
+      "accession_map": {
+        "analyses": {
+          "ANALYSIS_1": "GHGAZ27015623002226"
         },
-        "annotation": {
-            "accession_map": {
-                "analyses": {
-                    "ANALYSIS_1": "GHGAZ27015623002226"
-                },
-                "analysis_process_output_files": {
-                    "OUTPUT_1": "GHGAF60227492784158",
-                    "OUTPUT_2": "GHGAF98095735942999",
-                    "OUTPUT_3": "GHGAF03542347431941",
-                    "OUTPUT_4": "GHGAF00240854404941",
-                    "OUTPUT_5": "GHGAF70399258952657",
-                    "OUTPUT_6": "GHGAF48722477903529",
-                    "OUTPUT_7": "GHGAF52403457644815",
-                    "OUTPUT_8": "GHGAF64039739056861",
-                    "OUTPUT_9": "GHGAF00202976705407"
-                },
-                "analysis_processes": {
-                    "ANALYSIS_PROCESS_1": "GHGAR39274427357650",
-                    "ANALYSIS_PROCESS_2": "GHGAR69880405010665",
-                    "ANALYSIS_PROCESS_3": "GHGAR56199553295675",
-                    "ANALYSIS_PROCESS_4": "GHGAR75043017740512",
-                    "ANALYSIS_PROCESS_5": "GHGAR24081486884193",
-                    "ANALYSIS_PROCESS_6": "GHGAR30835311417129",
-                    "ANALYSIS_PROCESS_7": "GHGAR38458015046073",
-                    "ANALYSIS_PROCESS_8": "GHGAR93850957626599",
-                    "ANALYSIS_PROCESS_9": "GHGAR96450411800508"
-                },
-                "biospecimens": {
-                    "BIOSPECIMEN_1": "GHGAM87645148934949",
-                    "BIOSPECIMEN_2": "GHGAM09721498223028"
-                },
-                "conditions": {
-                    "COND_1": "GHGAK19290740394392",
-                    "COND_2": "GHGAK13090423773754"
-                },
-                "data_access_committees": {
-                    "DAC_1": "GHGAC27979815690400"
-                },
-                "data_access_policies": {
-                    "DAP_1": "GHGAP80911357088984",
-                    "DAP_2": "GHGAP60953192127193"
-                },
-                "datasets": {
-                    "DS_1": "GHGAD09598790897621",
-                    "DS_2": "GHGAD13934222639683"
-                },
-                "individuals": {
-                    "INDV_1": "GHGAI69689243593970",
-                    "MOTHER_1": "GHGAI67844275544626",
-                    "FATHER_1": "GHGAI04639299227616"
-                },
-                "library_preparation_protocols": {
-                    "LIB_PREP_1": "GHGAL47102665026041"
-                },
-                "publications": {
-                    "PUB_1": "GHGAU83435125182534",
-                    "PUB_2": "GHGAU43563073899203"
-                },
-                "sample_files": {},
-                "samples": {
-                    "SAMPLE_1": "GHGAN13712948112566",
-                    "SAMPLE_2": "GHGAN46177740365005"
-                },
-                "sequencing_experiments": {
-                    "SEQ_EXP_1": "GHGAX83851934458528"
-                },
-                "sequencing_process_files": {
-                    "SEQ_FILE_1": "GHGAF98787275505937",
-                    "SEQ_FILE_2": "GHGAF88846609319878",
-                    "SEQ_FILE_3": "GHGAF35359790750617",
-                    "SEQ_FILE_4": "GHGAF02723287849704",
-                    "SEQ_FILE_5": "GHGAF19339989618442",
-                    "SEQ_FILE_6": "GHGAF82574397155238",
-                    "SEQ_FILE_7": "GHGAF07328380425408",
-                    "SEQ_FILE_8": "GHGAF62118300340019",
-                    "SEQ_FILE_9": "GHGAF86681016295324"
-                },
-                "sequencing_processes": {
-                    "SEQ_PROCESS_1": "GHGAO62191423783852",
-                    "SEQ_PROCESS_2": "GHGAO26926467690962",
-                    "SEQ_PROCESS_3": "GHGAO51030339704752",
-                    "SEQ_PROCESS_4": "GHGAO97365634927261",
-                    "SEQ_PROCESS_5": "GHGAO06622800988515",
-                    "SEQ_PROCESS_6": "GHGAO66715047871416",
-                    "SEQ_PROCESS_7": "GHGAO36629966744948",
-                    "SEQ_PROCESS_8": "GHGAO59081664899908",
-                    "SEQ_PROCESS_9": "GHGAO35933687766366"
-                },
-                "sequencing_protocols": {
-                    "SEQ_PRO_1": "GHGAQ91563202933697"
-                },
-                "studies": {
-                    "STUDY_A": "GHGAS36422481396751",
-                    "STUDY_B": "GHGAS55941946021084"
-                },
-                "study_files": {
-                    "STUDY_FILE_1": "GHGAF29699992445931"
-                },
-                "trios": {
-                    "TRIO_1": "GHGAT29935793267059"
-                }
-            }
+        "analysis_process_output_files": {
+          "OUTPUT_1": "GHGAF60227492784158",
+          "OUTPUT_2": "GHGAF98095735942999",
+          "OUTPUT_3": "GHGAF03542347431941",
+          "OUTPUT_4": "GHGAF00240854404941",
+          "OUTPUT_5": "GHGAF70399258952657",
+          "OUTPUT_6": "GHGAF48722477903529",
+          "OUTPUT_7": "GHGAF52403457644815",
+          "OUTPUT_8": "GHGAF64039739056861",
+          "OUTPUT_9": "GHGAF00202976705407"
+        },
+        "analysis_processes": {
+          "ANALYSIS_PROCESS_1": "GHGAR39274427357650",
+          "ANALYSIS_PROCESS_2": "GHGAR69880405010665",
+          "ANALYSIS_PROCESS_3": "GHGAR56199553295675",
+          "ANALYSIS_PROCESS_4": "GHGAR75043017740512",
+          "ANALYSIS_PROCESS_5": "GHGAR24081486884193",
+          "ANALYSIS_PROCESS_6": "GHGAR30835311417129",
+          "ANALYSIS_PROCESS_7": "GHGAR38458015046073",
+          "ANALYSIS_PROCESS_8": "GHGAR93850957626599",
+          "ANALYSIS_PROCESS_9": "GHGAR96450411800508"
+        },
+        "biospecimens": {
+          "BIOSPECIMEN_1": "GHGAM87645148934949",
+          "BIOSPECIMEN_2": "GHGAM09721498223028"
+        },
+        "conditions": {
+          "COND_1": "GHGAK19290740394392",
+          "COND_2": "GHGAK13090423773754"
+        },
+        "data_access_committees": {
+          "DAC_1": "GHGAC27979815690400"
+        },
+        "data_access_policies": {
+          "DAP_1": "GHGAP80911357088984",
+          "DAP_2": "GHGAP60953192127193"
+        },
+        "datasets": {
+          "DS_1": "GHGAD09598790897621",
+          "DS_2": "GHGAD13934222639683"
+        },
+        "individuals": {
+          "FATHER_1": "GHGAI04639299227616",
+          "INDV_1": "GHGAI69689243593970",
+          "MOTHER_1": "GHGAI67844275544626"
+        },
+        "library_preparation_protocols": {
+          "LIB_PREP_1": "GHGAL47102665026041"
+        },
+        "publications": {
+          "PUB_1": "GHGAU83435125182534",
+          "PUB_2": "GHGAU43563073899203"
+        },
+        "sample_files": {},
+        "samples": {
+          "SAMPLE_1": "GHGAN13712948112566",
+          "SAMPLE_2": "GHGAN46177740365005"
+        },
+        "sequencing_experiments": {
+          "SEQ_EXP_1": "GHGAX83851934458528"
+        },
+        "sequencing_process_files": {
+          "SEQ_FILE_1": "GHGAF98787275505937",
+          "SEQ_FILE_2": "GHGAF88846609319878",
+          "SEQ_FILE_3": "GHGAF35359790750617",
+          "SEQ_FILE_4": "GHGAF02723287849704",
+          "SEQ_FILE_5": "GHGAF19339989618442",
+          "SEQ_FILE_6": "GHGAF82574397155238",
+          "SEQ_FILE_7": "GHGAF07328380425408",
+          "SEQ_FILE_8": "GHGAF62118300340019",
+          "SEQ_FILE_9": "GHGAF86681016295324"
+        },
+        "sequencing_processes": {
+          "SEQ_PROCESS_1": "GHGAO62191423783852",
+          "SEQ_PROCESS_2": "GHGAO26926467690962",
+          "SEQ_PROCESS_3": "GHGAO51030339704752",
+          "SEQ_PROCESS_4": "GHGAO97365634927261",
+          "SEQ_PROCESS_5": "GHGAO06622800988515",
+          "SEQ_PROCESS_6": "GHGAO66715047871416",
+          "SEQ_PROCESS_7": "GHGAO36629966744948",
+          "SEQ_PROCESS_8": "GHGAO59081664899908",
+          "SEQ_PROCESS_9": "GHGAO35933687766366"
+        },
+        "sequencing_protocols": {
+          "SEQ_PRO_1": "GHGAQ91563202933697"
+        },
+        "studies": {
+          "STUDY_A": "GHGAS36422481396751",
+          "STUDY_B": "GHGAS55941946021084"
+        },
+        "study_files": {
+          "STUDY_FILE_1": "GHGAF29699992445931"
+        },
+        "trios": {
+          "TRIO_1": "GHGAT29935793267059"
         }
-    }
+      }
+    },
+    "content": {
+      "analyses": [
+        {
+          "accession": "GHGAZ27015623002226",
+          "alias": "ANALYSIS_1",
+          "analysis_processes": [
+            "GHGAR24081486884193",
+            "GHGAR30835311417129",
+            "GHGAR38458015046073",
+            "GHGAR39274427357650",
+            "GHGAR56199553295675",
+            "GHGAR69880405010665",
+            "GHGAR75043017740512",
+            "GHGAR93850957626599",
+            "GHGAR96450411800508"
+          ],
+          "description": "Description of analysis 1",
+          "reference_chromosome": "chr6",
+          "reference_genome": "GRCh37",
+          "title": "Analysis 1 ",
+          "type": "Sequence Variation"
+        }
+      ],
+      "analysis_process_output_files": [
+        {
+          "accession": "GHGAF60227492784158",
+          "alias": "OUTPUT_1",
+          "analysis_process": "GHGAR39274427357650",
+          "checksum": "653c42e051644f1d03fd8a73c55649b9bea6d36b354348e9dc33ce355af41289",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD09598790897621",
+          "format": "VCF",
+          "name": "SAMPLE_1_SPECIMEN_1_FILE_1.vcf.gz",
+          "size": 92161
+        },
+        {
+          "accession": "GHGAF98095735942999",
+          "alias": "OUTPUT_2",
+          "analysis_process": "GHGAR69880405010665",
+          "checksum": "5864b0ef8f3c25cd7da50fcb3b88f8884831ebbc87435dc3f84371437162d170",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD09598790897621",
+          "format": "VCF",
+          "name": "SAMPLE_1_SPECIMEN_1_FILE_2.vcf.gz",
+          "size": 71681
+        },
+        {
+          "accession": "GHGAF03542347431941",
+          "alias": "OUTPUT_3",
+          "analysis_process": "GHGAR56199553295675",
+          "checksum": "68568c92cc9f836f9a2a1b701327ac089b7ff3c52228c4038b9de54edca876e0",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD09598790897621",
+          "format": "VCF",
+          "name": "SAMPLE_1_SPECIMEN_1_FILE_3.vcf.gz",
+          "size": 122881
+        },
+        {
+          "accession": "GHGAF00240854404941",
+          "alias": "OUTPUT_4",
+          "analysis_process": "GHGAR75043017740512",
+          "checksum": "ef2b7a9496ac3e8d90a6b2317a0ddc05fdc8e2cb616a14431544b0920cca2d41",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "VCF",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_4.vcf.gz",
+          "size": 45057
+        },
+        {
+          "accession": "GHGAF70399258952657",
+          "alias": "OUTPUT_5",
+          "analysis_process": "GHGAR24081486884193",
+          "checksum": "b446a4e9cd57e2446e113b603be5e761672e88c0b3d87de5f12ca6bfa73cf110",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "VCF",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_5.vcf.gz",
+          "size": 65537
+        },
+        {
+          "accession": "GHGAF48722477903529",
+          "alias": "OUTPUT_6",
+          "analysis_process": "GHGAR30835311417129",
+          "checksum": "c3f451348e9c5cb0acbacd2df071392d151f007554bc2c08de667a1349eb0a86",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "VCF",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_6.vcf.gz",
+          "size": 45057
+        },
+        {
+          "accession": "GHGAF52403457644815",
+          "alias": "OUTPUT_7",
+          "analysis_process": "GHGAR38458015046073",
+          "checksum": "b17e8d803fb62757d41ccbe26ed719e6aa95119ffd55fac64dc100ea985d42f0",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "VCF",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_7.vcf.gz",
+          "size": 61441
+        },
+        {
+          "accession": "GHGAF64039739056861",
+          "alias": "OUTPUT_8",
+          "analysis_process": "GHGAR93850957626599",
+          "checksum": "2912879766f9c619fdebb8f10ba4dad02a367ee30f52c1a55bb8cad4999efa53",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "VCF",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_8.vcf.gz",
+          "size": 92161
+        },
+        {
+          "accession": "GHGAF00202976705407",
+          "alias": "OUTPUT_9",
+          "analysis_process": "GHGAR96450411800508",
+          "checksum": "2935b5685772b2c2778dfc6facde4186d59e516cc6ad55e92f96b3e63d44b68a",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "VCF",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_9.vcf.gz",
+          "size": 43009
+        }
+      ],
+      "analysis_processes": [
+        {
+          "accession": "GHGAR39274427357650",
+          "alias": "ANALYSIS_PROCESS_1",
+          "analysis": "GHGAZ27015623002226",
+          "analysis_process_output_files": [
+            "GHGAF60227492784158"
+          ],
+          "sequencing_process_input_files": [
+            "GHGAF98787275505937"
+          ]
+        },
+        {
+          "accession": "GHGAR69880405010665",
+          "alias": "ANALYSIS_PROCESS_2",
+          "analysis": "GHGAZ27015623002226",
+          "analysis_process_output_files": [
+            "GHGAF98095735942999"
+          ],
+          "sequencing_process_input_files": [
+            "GHGAF88846609319878"
+          ]
+        },
+        {
+          "accession": "GHGAR56199553295675",
+          "alias": "ANALYSIS_PROCESS_3",
+          "analysis": "GHGAZ27015623002226",
+          "analysis_process_output_files": [
+            "GHGAF03542347431941"
+          ],
+          "sequencing_process_input_files": [
+            "GHGAF35359790750617"
+          ]
+        },
+        {
+          "accession": "GHGAR75043017740512",
+          "alias": "ANALYSIS_PROCESS_4",
+          "analysis": "GHGAZ27015623002226",
+          "analysis_process_output_files": [
+            "GHGAF00240854404941"
+          ],
+          "sequencing_process_input_files": [
+            "GHGAF02723287849704"
+          ]
+        },
+        {
+          "accession": "GHGAR24081486884193",
+          "alias": "ANALYSIS_PROCESS_5",
+          "analysis": "GHGAZ27015623002226",
+          "analysis_process_output_files": [
+            "GHGAF70399258952657"
+          ],
+          "sequencing_process_input_files": [
+            "GHGAF19339989618442"
+          ]
+        },
+        {
+          "accession": "GHGAR30835311417129",
+          "alias": "ANALYSIS_PROCESS_6",
+          "analysis": "GHGAZ27015623002226",
+          "analysis_process_output_files": [
+            "GHGAF48722477903529"
+          ],
+          "sequencing_process_input_files": [
+            "GHGAF82574397155238"
+          ]
+        },
+        {
+          "accession": "GHGAR38458015046073",
+          "alias": "ANALYSIS_PROCESS_7",
+          "analysis": "GHGAZ27015623002226",
+          "analysis_process_output_files": [
+            "GHGAF52403457644815"
+          ],
+          "sequencing_process_input_files": [
+            "GHGAF07328380425408"
+          ]
+        },
+        {
+          "accession": "GHGAR93850957626599",
+          "alias": "ANALYSIS_PROCESS_8",
+          "analysis": "GHGAZ27015623002226",
+          "analysis_process_output_files": [
+            "GHGAF64039739056861"
+          ],
+          "sequencing_process_input_files": [
+            "GHGAF62118300340019"
+          ]
+        },
+        {
+          "accession": "GHGAR96450411800508",
+          "alias": "ANALYSIS_PROCESS_9",
+          "analysis": "GHGAZ27015623002226",
+          "analysis_process_output_files": [
+            "GHGAF00202976705407"
+          ],
+          "sequencing_process_input_files": [
+            "GHGAF86681016295324"
+          ]
+        }
+      ],
+      "biospecimens": [
+        {
+          "accession": "GHGAM87645148934949",
+          "age_at_sampling": "66_TO_70",
+          "alias": "BIOSPECIMEN_1",
+          "description": "Blood biospecimen",
+          "individual": "GHGAI69689243593970",
+          "isolation": "Arterial blood specimen",
+          "name": "Biospecmen material",
+          "samples": [
+            "GHGAN13712948112566"
+          ],
+          "storage": "refrigitation at 4 degree",
+          "tissue": "blood",
+          "type": "Blood"
+        },
+        {
+          "accession": "GHGAM09721498223028",
+          "age_at_sampling": "66_TO_70",
+          "alias": "BIOSPECIMEN_2",
+          "description": "Subcutaneous fat biospecimen",
+          "individual": "GHGAI69689243593970",
+          "isolation": "Biopsy of soft tissue\u00a0",
+          "name": "Another biospecimen material",
+          "samples": [
+            "GHGAN46177740365005"
+          ],
+          "storage": "refrigitation at 4 degree",
+          "tissue": "subcutaneous adipose tissue",
+          "type": "Subcutaneous fat"
+        }
+      ],
+      "conditions": [
+        {
+          "accession": "GHGAK19290740394392",
+          "alias": "COND_1",
+          "case_control_status": "TRUE_CASE_STATUS",
+          "description": "Condition A is a condition",
+          "disease_or_healthy": "DISEASE",
+          "mutant_or_wildtype": "MUTANT",
+          "name": "Condition A",
+          "samples": [
+            "GHGAN13712948112566"
+          ],
+          "study": "GHGAS36422481396751",
+          "title": "Condition A"
+        },
+        {
+          "accession": "GHGAK13090423773754",
+          "alias": "COND_2",
+          "case_control_status": "TRUE_CONTROL_STATUS",
+          "description": "Condition B is another condition",
+          "disease_or_healthy": "HEALTHY",
+          "mutant_or_wildtype": "WILDTYPE",
+          "name": "Condition B",
+          "samples": [
+            "GHGAN46177740365005"
+          ],
+          "study": "GHGAS55941946021084",
+          "title": "Condition B"
+        }
+      ],
+      "data_access_committees": [
+        {
+          "accession": "GHGAC27979815690400",
+          "alias": "DAC_1",
+          "email": "dac_institute_a@dac.dac",
+          "institute": "institute_a"
+        }
+      ],
+      "data_access_policies": [
+        {
+          "accession": "GHGAP80911357088984",
+          "alias": "DAP_1",
+          "data_access_committee": "GHGAC27979815690400",
+          "data_use_modifiers": [
+            "clinical care use"
+          ],
+          "data_use_permission": "disease specific research",
+          "description": "A Data Access Policy 1",
+          "name": "DAP 1",
+          "policy_text": "This is a very permissible DAP",
+          "policy_url": "http://some/policy"
+        },
+        {
+          "accession": "GHGAP60953192127193",
+          "alias": "DAP_2",
+          "data_access_committee": "GHGAC27979815690400",
+          "data_use_modifiers": [
+            "user specific restriction"
+          ],
+          "data_use_permission": "no restriction",
+          "description": "A Data Access Policy 2",
+          "name": "DAP 2",
+          "policy_text": "This is a very strict DAP",
+          "policy_url": "http://some/other/policy"
+        }
+      ],
+      "datasets": [
+        {
+          "accession": "GHGAD09598790897621",
+          "alias": "DS_1",
+          "analysis_process_output_files": [
+            "GHGAF03542347431941",
+            "GHGAF60227492784158",
+            "GHGAF98095735942999"
+          ],
+          "data_access_policy": "GHGAP80911357088984",
+          "description": "An interesting dataset A",
+          "files": [
+            "GHGAF29699992445931"
+          ],
+          "sample_files": [],
+          "samples": [],
+          "sequencing_process_files": [
+            "GHGAF35359790750617",
+            "GHGAF88846609319878",
+            "GHGAF98787275505937"
+          ],
+          "studies": [
+            "GHGAS36422481396751"
+          ],
+          "study_files": [
+            "GHGAF29699992445931"
+          ],
+          "title": "The A dataset",
+          "types": [
+            "A Type",
+            "Another Type"
+          ]
+        },
+        {
+          "accession": "GHGAD13934222639683",
+          "alias": "DS_2",
+          "analysis_process_output_files": [
+            "GHGAF00202976705407",
+            "GHGAF00240854404941",
+            "GHGAF48722477903529",
+            "GHGAF52403457644815",
+            "GHGAF64039739056861",
+            "GHGAF70399258952657"
+          ],
+          "data_access_policy": "GHGAP60953192127193",
+          "description": "An interesting dataset B",
+          "files": [],
+          "sample_files": [],
+          "samples": [],
+          "sequencing_process_files": [
+            "GHGAF02723287849704",
+            "GHGAF07328380425408",
+            "GHGAF19339989618442",
+            "GHGAF62118300340019",
+            "GHGAF82574397155238",
+            "GHGAF86681016295324"
+          ],
+          "studies": [],
+          "study_files": [],
+          "title": "The B dataset",
+          "types": [
+            "And another Type"
+          ]
+        }
+      ],
+      "individuals": [
+        {
+          "accession": "GHGAI69689243593970",
+          "alias": "INDV_1",
+          "ancestries": [
+            "European"
+          ],
+          "biospecimens": [
+            "GHGAM09721498223028",
+            "GHGAM87645148934949"
+          ],
+          "geographical_region": "Italy",
+          "karyotype": "OTHER",
+          "phenotypic_features": [
+            "Leukemia"
+          ],
+          "sex": "MALE_SEX_FOR_CLINICAL_USE"
+        },
+        {
+          "accession": "GHGAI67844275544626",
+          "alias": "MOTHER_1",
+          "ancestries": [
+            "European"
+          ],
+          "biospecimens": [],
+          "geographical_region": "Italy",
+          "karyotype": "OTHER",
+          "phenotypic_features": [
+            "Leukemia"
+          ],
+          "sex": "FEMALE_SEX_FOR_CLINICAL_USE"
+        },
+        {
+          "accession": "GHGAI04639299227616",
+          "alias": "FATHER_1",
+          "ancestries": [
+            "European"
+          ],
+          "biospecimens": [],
+          "geographical_region": "Italy",
+          "karyotype": "OTHER",
+          "phenotypic_features": [
+            "Leukemia"
+          ],
+          "sex": "MALE_SEX_FOR_CLINICAL_USE"
+        }
+      ],
+      "library_preparation_protocols": [
+        {
+          "accession": "GHGAL47102665026041",
+          "alias": "LIB_PREP_1",
+          "description": "Sequence library is prepared like this. ",
+          "end_bias": "FULL_LENGTH",
+          "library_layout": "PE",
+          "library_name": "Library A",
+          "library_preparation": "PCR-amplification",
+          "library_preparation_kit_manufacturer": "Illumina",
+          "library_preparation_kit_retail_name": "ILLUMINA_TRU_SEQ_DNA",
+          "library_selection": "UNSPECIFIED",
+          "library_type": "WGS",
+          "primer": "GENE_SPECIFIC",
+          "sequencing_experiments": [
+            "GHGAX83851934458528"
+          ],
+          "target_regions": [
+            "chr6:123456-12345678"
+          ]
+        }
+      ],
+      "publications": [
+        {
+          "abstract": "This study aims finding findings.",
+          "accession": "GHGAU83435125182534",
+          "alias": "PUB_1",
+          "author": "John Doe",
+          "doi": "10.1234/abcd.5678",
+          "journal": "Journal of Studies",
+          "study": "GHGAS36422481396751",
+          "title": "A paper of a study",
+          "xref": [
+            "abcd_pubmed_link.pubmed"
+          ],
+          "year": 1965
+        },
+        {
+          "abstract": "This study aims finding more findings.",
+          "accession": "GHGAU43563073899203",
+          "alias": "PUB_2",
+          "author": "Joe Dohn",
+          "doi": "10.9876/efgh.5432",
+          "journal": "Journal of Studies",
+          "study": "GHGAS55941946021084",
+          "title": "Another paper of the same study",
+          "xref": [
+            "efgh_pubmed_link.pubmed"
+          ],
+          "year": 1967
+        }
+      ],
+      "sample_files": [],
+      "samples": [
+        {
+          "accession": "GHGAN13712948112566",
+          "alias": "SAMPLE_1",
+          "biospecimen": "GHGAM87645148934949",
+          "condition": "GHGAK19290740394392",
+          "description": "Arterial blood sample 1",
+          "isolation": "Blood collection tube holder/needle",
+          "name": "GHGAS_blood_sample1",
+          "sample_files": [],
+          "sequencing_processes": [
+            "GHGAO26926467690962",
+            "GHGAO51030339704752",
+            "GHGAO62191423783852"
+          ],
+          "storage": "frozen at -20",
+          "type": "CF_DNA"
+        },
+        {
+          "accession": "GHGAN46177740365005",
+          "alias": "SAMPLE_2",
+          "biospecimen": "GHGAM09721498223028",
+          "condition": "GHGAK13090423773754",
+          "description": "white adipose tissue sample 1",
+          "isolation": "Core needle biopsy",
+          "name": "GHGAS_tissue_sample1",
+          "sample_files": [],
+          "sequencing_processes": [
+            "GHGAO06622800988515",
+            "GHGAO35933687766366",
+            "GHGAO36629966744948",
+            "GHGAO59081664899908",
+            "GHGAO66715047871416",
+            "GHGAO97365634927261"
+          ],
+          "storage": "frozen at -80",
+          "type": "CF_DNA"
+        }
+      ],
+      "sequencing_experiments": [
+        {
+          "accession": "GHGAX83851934458528",
+          "alias": "SEQ_EXP_1",
+          "description": "Experiment is done like this. ",
+          "library_preparation_protocol": "GHGAL47102665026041",
+          "sequencing_processes": [
+            "GHGAO06622800988515",
+            "GHGAO26926467690962",
+            "GHGAO35933687766366",
+            "GHGAO36629966744948",
+            "GHGAO51030339704752",
+            "GHGAO59081664899908",
+            "GHGAO62191423783852",
+            "GHGAO66715047871416",
+            "GHGAO97365634927261"
+          ],
+          "sequencing_protocol": "GHGAQ91563202933697",
+          "title": "GHGAE_SEQ_EXP_1",
+          "type": "Experiement type A"
+        }
+      ],
+      "sequencing_process_files": [
+        {
+          "accession": "GHGAF98787275505937",
+          "alias": "SEQ_FILE_1",
+          "checksum": "995254cf212686d88ea73cbaf49489c8dc2784dc31cb586452e0aa835498ab98",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD09598790897621",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "SAMPLE_1_SPECIMEN_1_FILE_1.fastq.gz",
+          "sequencing_process": "GHGAO62191423783852",
+          "size": 90113
+        },
+        {
+          "accession": "GHGAF88846609319878",
+          "alias": "SEQ_FILE_2",
+          "checksum": "b8de1729ef9b8a424749ce85815c9eeb166cb7f5f5eca4b02f04e2f9277501c6",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD09598790897621",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "SAMPLE_1_SPECIMEN_1_FILE_2.fastq.gz",
+          "sequencing_process": "GHGAO26926467690962",
+          "size": 104449
+        },
+        {
+          "accession": "GHGAF35359790750617",
+          "alias": "SEQ_FILE_3",
+          "checksum": "6b7f4b8fc774de4359c985835733c169f1731a109db7893dd35acd4afea3c5b4",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD09598790897621",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "SAMPLE_1_SPECIMEN_1_FILE_3.fastq.gz",
+          "sequencing_process": "GHGAO51030339704752",
+          "size": 51201
+        },
+        {
+          "accession": "GHGAF02723287849704",
+          "alias": "SEQ_FILE_4",
+          "checksum": "9aea8c99cc065836f1f2765a8590971c5b5d2a29c4c6569c475089c5b57d1180",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_4.fastq.gz",
+          "sequencing_process": "GHGAO97365634927261",
+          "size": 96257
+        },
+        {
+          "accession": "GHGAF19339989618442",
+          "alias": "SEQ_FILE_5",
+          "checksum": "a13dfc276fe322cb1b7490441097662e60443fb8787b011eaec4621916842847",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_5.fastq.gz",
+          "sequencing_process": "GHGAO06622800988515",
+          "size": 63489
+        },
+        {
+          "accession": "GHGAF82574397155238",
+          "alias": "SEQ_FILE_6",
+          "checksum": "e5c186653c619507cec6aa6b7affedeb5ec29a5e23d2814d2710076fa1f5000b",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_6.fastq.gz",
+          "sequencing_process": "GHGAO66715047871416",
+          "size": 104449
+        },
+        {
+          "accession": "GHGAF07328380425408",
+          "alias": "SEQ_FILE_7",
+          "checksum": "f37c331e32ba71cfabbd88b9115eeb6a000c1085cc596dcee9db3c7552229049",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_7.fastq.gz",
+          "sequencing_process": "GHGAO36629966744948",
+          "size": 53249
+        },
+        {
+          "accession": "GHGAF62118300340019",
+          "alias": "SEQ_FILE_8",
+          "checksum": "6c11379d7ce5625bdef86d2b72c0399280388f2532c26c3934f4ee88e7c25e4d",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_8.fastq.gz",
+          "sequencing_process": "GHGAO59081664899908",
+          "size": 96257
+        },
+        {
+          "accession": "GHGAF86681016295324",
+          "alias": "SEQ_FILE_9",
+          "checksum": "23ba42aeef99bffae8f1f4409c64d1a2e19c49dc74c2c6ad6c7b98c5bf04dd1f",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD13934222639683",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "SAMPLE_2_SPECIMEN_1_FILE_9.fastq.gz",
+          "sequencing_process": "GHGAO35933687766366",
+          "size": 49153
+        }
+      ],
+      "sequencing_processes": [
+        {
+          "accession": "GHGAO62191423783852",
+          "alias": "SEQ_PROCESS_1",
+          "description": "Sequencing process A is conducted like this.",
+          "index_sequence": "AGTCGATCGTAC",
+          "lane_number": "lane_1",
+          "name": "Sequencing process A",
+          "sample": "GHGAN13712948112566",
+          "sequencing_experiment": "GHGAX83851934458528",
+          "sequencing_lane_id": "LANE_123",
+          "sequencing_machine_id": "SEQ_MACHINE_123",
+          "sequencing_process_files": [
+            "GHGAF98787275505937"
+          ],
+          "sequencing_run_id": "RUN_123",
+          "title": "Sequencing Process A"
+        },
+        {
+          "accession": "GHGAO26926467690962",
+          "alias": "SEQ_PROCESS_2",
+          "description": "Sequencing process B is conducted like this.",
+          "index_sequence": "AGTCGATCGTAC",
+          "lane_number": "lane_2",
+          "name": "Sequencing process B",
+          "sample": "GHGAN13712948112566",
+          "sequencing_experiment": "GHGAX83851934458528",
+          "sequencing_lane_id": "LANE_124",
+          "sequencing_machine_id": "SEQ_MACHINE_123",
+          "sequencing_process_files": [
+            "GHGAF88846609319878"
+          ],
+          "sequencing_run_id": "RUN_124",
+          "title": "Sequencing Process B"
+        },
+        {
+          "accession": "GHGAO51030339704752",
+          "alias": "SEQ_PROCESS_3",
+          "description": "Sequencing process C is conducted like this.",
+          "index_sequence": "AGTCGATCGTAC",
+          "lane_number": "lane_3",
+          "name": "Sequencing process C",
+          "sample": "GHGAN13712948112566",
+          "sequencing_experiment": "GHGAX83851934458528",
+          "sequencing_lane_id": "LANE_125",
+          "sequencing_machine_id": "SEQ_MACHINE_123",
+          "sequencing_process_files": [
+            "GHGAF35359790750617"
+          ],
+          "sequencing_run_id": "RUN_125",
+          "title": "Sequencing Process C"
+        },
+        {
+          "accession": "GHGAO97365634927261",
+          "alias": "SEQ_PROCESS_4",
+          "description": "Sequencing process D is conducted like this.",
+          "index_sequence": "AGTCGATCGTAC",
+          "lane_number": "lane_4",
+          "name": "Sequencing process D",
+          "sample": "GHGAN46177740365005",
+          "sequencing_experiment": "GHGAX83851934458528",
+          "sequencing_lane_id": "LANE_126",
+          "sequencing_machine_id": "SEQ_MACHINE_123",
+          "sequencing_process_files": [
+            "GHGAF02723287849704"
+          ],
+          "sequencing_run_id": "RUN_126",
+          "title": "Sequencing Process D"
+        },
+        {
+          "accession": "GHGAO06622800988515",
+          "alias": "SEQ_PROCESS_5",
+          "description": "Sequencing process E is conducted like this.",
+          "index_sequence": "AGTCGATCGTAC",
+          "lane_number": "lane_5",
+          "name": "Sequencing process E",
+          "sample": "GHGAN46177740365005",
+          "sequencing_experiment": "GHGAX83851934458528",
+          "sequencing_lane_id": "LANE_127",
+          "sequencing_machine_id": "SEQ_MACHINE_123",
+          "sequencing_process_files": [
+            "GHGAF19339989618442"
+          ],
+          "sequencing_run_id": "RUN_127",
+          "title": "Sequencing Process E"
+        },
+        {
+          "accession": "GHGAO66715047871416",
+          "alias": "SEQ_PROCESS_6",
+          "description": "Sequencing process F is conducted like this.",
+          "index_sequence": "AGTCGATCGTAC",
+          "lane_number": "lane_6",
+          "name": "Sequencing process F",
+          "sample": "GHGAN46177740365005",
+          "sequencing_experiment": "GHGAX83851934458528",
+          "sequencing_lane_id": "LANE_128",
+          "sequencing_machine_id": "SEQ_MACHINE_123",
+          "sequencing_process_files": [
+            "GHGAF82574397155238"
+          ],
+          "sequencing_run_id": "RUN_128",
+          "title": "Sequencing Process F"
+        },
+        {
+          "accession": "GHGAO36629966744948",
+          "alias": "SEQ_PROCESS_7",
+          "description": "Sequencing process G is conducted like this.",
+          "index_sequence": "AGTCGATCGTAC",
+          "lane_number": "lane_7",
+          "name": "Sequencing process G",
+          "sample": "GHGAN46177740365005",
+          "sequencing_experiment": "GHGAX83851934458528",
+          "sequencing_lane_id": "LANE_129",
+          "sequencing_machine_id": "SEQ_MACHINE_123",
+          "sequencing_process_files": [
+            "GHGAF07328380425408"
+          ],
+          "sequencing_run_id": "RUN_129",
+          "title": "Sequencing Process G"
+        },
+        {
+          "accession": "GHGAO59081664899908",
+          "alias": "SEQ_PROCESS_8",
+          "description": "Sequencing process H is conducted like this.",
+          "index_sequence": "AGTCGATCGTAC",
+          "lane_number": "lane_8",
+          "name": "Sequencing process H",
+          "sample": "GHGAN46177740365005",
+          "sequencing_experiment": "GHGAX83851934458528",
+          "sequencing_lane_id": "LANE_130",
+          "sequencing_machine_id": "SEQ_MACHINE_123",
+          "sequencing_process_files": [
+            "GHGAF62118300340019"
+          ],
+          "sequencing_run_id": "RUN_130",
+          "title": "Sequencing Process H"
+        },
+        {
+          "accession": "GHGAO35933687766366",
+          "alias": "SEQ_PROCESS_9",
+          "description": "Sequencing process I is conducted like this.",
+          "index_sequence": "AGTCGATCGTAC",
+          "lane_number": "lane_9",
+          "name": "Sequencing process I",
+          "sample": "GHGAN46177740365005",
+          "sequencing_experiment": "GHGAX83851934458528",
+          "sequencing_lane_id": "LANE_131",
+          "sequencing_machine_id": "SEQ_MACHINE_123",
+          "sequencing_process_files": [
+            "GHGAF86681016295324"
+          ],
+          "sequencing_run_id": "RUN_131",
+          "title": "Sequencing Process I"
+        }
+      ],
+      "sequencing_protocols": [
+        {
+          "accession": "GHGAQ91563202933697",
+          "alias": "SEQ_PRO_1",
+          "cell_barcode_offset": "20",
+          "cell_barcode_read": "INDEX1",
+          "cell_barcode_size": "18",
+          "description": "Sequence protocol 1 is conducted like this. ",
+          "flow_cell_id": "ID_Cell 1_Lane_1",
+          "flow_cell_type": "ILLUMINA_NOVA_SEQ_S4",
+          "instrument_model": "ILLUMINA_NOVA_SEQ_6000",
+          "sample_barcode_read": "INDEX1",
+          "sequencing_center": "Center A",
+          "sequencing_experiments": [
+            "GHGAX83851934458528"
+          ],
+          "sequencing_read_length": "long",
+          "target_coverage": "x50",
+          "type": "DNA-seq",
+          "umi_barcode_offset": "16",
+          "umi_barcode_read": "INDEX1",
+          "umi_barcode_size": "10"
+        }
+      ],
+      "studies": [
+        {
+          "accession": "GHGAS36422481396751",
+          "affiliations": [
+            "Some Institute",
+            "Some other Institute"
+          ],
+          "alias": "STUDY_A",
+          "attributes": [
+            {
+              "key": "budget",
+              "value": "3.5M"
+            },
+            {
+              "key": "funding",
+              "value": "EU"
+            }
+          ],
+          "conditions": [
+            "GHGAK19290740394392"
+          ],
+          "description": "A study that is the A study",
+          "publications": [
+            "GHGAU83435125182534"
+          ],
+          "study_files": [
+            "GHGAF29699992445931"
+          ],
+          "title": "The A Study",
+          "type": "SYNTHETIC_GENOMICS"
+        },
+        {
+          "accession": "GHGAS55941946021084",
+          "affiliations": [
+            "Some Institute"
+          ],
+          "alias": "STUDY_B",
+          "conditions": [
+            "GHGAK13090423773754"
+          ],
+          "description": "A study that is the B study",
+          "publications": [
+            "GHGAU43563073899203"
+          ],
+          "study_files": [],
+          "title": "The B Study",
+          "type": "WHOLE_GENOME_SEQUENCING"
+        }
+      ],
+      "study_files": [
+        {
+          "accession": "GHGAF29699992445931",
+          "alias": "STUDY_FILE_1",
+          "checksum": "7a586609dd8c7d6f53cbc2e82e1165de2c7aab6769c6dde9882b45048b0fdaa9",
+          "checksum_type": "SHA256",
+          "dataset": "GHGAD09598790897621",
+          "format": "FASTQ",
+          "forward_or_reverse": "REVERSE",
+          "name": "STUDY_1_SPECIMEN_1_FILE_1.fastq.gz",
+          "size": 106497,
+          "study": "GHGAS36422481396751"
+        }
+      ],
+      "trios": [
+        {
+          "accession": "GHGAT29935793267059",
+          "alias": "TRIO_1",
+          "child": "GHGAI69689243593970",
+          "father": "GHGAI04639299227616",
+          "mother": "GHGAI67844275544626"
+        }
+      ]
+    },
+    "submission_id": "5e5f1f85-890f-4fa2-9db1-9939ac283ef0"
+  },
+  "type_": "resolved_public"
 }

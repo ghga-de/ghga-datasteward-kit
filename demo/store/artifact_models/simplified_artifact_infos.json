@@ -1,861 +1,861 @@
 [
   {
-    "name": "embedded_restricted",
     "description": "embedded_restricted",
+    "name": "embedded_restricted",
     "resource_classes": {
-      "DataAccessCommittee": {
-        "name": "DataAccessCommittee",
-        "description": "A group of members that are delegated to grant access to one or more datasets after ensuring the minimum criteria for data sharing has been met, and request for data use does not raise ethical and/or legal concerns.",
+      "Analysis": {
         "anchor_point": {
-          "target_class": "DataAccessCommittee",
           "identifier_slot": "accession",
-          "root_slot": "data_access_committees"
+          "root_slot": "analyses",
+          "target_class": "Analysis"
         },
-        "json_schema": {}
-      },
-      "DataAccessPolicy": {
-        "name": "DataAccessPolicy",
-        "description": "A Data Access Policy specifies under which circumstances, legal or otherwise, a user can have access to one or more Datasets belonging to one or more Studies.",
-        "anchor_point": {
-          "target_class": "DataAccessPolicy",
-          "identifier_slot": "accession",
-          "root_slot": "data_access_policies"
-        },
-        "json_schema": {}
-      },
-      "Biospecimen": {
-        "name": "Biospecimen",
-        "description": "A Biospecimen is any natural material taken from a biological entity (usually a human) for testing, diagnostics, treatment, or research purposes. The Biospecimen is linked to the Individual from which the Biospecimen is derived.",
-        "anchor_point": {
-          "target_class": "Biospecimen",
-          "identifier_slot": "accession",
-          "root_slot": "biospecimens"
-        },
-        "json_schema": {}
-      },
-      "Sample": {
-        "name": "Sample",
-        "description": "A sample is a limited quantity of something to be used for testing, analysis, inspection, investigation, demonstration, or trial use. A sample is prepared from a Biospecimen (isolate or tissue).",
-        "anchor_point": {
-          "target_class": "Sample",
-          "identifier_slot": "accession",
-          "root_slot": "samples"
-        },
-        "json_schema": {}
+        "description": "An Analysis is a data transformation that transforms input data to output data. The workflow used to achieve this transformation and the individual steps are also captured.",
+        "json_schema": {},
+        "name": "Analysis"
       },
       "AnalysisProcess": {
-        "name": "AnalysisProcess",
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "analysis_processes",
+          "target_class": "AnalysisProcess"
+        },
         "description": null,
-        "anchor_point": {
-          "target_class": "AnalysisProcess",
-          "identifier_slot": "accession",
-          "root_slot": "analysis_processes"
-        },
-        "json_schema": {}
-      },
-      "EmbeddedDataset": {
-        "name": "EmbeddedDataset",
-        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
-        "anchor_point": {
-          "target_class": "EmbeddedDataset",
-          "identifier_slot": "accession",
-          "root_slot": "embedded_dataset"
-        },
-        "json_schema": {}
-      },
-      "SequencingExperiment": {
-        "name": "SequencingExperiment",
-        "description": "An sequencing experiment is an investigation that consists of a coordinated set of actions and observations designed to generate data with the goal of verifying, falsifying, or establishing the validity of a hypothesis.",
-        "anchor_point": {
-          "target_class": "SequencingExperiment",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_experiments"
-        },
-        "json_schema": {}
-      },
-      "Analysis": {
-        "name": "Analysis",
-        "description": "An Analysis is a data transformation that transforms input data to output data. The workflow used to achieve this transformation and the individual steps are also captured.",
-        "anchor_point": {
-          "target_class": "Analysis",
-          "identifier_slot": "accession",
-          "root_slot": "analyses"
-        },
-        "json_schema": {}
-      },
-      "Dataset": {
-        "name": "Dataset",
-        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
-        "anchor_point": {
-          "target_class": "Dataset",
-          "identifier_slot": "accession",
-          "root_slot": "datasets"
-        },
-        "json_schema": {}
-      },
-      "Trio": {
-        "name": "Trio",
-        "description": "A trio is defined by three individuals representing an individual and their parents.",
-        "anchor_point": {
-          "target_class": "Trio",
-          "identifier_slot": "accession",
-          "root_slot": "trios"
-        },
-        "json_schema": {}
-      },
-      "Condition": {
-        "name": "Condition",
-        "description": "An condition that is linked to comparable samples.",
-        "anchor_point": {
-          "target_class": "Condition",
-          "identifier_slot": "accession",
-          "root_slot": "conditions"
-        },
-        "json_schema": {}
-      },
-      "Study": {
-        "name": "Study",
-        "description": "Studies are experimental investigations of a particular phenomenon. It involves a detailed examination and analysis of a subject to learn more about the phenomenon being studied.",
-        "anchor_point": {
-          "target_class": "Study",
-          "identifier_slot": "accession",
-          "root_slot": "studies"
-        },
-        "json_schema": {}
-      },
-      "LibraryPreparationProtocol": {
-        "name": "LibraryPreparationProtocol",
-        "description": "Information about the library_preparation of an sequencing experiment.",
-        "anchor_point": {
-          "target_class": "LibraryPreparationProtocol",
-          "identifier_slot": "accession",
-          "root_slot": "library_preparation_protocols"
-        },
-        "json_schema": {}
-      },
-      "SequencingProcess": {
-        "name": "SequencingProcess",
-        "description": "A sequencing process linking a sample to sequencing output.",
-        "anchor_point": {
-          "target_class": "SequencingProcess",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_processes"
-        },
-        "json_schema": {}
-      },
-      "Individual": {
-        "name": "Individual",
-        "description": "An Individual is a Person who is participating in a Study.",
-        "anchor_point": {
-          "target_class": "Individual",
-          "identifier_slot": "accession",
-          "root_slot": "individuals"
-        },
-        "json_schema": {}
-      },
-      "SequencingProcessFile": {
-        "name": "SequencingProcessFile",
-        "description": "A SequencingProcessFile is a File that is associated with a SequencingProcess.",
-        "anchor_point": {
-          "target_class": "SequencingProcessFile",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_process_files"
-        },
-        "json_schema": {}
-      },
-      "SequencingProtocol": {
-        "name": "SequencingProtocol",
-        "description": "Information about the sequencing of a sample.",
-        "anchor_point": {
-          "target_class": "SequencingProtocol",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_protocols"
-        },
-        "json_schema": {}
+        "json_schema": {},
+        "name": "AnalysisProcess"
       },
       "AnalysisProcessOutputFile": {
-        "name": "AnalysisProcessOutputFile",
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "analysis_process_output_files",
+          "target_class": "AnalysisProcessOutputFile"
+        },
         "description": "A AnalysisProcessOutputFile is a File that is associated as an output file with an AnalysisProcess.",
-        "anchor_point": {
-          "target_class": "AnalysisProcessOutputFile",
-          "identifier_slot": "accession",
-          "root_slot": "analysis_process_output_files"
-        },
-        "json_schema": {}
+        "json_schema": {},
+        "name": "AnalysisProcessOutputFile"
       },
-      "SampleFile": {
-        "name": "SampleFile",
-        "description": "A SampleFile is a File that is associated with a Sample.",
+      "Biospecimen": {
         "anchor_point": {
-          "target_class": "SampleFile",
           "identifier_slot": "accession",
-          "root_slot": "sample_files"
+          "root_slot": "biospecimens",
+          "target_class": "Biospecimen"
         },
-        "json_schema": {}
+        "description": "A Biospecimen is any natural material taken from a biological entity (usually a human) for testing, diagnostics, treatment, or research purposes. The Biospecimen is linked to the Individual from which the Biospecimen is derived.",
+        "json_schema": {},
+        "name": "Biospecimen"
       },
-      "StudyFile": {
-        "name": "StudyFile",
-        "description": "A StudyFile is a File that is associated with a Study.",
+      "Condition": {
         "anchor_point": {
-          "target_class": "StudyFile",
           "identifier_slot": "accession",
-          "root_slot": "study_files"
+          "root_slot": "conditions",
+          "target_class": "Condition"
         },
-        "json_schema": {}
+        "description": "An condition that is linked to comparable samples.",
+        "json_schema": {},
+        "name": "Condition"
+      },
+      "DataAccessCommittee": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "data_access_committees",
+          "target_class": "DataAccessCommittee"
+        },
+        "description": "A group of members that are delegated to grant access to one or more datasets after ensuring the minimum criteria for data sharing has been met, and request for data use does not raise ethical and/or legal concerns.",
+        "json_schema": {},
+        "name": "DataAccessCommittee"
+      },
+      "DataAccessPolicy": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "data_access_policies",
+          "target_class": "DataAccessPolicy"
+        },
+        "description": "A Data Access Policy specifies under which circumstances, legal or otherwise, a user can have access to one or more Datasets belonging to one or more Studies.",
+        "json_schema": {},
+        "name": "DataAccessPolicy"
+      },
+      "Dataset": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "datasets",
+          "target_class": "Dataset"
+        },
+        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
+        "json_schema": {},
+        "name": "Dataset"
+      },
+      "EmbeddedDataset": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "embedded_dataset",
+          "target_class": "EmbeddedDataset"
+        },
+        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
+        "json_schema": {},
+        "name": "EmbeddedDataset"
+      },
+      "Individual": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "individuals",
+          "target_class": "Individual"
+        },
+        "description": "An Individual is a Person who is participating in a Study.",
+        "json_schema": {},
+        "name": "Individual"
+      },
+      "LibraryPreparationProtocol": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "library_preparation_protocols",
+          "target_class": "LibraryPreparationProtocol"
+        },
+        "description": "Information about the library_preparation of an sequencing experiment.",
+        "json_schema": {},
+        "name": "LibraryPreparationProtocol"
       },
       "Publication": {
-        "name": "Publication",
-        "description": "The Publication entity represents a publication. While a publication can be any article that is published, the minimum expectation is that the publication has a valid DOI.",
         "anchor_point": {
-          "target_class": "Publication",
           "identifier_slot": "accession",
-          "root_slot": "publications"
+          "root_slot": "publications",
+          "target_class": "Publication"
         },
-        "json_schema": {}
+        "description": "The Publication entity represents a publication. While a publication can be any article that is published, the minimum expectation is that the publication has a valid DOI.",
+        "json_schema": {},
+        "name": "Publication"
+      },
+      "Sample": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "samples",
+          "target_class": "Sample"
+        },
+        "description": "A sample is a limited quantity of something to be used for testing, analysis, inspection, investigation, demonstration, or trial use. A sample is prepared from a Biospecimen (isolate or tissue).",
+        "json_schema": {},
+        "name": "Sample"
+      },
+      "SampleFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sample_files",
+          "target_class": "SampleFile"
+        },
+        "description": "A SampleFile is a File that is associated with a Sample.",
+        "json_schema": {},
+        "name": "SampleFile"
+      },
+      "SequencingExperiment": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_experiments",
+          "target_class": "SequencingExperiment"
+        },
+        "description": "An sequencing experiment is an investigation that consists of a coordinated set of actions and observations designed to generate data with the goal of verifying, falsifying, or establishing the validity of a hypothesis.",
+        "json_schema": {},
+        "name": "SequencingExperiment"
+      },
+      "SequencingProcess": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_processes",
+          "target_class": "SequencingProcess"
+        },
+        "description": "A sequencing process linking a sample to sequencing output.",
+        "json_schema": {},
+        "name": "SequencingProcess"
+      },
+      "SequencingProcessFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_process_files",
+          "target_class": "SequencingProcessFile"
+        },
+        "description": "A SequencingProcessFile is a File that is associated with a SequencingProcess.",
+        "json_schema": {},
+        "name": "SequencingProcessFile"
+      },
+      "SequencingProtocol": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_protocols",
+          "target_class": "SequencingProtocol"
+        },
+        "description": "Information about the sequencing of a sample.",
+        "json_schema": {},
+        "name": "SequencingProtocol"
+      },
+      "Study": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "studies",
+          "target_class": "Study"
+        },
+        "description": "Studies are experimental investigations of a particular phenomenon. It involves a detailed examination and analysis of a subject to learn more about the phenomenon being studied.",
+        "json_schema": {},
+        "name": "Study"
+      },
+      "StudyFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "study_files",
+          "target_class": "StudyFile"
+        },
+        "description": "A StudyFile is a File that is associated with a Study.",
+        "json_schema": {},
+        "name": "StudyFile"
+      },
+      "Trio": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "trios",
+          "target_class": "Trio"
+        },
+        "description": "A trio is defined by three individuals representing an individual and their parents.",
+        "json_schema": {},
+        "name": "Trio"
       }
     }
   },
   {
-    "name": "resolved_restricted",
     "description": "resolved_restricted",
+    "name": "resolved_restricted",
     "resource_classes": {
-      "DataAccessCommittee": {
-        "name": "DataAccessCommittee",
-        "description": "A group of members that are delegated to grant access to one or more datasets after ensuring the minimum criteria for data sharing has been met, and request for data use does not raise ethical and/or legal concerns.",
+      "Analysis": {
         "anchor_point": {
-          "target_class": "DataAccessCommittee",
           "identifier_slot": "accession",
-          "root_slot": "data_access_committees"
+          "root_slot": "analyses",
+          "target_class": "Analysis"
         },
-        "json_schema": {}
-      },
-      "DataAccessPolicy": {
-        "name": "DataAccessPolicy",
-        "description": "A Data Access Policy specifies under which circumstances, legal or otherwise, a user can have access to one or more Datasets belonging to one or more Studies.",
-        "anchor_point": {
-          "target_class": "DataAccessPolicy",
-          "identifier_slot": "accession",
-          "root_slot": "data_access_policies"
-        },
-        "json_schema": {}
-      },
-      "Biospecimen": {
-        "name": "Biospecimen",
-        "description": "A Biospecimen is any natural material taken from a biological entity (usually a human) for testing, diagnostics, treatment, or research purposes. The Biospecimen is linked to the Individual from which the Biospecimen is derived.",
-        "anchor_point": {
-          "target_class": "Biospecimen",
-          "identifier_slot": "accession",
-          "root_slot": "biospecimens"
-        },
-        "json_schema": {}
-      },
-      "Sample": {
-        "name": "Sample",
-        "description": "A sample is a limited quantity of something to be used for testing, analysis, inspection, investigation, demonstration, or trial use. A sample is prepared from a Biospecimen (isolate or tissue).",
-        "anchor_point": {
-          "target_class": "Sample",
-          "identifier_slot": "accession",
-          "root_slot": "samples"
-        },
-        "json_schema": {}
+        "description": "An Analysis is a data transformation that transforms input data to output data. The workflow used to achieve this transformation and the individual steps are also captured.",
+        "json_schema": {},
+        "name": "Analysis"
       },
       "AnalysisProcess": {
-        "name": "AnalysisProcess",
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "analysis_processes",
+          "target_class": "AnalysisProcess"
+        },
         "description": null,
-        "anchor_point": {
-          "target_class": "AnalysisProcess",
-          "identifier_slot": "accession",
-          "root_slot": "analysis_processes"
-        },
-        "json_schema": {}
-      },
-      "SequencingExperiment": {
-        "name": "SequencingExperiment",
-        "description": "An sequencing experiment is an investigation that consists of a coordinated set of actions and observations designed to generate data with the goal of verifying, falsifying, or establishing the validity of a hypothesis.",
-        "anchor_point": {
-          "target_class": "SequencingExperiment",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_experiments"
-        },
-        "json_schema": {}
-      },
-      "Analysis": {
-        "name": "Analysis",
-        "description": "An Analysis is a data transformation that transforms input data to output data. The workflow used to achieve this transformation and the individual steps are also captured.",
-        "anchor_point": {
-          "target_class": "Analysis",
-          "identifier_slot": "accession",
-          "root_slot": "analyses"
-        },
-        "json_schema": {}
-      },
-      "Dataset": {
-        "name": "Dataset",
-        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
-        "anchor_point": {
-          "target_class": "Dataset",
-          "identifier_slot": "accession",
-          "root_slot": "datasets"
-        },
-        "json_schema": {}
-      },
-      "Trio": {
-        "name": "Trio",
-        "description": "A trio is defined by three individuals representing an individual and their parents.",
-        "anchor_point": {
-          "target_class": "Trio",
-          "identifier_slot": "accession",
-          "root_slot": "trios"
-        },
-        "json_schema": {}
-      },
-      "Condition": {
-        "name": "Condition",
-        "description": "An condition that is linked to comparable samples.",
-        "anchor_point": {
-          "target_class": "Condition",
-          "identifier_slot": "accession",
-          "root_slot": "conditions"
-        },
-        "json_schema": {}
-      },
-      "Study": {
-        "name": "Study",
-        "description": "Studies are experimental investigations of a particular phenomenon. It involves a detailed examination and analysis of a subject to learn more about the phenomenon being studied.",
-        "anchor_point": {
-          "target_class": "Study",
-          "identifier_slot": "accession",
-          "root_slot": "studies"
-        },
-        "json_schema": {}
-      },
-      "LibraryPreparationProtocol": {
-        "name": "LibraryPreparationProtocol",
-        "description": "Information about the library_preparation of an sequencing experiment.",
-        "anchor_point": {
-          "target_class": "LibraryPreparationProtocol",
-          "identifier_slot": "accession",
-          "root_slot": "library_preparation_protocols"
-        },
-        "json_schema": {}
-      },
-      "SequencingProcess": {
-        "name": "SequencingProcess",
-        "description": "A sequencing process linking a sample to sequencing output.",
-        "anchor_point": {
-          "target_class": "SequencingProcess",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_processes"
-        },
-        "json_schema": {}
-      },
-      "Individual": {
-        "name": "Individual",
-        "description": "An Individual is a Person who is participating in a Study.",
-        "anchor_point": {
-          "target_class": "Individual",
-          "identifier_slot": "accession",
-          "root_slot": "individuals"
-        },
-        "json_schema": {}
-      },
-      "SequencingProcessFile": {
-        "name": "SequencingProcessFile",
-        "description": "A SequencingProcessFile is a File that is associated with a SequencingProcess.",
-        "anchor_point": {
-          "target_class": "SequencingProcessFile",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_process_files"
-        },
-        "json_schema": {}
-      },
-      "SequencingProtocol": {
-        "name": "SequencingProtocol",
-        "description": "Information about the sequencing of a sample.",
-        "anchor_point": {
-          "target_class": "SequencingProtocol",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_protocols"
-        },
-        "json_schema": {}
+        "json_schema": {},
+        "name": "AnalysisProcess"
       },
       "AnalysisProcessOutputFile": {
-        "name": "AnalysisProcessOutputFile",
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "analysis_process_output_files",
+          "target_class": "AnalysisProcessOutputFile"
+        },
         "description": "A AnalysisProcessOutputFile is a File that is associated as an output file with an AnalysisProcess.",
-        "anchor_point": {
-          "target_class": "AnalysisProcessOutputFile",
-          "identifier_slot": "accession",
-          "root_slot": "analysis_process_output_files"
-        },
-        "json_schema": {}
+        "json_schema": {},
+        "name": "AnalysisProcessOutputFile"
       },
-      "SampleFile": {
-        "name": "SampleFile",
-        "description": "A SampleFile is a File that is associated with a Sample.",
+      "Biospecimen": {
         "anchor_point": {
-          "target_class": "SampleFile",
           "identifier_slot": "accession",
-          "root_slot": "sample_files"
+          "root_slot": "biospecimens",
+          "target_class": "Biospecimen"
         },
-        "json_schema": {}
+        "description": "A Biospecimen is any natural material taken from a biological entity (usually a human) for testing, diagnostics, treatment, or research purposes. The Biospecimen is linked to the Individual from which the Biospecimen is derived.",
+        "json_schema": {},
+        "name": "Biospecimen"
       },
-      "StudyFile": {
-        "name": "StudyFile",
-        "description": "A StudyFile is a File that is associated with a Study.",
+      "Condition": {
         "anchor_point": {
-          "target_class": "StudyFile",
           "identifier_slot": "accession",
-          "root_slot": "study_files"
+          "root_slot": "conditions",
+          "target_class": "Condition"
         },
-        "json_schema": {}
+        "description": "An condition that is linked to comparable samples.",
+        "json_schema": {},
+        "name": "Condition"
+      },
+      "DataAccessCommittee": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "data_access_committees",
+          "target_class": "DataAccessCommittee"
+        },
+        "description": "A group of members that are delegated to grant access to one or more datasets after ensuring the minimum criteria for data sharing has been met, and request for data use does not raise ethical and/or legal concerns.",
+        "json_schema": {},
+        "name": "DataAccessCommittee"
+      },
+      "DataAccessPolicy": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "data_access_policies",
+          "target_class": "DataAccessPolicy"
+        },
+        "description": "A Data Access Policy specifies under which circumstances, legal or otherwise, a user can have access to one or more Datasets belonging to one or more Studies.",
+        "json_schema": {},
+        "name": "DataAccessPolicy"
+      },
+      "Dataset": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "datasets",
+          "target_class": "Dataset"
+        },
+        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
+        "json_schema": {},
+        "name": "Dataset"
+      },
+      "Individual": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "individuals",
+          "target_class": "Individual"
+        },
+        "description": "An Individual is a Person who is participating in a Study.",
+        "json_schema": {},
+        "name": "Individual"
+      },
+      "LibraryPreparationProtocol": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "library_preparation_protocols",
+          "target_class": "LibraryPreparationProtocol"
+        },
+        "description": "Information about the library_preparation of an sequencing experiment.",
+        "json_schema": {},
+        "name": "LibraryPreparationProtocol"
       },
       "Publication": {
-        "name": "Publication",
-        "description": "The Publication entity represents a publication. While a publication can be any article that is published, the minimum expectation is that the publication has a valid DOI.",
         "anchor_point": {
-          "target_class": "Publication",
           "identifier_slot": "accession",
-          "root_slot": "publications"
+          "root_slot": "publications",
+          "target_class": "Publication"
         },
-        "json_schema": {}
+        "description": "The Publication entity represents a publication. While a publication can be any article that is published, the minimum expectation is that the publication has a valid DOI.",
+        "json_schema": {},
+        "name": "Publication"
+      },
+      "Sample": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "samples",
+          "target_class": "Sample"
+        },
+        "description": "A sample is a limited quantity of something to be used for testing, analysis, inspection, investigation, demonstration, or trial use. A sample is prepared from a Biospecimen (isolate or tissue).",
+        "json_schema": {},
+        "name": "Sample"
+      },
+      "SampleFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sample_files",
+          "target_class": "SampleFile"
+        },
+        "description": "A SampleFile is a File that is associated with a Sample.",
+        "json_schema": {},
+        "name": "SampleFile"
+      },
+      "SequencingExperiment": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_experiments",
+          "target_class": "SequencingExperiment"
+        },
+        "description": "An sequencing experiment is an investigation that consists of a coordinated set of actions and observations designed to generate data with the goal of verifying, falsifying, or establishing the validity of a hypothesis.",
+        "json_schema": {},
+        "name": "SequencingExperiment"
+      },
+      "SequencingProcess": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_processes",
+          "target_class": "SequencingProcess"
+        },
+        "description": "A sequencing process linking a sample to sequencing output.",
+        "json_schema": {},
+        "name": "SequencingProcess"
+      },
+      "SequencingProcessFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_process_files",
+          "target_class": "SequencingProcessFile"
+        },
+        "description": "A SequencingProcessFile is a File that is associated with a SequencingProcess.",
+        "json_schema": {},
+        "name": "SequencingProcessFile"
+      },
+      "SequencingProtocol": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_protocols",
+          "target_class": "SequencingProtocol"
+        },
+        "description": "Information about the sequencing of a sample.",
+        "json_schema": {},
+        "name": "SequencingProtocol"
+      },
+      "Study": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "studies",
+          "target_class": "Study"
+        },
+        "description": "Studies are experimental investigations of a particular phenomenon. It involves a detailed examination and analysis of a subject to learn more about the phenomenon being studied.",
+        "json_schema": {},
+        "name": "Study"
+      },
+      "StudyFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "study_files",
+          "target_class": "StudyFile"
+        },
+        "description": "A StudyFile is a File that is associated with a Study.",
+        "json_schema": {},
+        "name": "StudyFile"
+      },
+      "Trio": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "trios",
+          "target_class": "Trio"
+        },
+        "description": "A trio is defined by three individuals representing an individual and their parents.",
+        "json_schema": {},
+        "name": "Trio"
       }
     }
   },
   {
-    "name": "resolved_public",
     "description": "resolved_public",
+    "name": "resolved_public",
     "resource_classes": {
-      "DataAccessCommittee": {
-        "name": "DataAccessCommittee",
-        "description": "A group of members that are delegated to grant access to one or more datasets after ensuring the minimum criteria for data sharing has been met, and request for data use does not raise ethical and/or legal concerns.",
+      "Analysis": {
         "anchor_point": {
-          "target_class": "DataAccessCommittee",
           "identifier_slot": "accession",
-          "root_slot": "data_access_committees"
+          "root_slot": "analyses",
+          "target_class": "Analysis"
         },
-        "json_schema": {}
-      },
-      "DataAccessPolicy": {
-        "name": "DataAccessPolicy",
-        "description": "A Data Access Policy specifies under which circumstances, legal or otherwise, a user can have access to one or more Datasets belonging to one or more Studies.",
-        "anchor_point": {
-          "target_class": "DataAccessPolicy",
-          "identifier_slot": "accession",
-          "root_slot": "data_access_policies"
-        },
-        "json_schema": {}
-      },
-      "Biospecimen": {
-        "name": "Biospecimen",
-        "description": "A Biospecimen is any natural material taken from a biological entity (usually a human) for testing, diagnostics, treatment, or research purposes. The Biospecimen is linked to the Individual from which the Biospecimen is derived.",
-        "anchor_point": {
-          "target_class": "Biospecimen",
-          "identifier_slot": "accession",
-          "root_slot": "biospecimens"
-        },
-        "json_schema": {}
-      },
-      "Sample": {
-        "name": "Sample",
-        "description": "A sample is a limited quantity of something to be used for testing, analysis, inspection, investigation, demonstration, or trial use. A sample is prepared from a Biospecimen (isolate or tissue).",
-        "anchor_point": {
-          "target_class": "Sample",
-          "identifier_slot": "accession",
-          "root_slot": "samples"
-        },
-        "json_schema": {}
+        "description": "An Analysis is a data transformation that transforms input data to output data. The workflow used to achieve this transformation and the individual steps are also captured.",
+        "json_schema": {},
+        "name": "Analysis"
       },
       "AnalysisProcess": {
-        "name": "AnalysisProcess",
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "analysis_processes",
+          "target_class": "AnalysisProcess"
+        },
         "description": null,
-        "anchor_point": {
-          "target_class": "AnalysisProcess",
-          "identifier_slot": "accession",
-          "root_slot": "analysis_processes"
-        },
-        "json_schema": {}
-      },
-      "SequencingExperiment": {
-        "name": "SequencingExperiment",
-        "description": "An sequencing experiment is an investigation that consists of a coordinated set of actions and observations designed to generate data with the goal of verifying, falsifying, or establishing the validity of a hypothesis.",
-        "anchor_point": {
-          "target_class": "SequencingExperiment",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_experiments"
-        },
-        "json_schema": {}
-      },
-      "Analysis": {
-        "name": "Analysis",
-        "description": "An Analysis is a data transformation that transforms input data to output data. The workflow used to achieve this transformation and the individual steps are also captured.",
-        "anchor_point": {
-          "target_class": "Analysis",
-          "identifier_slot": "accession",
-          "root_slot": "analyses"
-        },
-        "json_schema": {}
-      },
-      "Dataset": {
-        "name": "Dataset",
-        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
-        "anchor_point": {
-          "target_class": "Dataset",
-          "identifier_slot": "accession",
-          "root_slot": "datasets"
-        },
-        "json_schema": {}
-      },
-      "Trio": {
-        "name": "Trio",
-        "description": "A trio is defined by three individuals representing an individual and their parents.",
-        "anchor_point": {
-          "target_class": "Trio",
-          "identifier_slot": "accession",
-          "root_slot": "trios"
-        },
-        "json_schema": {}
-      },
-      "Condition": {
-        "name": "Condition",
-        "description": "An condition that is linked to comparable samples.",
-        "anchor_point": {
-          "target_class": "Condition",
-          "identifier_slot": "accession",
-          "root_slot": "conditions"
-        },
-        "json_schema": {}
-      },
-      "Study": {
-        "name": "Study",
-        "description": "Studies are experimental investigations of a particular phenomenon. It involves a detailed examination and analysis of a subject to learn more about the phenomenon being studied.",
-        "anchor_point": {
-          "target_class": "Study",
-          "identifier_slot": "accession",
-          "root_slot": "studies"
-        },
-        "json_schema": {}
-      },
-      "LibraryPreparationProtocol": {
-        "name": "LibraryPreparationProtocol",
-        "description": "Information about the library_preparation of an sequencing experiment.",
-        "anchor_point": {
-          "target_class": "LibraryPreparationProtocol",
-          "identifier_slot": "accession",
-          "root_slot": "library_preparation_protocols"
-        },
-        "json_schema": {}
-      },
-      "SequencingProcess": {
-        "name": "SequencingProcess",
-        "description": "A sequencing process linking a sample to sequencing output.",
-        "anchor_point": {
-          "target_class": "SequencingProcess",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_processes"
-        },
-        "json_schema": {}
-      },
-      "Individual": {
-        "name": "Individual",
-        "description": "An Individual is a Person who is participating in a Study.",
-        "anchor_point": {
-          "target_class": "Individual",
-          "identifier_slot": "accession",
-          "root_slot": "individuals"
-        },
-        "json_schema": {}
-      },
-      "SequencingProcessFile": {
-        "name": "SequencingProcessFile",
-        "description": "A SequencingProcessFile is a File that is associated with a SequencingProcess.",
-        "anchor_point": {
-          "target_class": "SequencingProcessFile",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_process_files"
-        },
-        "json_schema": {}
-      },
-      "SequencingProtocol": {
-        "name": "SequencingProtocol",
-        "description": "Information about the sequencing of a sample.",
-        "anchor_point": {
-          "target_class": "SequencingProtocol",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_protocols"
-        },
-        "json_schema": {}
+        "json_schema": {},
+        "name": "AnalysisProcess"
       },
       "AnalysisProcessOutputFile": {
-        "name": "AnalysisProcessOutputFile",
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "analysis_process_output_files",
+          "target_class": "AnalysisProcessOutputFile"
+        },
         "description": "A AnalysisProcessOutputFile is a File that is associated as an output file with an AnalysisProcess.",
-        "anchor_point": {
-          "target_class": "AnalysisProcessOutputFile",
-          "identifier_slot": "accession",
-          "root_slot": "analysis_process_output_files"
-        },
-        "json_schema": {}
+        "json_schema": {},
+        "name": "AnalysisProcessOutputFile"
       },
-      "SampleFile": {
-        "name": "SampleFile",
-        "description": "A SampleFile is a File that is associated with a Sample.",
+      "Biospecimen": {
         "anchor_point": {
-          "target_class": "SampleFile",
           "identifier_slot": "accession",
-          "root_slot": "sample_files"
+          "root_slot": "biospecimens",
+          "target_class": "Biospecimen"
         },
-        "json_schema": {}
+        "description": "A Biospecimen is any natural material taken from a biological entity (usually a human) for testing, diagnostics, treatment, or research purposes. The Biospecimen is linked to the Individual from which the Biospecimen is derived.",
+        "json_schema": {},
+        "name": "Biospecimen"
       },
-      "StudyFile": {
-        "name": "StudyFile",
-        "description": "A StudyFile is a File that is associated with a Study.",
+      "Condition": {
         "anchor_point": {
-          "target_class": "StudyFile",
           "identifier_slot": "accession",
-          "root_slot": "study_files"
+          "root_slot": "conditions",
+          "target_class": "Condition"
         },
-        "json_schema": {}
+        "description": "An condition that is linked to comparable samples.",
+        "json_schema": {},
+        "name": "Condition"
+      },
+      "DataAccessCommittee": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "data_access_committees",
+          "target_class": "DataAccessCommittee"
+        },
+        "description": "A group of members that are delegated to grant access to one or more datasets after ensuring the minimum criteria for data sharing has been met, and request for data use does not raise ethical and/or legal concerns.",
+        "json_schema": {},
+        "name": "DataAccessCommittee"
+      },
+      "DataAccessPolicy": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "data_access_policies",
+          "target_class": "DataAccessPolicy"
+        },
+        "description": "A Data Access Policy specifies under which circumstances, legal or otherwise, a user can have access to one or more Datasets belonging to one or more Studies.",
+        "json_schema": {},
+        "name": "DataAccessPolicy"
+      },
+      "Dataset": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "datasets",
+          "target_class": "Dataset"
+        },
+        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
+        "json_schema": {},
+        "name": "Dataset"
+      },
+      "Individual": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "individuals",
+          "target_class": "Individual"
+        },
+        "description": "An Individual is a Person who is participating in a Study.",
+        "json_schema": {},
+        "name": "Individual"
+      },
+      "LibraryPreparationProtocol": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "library_preparation_protocols",
+          "target_class": "LibraryPreparationProtocol"
+        },
+        "description": "Information about the library_preparation of an sequencing experiment.",
+        "json_schema": {},
+        "name": "LibraryPreparationProtocol"
       },
       "Publication": {
-        "name": "Publication",
-        "description": "The Publication entity represents a publication. While a publication can be any article that is published, the minimum expectation is that the publication has a valid DOI.",
         "anchor_point": {
-          "target_class": "Publication",
           "identifier_slot": "accession",
-          "root_slot": "publications"
+          "root_slot": "publications",
+          "target_class": "Publication"
         },
-        "json_schema": {}
+        "description": "The Publication entity represents a publication. While a publication can be any article that is published, the minimum expectation is that the publication has a valid DOI.",
+        "json_schema": {},
+        "name": "Publication"
+      },
+      "Sample": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "samples",
+          "target_class": "Sample"
+        },
+        "description": "A sample is a limited quantity of something to be used for testing, analysis, inspection, investigation, demonstration, or trial use. A sample is prepared from a Biospecimen (isolate or tissue).",
+        "json_schema": {},
+        "name": "Sample"
+      },
+      "SampleFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sample_files",
+          "target_class": "SampleFile"
+        },
+        "description": "A SampleFile is a File that is associated with a Sample.",
+        "json_schema": {},
+        "name": "SampleFile"
+      },
+      "SequencingExperiment": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_experiments",
+          "target_class": "SequencingExperiment"
+        },
+        "description": "An sequencing experiment is an investigation that consists of a coordinated set of actions and observations designed to generate data with the goal of verifying, falsifying, or establishing the validity of a hypothesis.",
+        "json_schema": {},
+        "name": "SequencingExperiment"
+      },
+      "SequencingProcess": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_processes",
+          "target_class": "SequencingProcess"
+        },
+        "description": "A sequencing process linking a sample to sequencing output.",
+        "json_schema": {},
+        "name": "SequencingProcess"
+      },
+      "SequencingProcessFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_process_files",
+          "target_class": "SequencingProcessFile"
+        },
+        "description": "A SequencingProcessFile is a File that is associated with a SequencingProcess.",
+        "json_schema": {},
+        "name": "SequencingProcessFile"
+      },
+      "SequencingProtocol": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_protocols",
+          "target_class": "SequencingProtocol"
+        },
+        "description": "Information about the sequencing of a sample.",
+        "json_schema": {},
+        "name": "SequencingProtocol"
+      },
+      "Study": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "studies",
+          "target_class": "Study"
+        },
+        "description": "Studies are experimental investigations of a particular phenomenon. It involves a detailed examination and analysis of a subject to learn more about the phenomenon being studied.",
+        "json_schema": {},
+        "name": "Study"
+      },
+      "StudyFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "study_files",
+          "target_class": "StudyFile"
+        },
+        "description": "A StudyFile is a File that is associated with a Study.",
+        "json_schema": {},
+        "name": "StudyFile"
+      },
+      "Trio": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "trios",
+          "target_class": "Trio"
+        },
+        "description": "A trio is defined by three individuals representing an individual and their parents.",
+        "json_schema": {},
+        "name": "Trio"
       }
     }
   },
   {
-    "name": "embedded_public",
     "description": "embedded_public",
+    "name": "embedded_public",
     "resource_classes": {
-      "DataAccessCommittee": {
-        "name": "DataAccessCommittee",
-        "description": "A group of members that are delegated to grant access to one or more datasets after ensuring the minimum criteria for data sharing has been met, and request for data use does not raise ethical and/or legal concerns.",
+      "Analysis": {
         "anchor_point": {
-          "target_class": "DataAccessCommittee",
           "identifier_slot": "accession",
-          "root_slot": "data_access_committees"
+          "root_slot": "analyses",
+          "target_class": "Analysis"
         },
-        "json_schema": {}
-      },
-      "DataAccessPolicy": {
-        "name": "DataAccessPolicy",
-        "description": "A Data Access Policy specifies under which circumstances, legal or otherwise, a user can have access to one or more Datasets belonging to one or more Studies.",
-        "anchor_point": {
-          "target_class": "DataAccessPolicy",
-          "identifier_slot": "accession",
-          "root_slot": "data_access_policies"
-        },
-        "json_schema": {}
-      },
-      "Biospecimen": {
-        "name": "Biospecimen",
-        "description": "A Biospecimen is any natural material taken from a biological entity (usually a human) for testing, diagnostics, treatment, or research purposes. The Biospecimen is linked to the Individual from which the Biospecimen is derived.",
-        "anchor_point": {
-          "target_class": "Biospecimen",
-          "identifier_slot": "accession",
-          "root_slot": "biospecimens"
-        },
-        "json_schema": {}
-      },
-      "Sample": {
-        "name": "Sample",
-        "description": "A sample is a limited quantity of something to be used for testing, analysis, inspection, investigation, demonstration, or trial use. A sample is prepared from a Biospecimen (isolate or tissue).",
-        "anchor_point": {
-          "target_class": "Sample",
-          "identifier_slot": "accession",
-          "root_slot": "samples"
-        },
-        "json_schema": {}
+        "description": "An Analysis is a data transformation that transforms input data to output data. The workflow used to achieve this transformation and the individual steps are also captured.",
+        "json_schema": {},
+        "name": "Analysis"
       },
       "AnalysisProcess": {
-        "name": "AnalysisProcess",
-        "description": null,
         "anchor_point": {
-          "target_class": "AnalysisProcess",
           "identifier_slot": "accession",
-          "root_slot": "analysis_processes"
+          "root_slot": "analysis_processes",
+          "target_class": "AnalysisProcess"
         },
-        "json_schema": {}
+        "description": null,
+        "json_schema": {},
+        "name": "AnalysisProcess"
+      },
+      "AnalysisProcessOutputFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "analysis_process_output_files",
+          "target_class": "AnalysisProcessOutputFile"
+        },
+        "description": "A AnalysisProcessOutputFile is a File that is associated as an output file with an AnalysisProcess.",
+        "json_schema": {},
+        "name": "AnalysisProcessOutputFile"
+      },
+      "Biospecimen": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "biospecimens",
+          "target_class": "Biospecimen"
+        },
+        "description": "A Biospecimen is any natural material taken from a biological entity (usually a human) for testing, diagnostics, treatment, or research purposes. The Biospecimen is linked to the Individual from which the Biospecimen is derived.",
+        "json_schema": {},
+        "name": "Biospecimen"
+      },
+      "Condition": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "conditions",
+          "target_class": "Condition"
+        },
+        "description": "An condition that is linked to comparable samples.",
+        "json_schema": {},
+        "name": "Condition"
+      },
+      "DataAccessCommittee": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "data_access_committees",
+          "target_class": "DataAccessCommittee"
+        },
+        "description": "A group of members that are delegated to grant access to one or more datasets after ensuring the minimum criteria for data sharing has been met, and request for data use does not raise ethical and/or legal concerns.",
+        "json_schema": {},
+        "name": "DataAccessCommittee"
+      },
+      "DataAccessPolicy": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "data_access_policies",
+          "target_class": "DataAccessPolicy"
+        },
+        "description": "A Data Access Policy specifies under which circumstances, legal or otherwise, a user can have access to one or more Datasets belonging to one or more Studies.",
+        "json_schema": {},
+        "name": "DataAccessPolicy"
+      },
+      "Dataset": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "datasets",
+          "target_class": "Dataset"
+        },
+        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
+        "json_schema": {},
+        "name": "Dataset"
       },
       "EmbeddedDataset": {
-        "name": "EmbeddedDataset",
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "embedded_dataset",
+          "target_class": "EmbeddedDataset"
+        },
         "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
-        "anchor_point": {
-          "target_class": "EmbeddedDataset",
-          "identifier_slot": "accession",
-          "root_slot": "embedded_dataset"
-        },
-        "json_schema": {}
-      },
-      "SequencingExperiment": {
-        "name": "SequencingExperiment",
-        "description": "An sequencing experiment is an investigation that consists of a coordinated set of actions and observations designed to generate data with the goal of verifying, falsifying, or establishing the validity of a hypothesis.",
-        "anchor_point": {
-          "target_class": "SequencingExperiment",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_experiments"
-        },
-        "json_schema": {}
-      },
-      "Analysis": {
-        "name": "Analysis",
-        "description": "An Analysis is a data transformation that transforms input data to output data. The workflow used to achieve this transformation and the individual steps are also captured.",
-        "anchor_point": {
-          "target_class": "Analysis",
-          "identifier_slot": "accession",
-          "root_slot": "analyses"
-        },
-        "json_schema": {}
-      },
-      "Dataset": {
-        "name": "Dataset",
-        "description": "A Dataset is a collection of Files that is prepared for distribution and is tied to a Data Access Policy.",
-        "anchor_point": {
-          "target_class": "Dataset",
-          "identifier_slot": "accession",
-          "root_slot": "datasets"
-        },
-        "json_schema": {}
-      },
-      "Trio": {
-        "name": "Trio",
-        "description": "A trio is defined by three individuals representing an individual and their parents.",
-        "anchor_point": {
-          "target_class": "Trio",
-          "identifier_slot": "accession",
-          "root_slot": "trios"
-        },
-        "json_schema": {}
-      },
-      "Condition": {
-        "name": "Condition",
-        "description": "An condition that is linked to comparable samples.",
-        "anchor_point": {
-          "target_class": "Condition",
-          "identifier_slot": "accession",
-          "root_slot": "conditions"
-        },
-        "json_schema": {}
-      },
-      "Study": {
-        "name": "Study",
-        "description": "Studies are experimental investigations of a particular phenomenon. It involves a detailed examination and analysis of a subject to learn more about the phenomenon being studied.",
-        "anchor_point": {
-          "target_class": "Study",
-          "identifier_slot": "accession",
-          "root_slot": "studies"
-        },
-        "json_schema": {}
-      },
-      "LibraryPreparationProtocol": {
-        "name": "LibraryPreparationProtocol",
-        "description": "Information about the library_preparation of an sequencing experiment.",
-        "anchor_point": {
-          "target_class": "LibraryPreparationProtocol",
-          "identifier_slot": "accession",
-          "root_slot": "library_preparation_protocols"
-        },
-        "json_schema": {}
-      },
-      "SequencingProcess": {
-        "name": "SequencingProcess",
-        "description": "A sequencing process linking a sample to sequencing output.",
-        "anchor_point": {
-          "target_class": "SequencingProcess",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_processes"
-        },
-        "json_schema": {}
+        "json_schema": {},
+        "name": "EmbeddedDataset"
       },
       "Individual": {
-        "name": "Individual",
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "individuals",
+          "target_class": "Individual"
+        },
         "description": "An Individual is a Person who is participating in a Study.",
-        "anchor_point": {
-          "target_class": "Individual",
-          "identifier_slot": "accession",
-          "root_slot": "individuals"
-        },
-        "json_schema": {}
+        "json_schema": {},
+        "name": "Individual"
       },
-      "SequencingProcessFile": {
-        "name": "SequencingProcessFile",
-        "description": "A SequencingProcessFile is a File that is associated with a SequencingProcess.",
+      "LibraryPreparationProtocol": {
         "anchor_point": {
-          "target_class": "SequencingProcessFile",
           "identifier_slot": "accession",
-          "root_slot": "sequencing_process_files"
+          "root_slot": "library_preparation_protocols",
+          "target_class": "LibraryPreparationProtocol"
         },
-        "json_schema": {}
-      },
-      "SequencingProtocol": {
-        "name": "SequencingProtocol",
-        "description": "Information about the sequencing of a sample.",
-        "anchor_point": {
-          "target_class": "SequencingProtocol",
-          "identifier_slot": "accession",
-          "root_slot": "sequencing_protocols"
-        },
-        "json_schema": {}
-      },
-      "AnalysisProcessOutputFile": {
-        "name": "AnalysisProcessOutputFile",
-        "description": "A AnalysisProcessOutputFile is a File that is associated as an output file with an AnalysisProcess.",
-        "anchor_point": {
-          "target_class": "AnalysisProcessOutputFile",
-          "identifier_slot": "accession",
-          "root_slot": "analysis_process_output_files"
-        },
-        "json_schema": {}
-      },
-      "SampleFile": {
-        "name": "SampleFile",
-        "description": "A SampleFile is a File that is associated with a Sample.",
-        "anchor_point": {
-          "target_class": "SampleFile",
-          "identifier_slot": "accession",
-          "root_slot": "sample_files"
-        },
-        "json_schema": {}
-      },
-      "StudyFile": {
-        "name": "StudyFile",
-        "description": "A StudyFile is a File that is associated with a Study.",
-        "anchor_point": {
-          "target_class": "StudyFile",
-          "identifier_slot": "accession",
-          "root_slot": "study_files"
-        },
-        "json_schema": {}
+        "description": "Information about the library_preparation of an sequencing experiment.",
+        "json_schema": {},
+        "name": "LibraryPreparationProtocol"
       },
       "Publication": {
-        "name": "Publication",
-        "description": "The Publication entity represents a publication. While a publication can be any article that is published, the minimum expectation is that the publication has a valid DOI.",
         "anchor_point": {
-          "target_class": "Publication",
           "identifier_slot": "accession",
-          "root_slot": "publications"
+          "root_slot": "publications",
+          "target_class": "Publication"
         },
-        "json_schema": {}
+        "description": "The Publication entity represents a publication. While a publication can be any article that is published, the minimum expectation is that the publication has a valid DOI.",
+        "json_schema": {},
+        "name": "Publication"
+      },
+      "Sample": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "samples",
+          "target_class": "Sample"
+        },
+        "description": "A sample is a limited quantity of something to be used for testing, analysis, inspection, investigation, demonstration, or trial use. A sample is prepared from a Biospecimen (isolate or tissue).",
+        "json_schema": {},
+        "name": "Sample"
+      },
+      "SampleFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sample_files",
+          "target_class": "SampleFile"
+        },
+        "description": "A SampleFile is a File that is associated with a Sample.",
+        "json_schema": {},
+        "name": "SampleFile"
+      },
+      "SequencingExperiment": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_experiments",
+          "target_class": "SequencingExperiment"
+        },
+        "description": "An sequencing experiment is an investigation that consists of a coordinated set of actions and observations designed to generate data with the goal of verifying, falsifying, or establishing the validity of a hypothesis.",
+        "json_schema": {},
+        "name": "SequencingExperiment"
+      },
+      "SequencingProcess": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_processes",
+          "target_class": "SequencingProcess"
+        },
+        "description": "A sequencing process linking a sample to sequencing output.",
+        "json_schema": {},
+        "name": "SequencingProcess"
+      },
+      "SequencingProcessFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_process_files",
+          "target_class": "SequencingProcessFile"
+        },
+        "description": "A SequencingProcessFile is a File that is associated with a SequencingProcess.",
+        "json_schema": {},
+        "name": "SequencingProcessFile"
+      },
+      "SequencingProtocol": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "sequencing_protocols",
+          "target_class": "SequencingProtocol"
+        },
+        "description": "Information about the sequencing of a sample.",
+        "json_schema": {},
+        "name": "SequencingProtocol"
+      },
+      "Study": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "studies",
+          "target_class": "Study"
+        },
+        "description": "Studies are experimental investigations of a particular phenomenon. It involves a detailed examination and analysis of a subject to learn more about the phenomenon being studied.",
+        "json_schema": {},
+        "name": "Study"
+      },
+      "StudyFile": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "study_files",
+          "target_class": "StudyFile"
+        },
+        "description": "A StudyFile is a File that is associated with a Study.",
+        "json_schema": {},
+        "name": "StudyFile"
+      },
+      "Trio": {
+        "anchor_point": {
+          "identifier_slot": "accession",
+          "root_slot": "trios",
+          "target_class": "Trio"
+        },
+        "description": "A trio is defined by three individuals representing an individual and their parents.",
+        "json_schema": {},
+        "name": "Trio"
       }
     }
   },
   {
-    "name": "stats_public",
     "description": "stats_public",
+    "name": "stats_public",
     "resource_classes": {
       "DatasetStats": {
-        "name": "DatasetStats",
-        "description": null,
         "anchor_point": {
-          "target_class": "DatasetStats",
           "identifier_slot": "accession",
-          "root_slot": "dataset_stats"
+          "root_slot": "dataset_stats",
+          "target_class": "DatasetStats"
         },
-        "json_schema": {}
+        "description": null,
+        "json_schema": {},
+        "name": "DatasetStats"
       }
     }
   }

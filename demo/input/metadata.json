@@ -1,678 +1,678 @@
 {
-    "analyses": [
+  "analyses": [
+    {
+      "alias": "ANALYSIS_1",
+      "description": "Description of analysis 1",
+      "reference_chromosome": "chr6",
+      "reference_genome": "GRCh37",
+      "title": "Analysis 1 ",
+      "type": "Sequence Variation"
+    }
+  ],
+  "analysis_process_output_files": [
+    {
+      "alias": "OUTPUT_1",
+      "analysis_process": "ANALYSIS_PROCESS_1",
+      "checksum": "653c42e051644f1d03fd8a73c55649b9bea6d36b354348e9dc33ce355af41289",
+      "checksum_type": "SHA256",
+      "dataset": "DS_1",
+      "format": "VCF",
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_1.vcf.gz",
+      "size": 92161
+    },
+    {
+      "alias": "OUTPUT_2",
+      "analysis_process": "ANALYSIS_PROCESS_2",
+      "checksum": "5864b0ef8f3c25cd7da50fcb3b88f8884831ebbc87435dc3f84371437162d170",
+      "checksum_type": "SHA256",
+      "dataset": "DS_1",
+      "format": "VCF",
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_2.vcf.gz",
+      "size": 71681
+    },
+    {
+      "alias": "OUTPUT_3",
+      "analysis_process": "ANALYSIS_PROCESS_3",
+      "checksum": "68568c92cc9f836f9a2a1b701327ac089b7ff3c52228c4038b9de54edca876e0",
+      "checksum_type": "SHA256",
+      "dataset": "DS_1",
+      "format": "VCF",
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_3.vcf.gz",
+      "size": 122881
+    },
+    {
+      "alias": "OUTPUT_4",
+      "analysis_process": "ANALYSIS_PROCESS_4",
+      "checksum": "ef2b7a9496ac3e8d90a6b2317a0ddc05fdc8e2cb616a14431544b0920cca2d41",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "VCF",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_4.vcf.gz",
+      "size": 45057
+    },
+    {
+      "alias": "OUTPUT_5",
+      "analysis_process": "ANALYSIS_PROCESS_5",
+      "checksum": "b446a4e9cd57e2446e113b603be5e761672e88c0b3d87de5f12ca6bfa73cf110",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "VCF",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_5.vcf.gz",
+      "size": 65537
+    },
+    {
+      "alias": "OUTPUT_6",
+      "analysis_process": "ANALYSIS_PROCESS_6",
+      "checksum": "c3f451348e9c5cb0acbacd2df071392d151f007554bc2c08de667a1349eb0a86",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "VCF",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_6.vcf.gz",
+      "size": 45057
+    },
+    {
+      "alias": "OUTPUT_7",
+      "analysis_process": "ANALYSIS_PROCESS_7",
+      "checksum": "b17e8d803fb62757d41ccbe26ed719e6aa95119ffd55fac64dc100ea985d42f0",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "VCF",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_7.vcf.gz",
+      "size": 61441
+    },
+    {
+      "alias": "OUTPUT_8",
+      "analysis_process": "ANALYSIS_PROCESS_8",
+      "checksum": "2912879766f9c619fdebb8f10ba4dad02a367ee30f52c1a55bb8cad4999efa53",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "VCF",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_8.vcf.gz",
+      "size": 92161
+    },
+    {
+      "alias": "OUTPUT_9",
+      "analysis_process": "ANALYSIS_PROCESS_9",
+      "checksum": "2935b5685772b2c2778dfc6facde4186d59e516cc6ad55e92f96b3e63d44b68a",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "VCF",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_9.vcf.gz",
+      "size": 43009
+    }
+  ],
+  "analysis_processes": [
+    {
+      "alias": "ANALYSIS_PROCESS_1",
+      "analysis": "ANALYSIS_1",
+      "sequencing_process_input_files": [
+        "SEQ_FILE_1"
+      ]
+    },
+    {
+      "alias": "ANALYSIS_PROCESS_2",
+      "analysis": "ANALYSIS_1",
+      "sequencing_process_input_files": [
+        "SEQ_FILE_2"
+      ]
+    },
+    {
+      "alias": "ANALYSIS_PROCESS_3",
+      "analysis": "ANALYSIS_1",
+      "sequencing_process_input_files": [
+        "SEQ_FILE_3"
+      ]
+    },
+    {
+      "alias": "ANALYSIS_PROCESS_4",
+      "analysis": "ANALYSIS_1",
+      "sequencing_process_input_files": [
+        "SEQ_FILE_4"
+      ]
+    },
+    {
+      "alias": "ANALYSIS_PROCESS_5",
+      "analysis": "ANALYSIS_1",
+      "sequencing_process_input_files": [
+        "SEQ_FILE_5"
+      ]
+    },
+    {
+      "alias": "ANALYSIS_PROCESS_6",
+      "analysis": "ANALYSIS_1",
+      "sequencing_process_input_files": [
+        "SEQ_FILE_6"
+      ]
+    },
+    {
+      "alias": "ANALYSIS_PROCESS_7",
+      "analysis": "ANALYSIS_1",
+      "sequencing_process_input_files": [
+        "SEQ_FILE_7"
+      ]
+    },
+    {
+      "alias": "ANALYSIS_PROCESS_8",
+      "analysis": "ANALYSIS_1",
+      "sequencing_process_input_files": [
+        "SEQ_FILE_8"
+      ]
+    },
+    {
+      "alias": "ANALYSIS_PROCESS_9",
+      "analysis": "ANALYSIS_1",
+      "sequencing_process_input_files": [
+        "SEQ_FILE_9"
+      ]
+    }
+  ],
+  "biospecimens": [
+    {
+      "age_at_sampling": "66_TO_70",
+      "alias": "BIOSPECIMEN_1",
+      "description": "Blood biospecimen",
+      "individual": "INDV_1",
+      "isolation": "Arterial blood specimen",
+      "name": "Biospecmen material",
+      "storage": "refrigitation at 4 degree",
+      "tissue": "blood",
+      "type": "Blood"
+    },
+    {
+      "age_at_sampling": "66_TO_70",
+      "alias": "BIOSPECIMEN_2",
+      "description": "Subcutaneous fat biospecimen",
+      "individual": "INDV_1",
+      "isolation": "Biopsy of soft tissue\u00a0",
+      "name": "Another biospecimen material",
+      "storage": "refrigitation at 4 degree",
+      "tissue": "subcutaneous adipose tissue",
+      "type": "Subcutaneous fat"
+    }
+  ],
+  "conditions": [
+    {
+      "alias": "COND_1",
+      "case_control_status": "TRUE_CASE_STATUS",
+      "description": "Condition A is a condition",
+      "disease_or_healthy": "DISEASE",
+      "mutant_or_wildtype": "MUTANT",
+      "name": "Condition A",
+      "study": "STUDY_A",
+      "title": "Condition A"
+    },
+    {
+      "alias": "COND_2",
+      "case_control_status": "TRUE_CONTROL_STATUS",
+      "description": "Condition B is another condition",
+      "disease_or_healthy": "HEALTHY",
+      "mutant_or_wildtype": "WILDTYPE",
+      "name": "Condition B",
+      "study": "STUDY_B",
+      "title": "Condition B"
+    }
+  ],
+  "data_access_committees": [
+    {
+      "alias": "DAC_1",
+      "email": "dac_institute_a@dac.dac",
+      "institute": "institute_a"
+    }
+  ],
+  "data_access_policies": [
+    {
+      "alias": "DAP_1",
+      "data_access_committee": "DAC_1",
+      "data_use_modifiers": [
+        "clinical care use"
+      ],
+      "data_use_permission": "disease specific research",
+      "description": "A Data Access Policy 1",
+      "name": "DAP 1",
+      "policy_text": "This is a very permissible DAP",
+      "policy_url": "http://some/policy"
+    },
+    {
+      "alias": "DAP_2",
+      "data_access_committee": "DAC_1",
+      "data_use_modifiers": [
+        "user specific restriction"
+      ],
+      "data_use_permission": "no restriction",
+      "description": "A Data Access Policy 2",
+      "name": "DAP 2",
+      "policy_text": "This is a very strict DAP",
+      "policy_url": "http://some/other/policy"
+    }
+  ],
+  "datasets": [
+    {
+      "alias": "DS_1",
+      "data_access_policy": "DAP_1",
+      "description": "An interesting dataset A",
+      "title": "The A dataset",
+      "types": [
+        "A Type",
+        "Another Type"
+      ]
+    },
+    {
+      "alias": "DS_2",
+      "data_access_policy": "DAP_2",
+      "description": "An interesting dataset B",
+      "title": "The B dataset",
+      "types": [
+        "And another Type"
+      ]
+    }
+  ],
+  "individuals": [
+    {
+      "alias": "INDV_1",
+      "ancestries": [
+        "European"
+      ],
+      "geographical_region": "Italy",
+      "karyotype": "OTHER",
+      "phenotypic_features": [
+        "Leukemia"
+      ],
+      "sex": "MALE_SEX_FOR_CLINICAL_USE"
+    },
+    {
+      "alias": "MOTHER_1",
+      "ancestries": [
+        "European"
+      ],
+      "geographical_region": "Italy",
+      "karyotype": "OTHER",
+      "phenotypic_features": [
+        "Leukemia"
+      ],
+      "sex": "FEMALE_SEX_FOR_CLINICAL_USE"
+    },
+    {
+      "alias": "FATHER_1",
+      "ancestries": [
+        "European"
+      ],
+      "geographical_region": "Italy",
+      "karyotype": "OTHER",
+      "phenotypic_features": [
+        "Leukemia"
+      ],
+      "sex": "MALE_SEX_FOR_CLINICAL_USE"
+    }
+  ],
+  "library_preparation_protocols": [
+    {
+      "alias": "LIB_PREP_1",
+      "description": "Sequence library is prepared like this. ",
+      "end_bias": "FULL_LENGTH",
+      "library_layout": "PE",
+      "library_name": "Library A",
+      "library_preparation": "PCR-amplification",
+      "library_preparation_kit_manufacturer": "Illumina",
+      "library_preparation_kit_retail_name": "ILLUMINA_TRU_SEQ_DNA",
+      "library_selection": "UNSPECIFIED",
+      "library_type": "WGS",
+      "primer": "GENE_SPECIFIC",
+      "target_regions": [
+        "chr6:123456-12345678"
+      ]
+    }
+  ],
+  "publications": [
+    {
+      "abstract": "This study aims finding findings.",
+      "alias": "PUB_1",
+      "author": "John Doe",
+      "doi": "10.1234/abcd.5678",
+      "journal": "Journal of Studies",
+      "study": "STUDY_A",
+      "title": "A paper of a study",
+      "xref": [
+        "abcd_pubmed_link.pubmed"
+      ],
+      "year": 1965
+    },
+    {
+      "abstract": "This study aims finding more findings.",
+      "alias": "PUB_2",
+      "author": "Joe Dohn",
+      "doi": "10.9876/efgh.5432",
+      "journal": "Journal of Studies",
+      "study": "STUDY_B",
+      "title": "Another paper of the same study",
+      "xref": [
+        "efgh_pubmed_link.pubmed"
+      ],
+      "year": 1967
+    }
+  ],
+  "sample_files": [],
+  "samples": [
+    {
+      "alias": "SAMPLE_1",
+      "biospecimen": "BIOSPECIMEN_1",
+      "condition": "COND_1",
+      "description": "Arterial blood sample 1",
+      "isolation": "Blood collection tube holder/needle",
+      "name": "GHGAS_blood_sample1",
+      "storage": "frozen at -20",
+      "type": "CF_DNA"
+    },
+    {
+      "alias": "SAMPLE_2",
+      "biospecimen": "BIOSPECIMEN_2",
+      "condition": "COND_2",
+      "description": "white adipose tissue sample 1",
+      "isolation": "Core needle biopsy",
+      "name": "GHGAS_tissue_sample1",
+      "storage": "frozen at -80",
+      "type": "CF_DNA"
+    }
+  ],
+  "sequencing_experiments": [
+    {
+      "alias": "SEQ_EXP_1",
+      "description": "Experiment is done like this. ",
+      "library_preparation_protocol": "LIB_PREP_1",
+      "sequencing_protocol": "SEQ_PRO_1",
+      "title": "GHGAE_SEQ_EXP_1",
+      "type": "Experiement type A"
+    }
+  ],
+  "sequencing_process_files": [
+    {
+      "alias": "SEQ_FILE_1",
+      "checksum": "995254cf212686d88ea73cbaf49489c8dc2784dc31cb586452e0aa835498ab98",
+      "checksum_type": "SHA256",
+      "dataset": "DS_1",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_1.fastq.gz",
+      "sequencing_process": "SEQ_PROCESS_1",
+      "size": 90113
+    },
+    {
+      "alias": "SEQ_FILE_2",
+      "checksum": "b8de1729ef9b8a424749ce85815c9eeb166cb7f5f5eca4b02f04e2f9277501c6",
+      "checksum_type": "SHA256",
+      "dataset": "DS_1",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_2.fastq.gz",
+      "sequencing_process": "SEQ_PROCESS_2",
+      "size": 104449
+    },
+    {
+      "alias": "SEQ_FILE_3",
+      "checksum": "6b7f4b8fc774de4359c985835733c169f1731a109db7893dd35acd4afea3c5b4",
+      "checksum_type": "SHA256",
+      "dataset": "DS_1",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_3.fastq.gz",
+      "sequencing_process": "SEQ_PROCESS_3",
+      "size": 51201
+    },
+    {
+      "alias": "SEQ_FILE_4",
+      "checksum": "9aea8c99cc065836f1f2765a8590971c5b5d2a29c4c6569c475089c5b57d1180",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_4.fastq.gz",
+      "sequencing_process": "SEQ_PROCESS_4",
+      "size": 96257
+    },
+    {
+      "alias": "SEQ_FILE_5",
+      "checksum": "a13dfc276fe322cb1b7490441097662e60443fb8787b011eaec4621916842847",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_5.fastq.gz",
+      "sequencing_process": "SEQ_PROCESS_5",
+      "size": 63489
+    },
+    {
+      "alias": "SEQ_FILE_6",
+      "checksum": "e5c186653c619507cec6aa6b7affedeb5ec29a5e23d2814d2710076fa1f5000b",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_6.fastq.gz",
+      "sequencing_process": "SEQ_PROCESS_6",
+      "size": 104449
+    },
+    {
+      "alias": "SEQ_FILE_7",
+      "checksum": "f37c331e32ba71cfabbd88b9115eeb6a000c1085cc596dcee9db3c7552229049",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_7.fastq.gz",
+      "sequencing_process": "SEQ_PROCESS_7",
+      "size": 53249
+    },
+    {
+      "alias": "SEQ_FILE_8",
+      "checksum": "6c11379d7ce5625bdef86d2b72c0399280388f2532c26c3934f4ee88e7c25e4d",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_8.fastq.gz",
+      "sequencing_process": "SEQ_PROCESS_8",
+      "size": 96257
+    },
+    {
+      "alias": "SEQ_FILE_9",
+      "checksum": "23ba42aeef99bffae8f1f4409c64d1a2e19c49dc74c2c6ad6c7b98c5bf04dd1f",
+      "checksum_type": "SHA256",
+      "dataset": "DS_2",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_9.fastq.gz",
+      "sequencing_process": "SEQ_PROCESS_9",
+      "size": 49153
+    }
+  ],
+  "sequencing_processes": [
+    {
+      "alias": "SEQ_PROCESS_1",
+      "description": "Sequencing process A is conducted like this.",
+      "index_sequence": "AGTCGATCGTAC",
+      "lane_number": "lane_1",
+      "name": "Sequencing process A",
+      "sample": "SAMPLE_1",
+      "sequencing_experiment": "SEQ_EXP_1",
+      "sequencing_lane_id": "LANE_123",
+      "sequencing_machine_id": "SEQ_MACHINE_123",
+      "sequencing_run_id": "RUN_123",
+      "title": "Sequencing Process A"
+    },
+    {
+      "alias": "SEQ_PROCESS_2",
+      "description": "Sequencing process B is conducted like this.",
+      "index_sequence": "AGTCGATCGTAC",
+      "lane_number": "lane_2",
+      "name": "Sequencing process B",
+      "sample": "SAMPLE_1",
+      "sequencing_experiment": "SEQ_EXP_1",
+      "sequencing_lane_id": "LANE_124",
+      "sequencing_machine_id": "SEQ_MACHINE_123",
+      "sequencing_run_id": "RUN_124",
+      "title": "Sequencing Process B"
+    },
+    {
+      "alias": "SEQ_PROCESS_3",
+      "description": "Sequencing process C is conducted like this.",
+      "index_sequence": "AGTCGATCGTAC",
+      "lane_number": "lane_3",
+      "name": "Sequencing process C",
+      "sample": "SAMPLE_1",
+      "sequencing_experiment": "SEQ_EXP_1",
+      "sequencing_lane_id": "LANE_125",
+      "sequencing_machine_id": "SEQ_MACHINE_123",
+      "sequencing_run_id": "RUN_125",
+      "title": "Sequencing Process C"
+    },
+    {
+      "alias": "SEQ_PROCESS_4",
+      "description": "Sequencing process D is conducted like this.",
+      "index_sequence": "AGTCGATCGTAC",
+      "lane_number": "lane_4",
+      "name": "Sequencing process D",
+      "sample": "SAMPLE_2",
+      "sequencing_experiment": "SEQ_EXP_1",
+      "sequencing_lane_id": "LANE_126",
+      "sequencing_machine_id": "SEQ_MACHINE_123",
+      "sequencing_run_id": "RUN_126",
+      "title": "Sequencing Process D"
+    },
+    {
+      "alias": "SEQ_PROCESS_5",
+      "description": "Sequencing process E is conducted like this.",
+      "index_sequence": "AGTCGATCGTAC",
+      "lane_number": "lane_5",
+      "name": "Sequencing process E",
+      "sample": "SAMPLE_2",
+      "sequencing_experiment": "SEQ_EXP_1",
+      "sequencing_lane_id": "LANE_127",
+      "sequencing_machine_id": "SEQ_MACHINE_123",
+      "sequencing_run_id": "RUN_127",
+      "title": "Sequencing Process E"
+    },
+    {
+      "alias": "SEQ_PROCESS_6",
+      "description": "Sequencing process F is conducted like this.",
+      "index_sequence": "AGTCGATCGTAC",
+      "lane_number": "lane_6",
+      "name": "Sequencing process F",
+      "sample": "SAMPLE_2",
+      "sequencing_experiment": "SEQ_EXP_1",
+      "sequencing_lane_id": "LANE_128",
+      "sequencing_machine_id": "SEQ_MACHINE_123",
+      "sequencing_run_id": "RUN_128",
+      "title": "Sequencing Process F"
+    },
+    {
+      "alias": "SEQ_PROCESS_7",
+      "description": "Sequencing process G is conducted like this.",
+      "index_sequence": "AGTCGATCGTAC",
+      "lane_number": "lane_7",
+      "name": "Sequencing process G",
+      "sample": "SAMPLE_2",
+      "sequencing_experiment": "SEQ_EXP_1",
+      "sequencing_lane_id": "LANE_129",
+      "sequencing_machine_id": "SEQ_MACHINE_123",
+      "sequencing_run_id": "RUN_129",
+      "title": "Sequencing Process G"
+    },
+    {
+      "alias": "SEQ_PROCESS_8",
+      "description": "Sequencing process H is conducted like this.",
+      "index_sequence": "AGTCGATCGTAC",
+      "lane_number": "lane_8",
+      "name": "Sequencing process H",
+      "sample": "SAMPLE_2",
+      "sequencing_experiment": "SEQ_EXP_1",
+      "sequencing_lane_id": "LANE_130",
+      "sequencing_machine_id": "SEQ_MACHINE_123",
+      "sequencing_run_id": "RUN_130",
+      "title": "Sequencing Process H"
+    },
+    {
+      "alias": "SEQ_PROCESS_9",
+      "description": "Sequencing process I is conducted like this.",
+      "index_sequence": "AGTCGATCGTAC",
+      "lane_number": "lane_9",
+      "name": "Sequencing process I",
+      "sample": "SAMPLE_2",
+      "sequencing_experiment": "SEQ_EXP_1",
+      "sequencing_lane_id": "LANE_131",
+      "sequencing_machine_id": "SEQ_MACHINE_123",
+      "sequencing_run_id": "RUN_131",
+      "title": "Sequencing Process I"
+    }
+  ],
+  "sequencing_protocols": [
+    {
+      "alias": "SEQ_PRO_1",
+      "cell_barcode_offset": "20",
+      "cell_barcode_read": "INDEX1",
+      "cell_barcode_size": "18",
+      "description": "Sequence protocol 1 is conducted like this. ",
+      "flow_cell_id": "ID_Cell 1_Lane_1",
+      "flow_cell_type": "ILLUMINA_NOVA_SEQ_S4",
+      "instrument_model": "ILLUMINA_NOVA_SEQ_6000",
+      "sample_barcode_read": "INDEX1",
+      "sequencing_center": "Center A",
+      "sequencing_read_length": "long",
+      "target_coverage": "x50",
+      "type": "DNA-seq",
+      "umi_barcode_offset": "16",
+      "umi_barcode_read": "INDEX1",
+      "umi_barcode_size": "10"
+    }
+  ],
+  "studies": [
+    {
+      "affiliations": [
+        "Some Institute",
+        "Some other Institute"
+      ],
+      "alias": "STUDY_A",
+      "attributes": [
         {
-            "alias": "ANALYSIS_1",
-            "title": "Analysis 1 ",
-            "description": "Description of analysis 1",
-            "type": "Sequence Variation",
-            "reference_genome": "GRCh37",
-            "reference_chromosome": "chr6"
+          "key": "budget",
+          "value": "3.5M"
+        },
+        {
+          "key": "funding",
+          "value": "EU"
         }
-    ],
-    "analysis_process_output_files": [
-        {
-            "alias": "OUTPUT_1",
-            "analysis_process": "ANALYSIS_PROCESS_1",
-            "name": "SAMPLE_1_SPECIMEN_1_FILE_1.vcf.gz",
-            "format": "VCF",
-            "size": 92161,
-            "checksum": "653c42e051644f1d03fd8a73c55649b9bea6d36b354348e9dc33ce355af41289",
-            "checksum_type": "SHA256",
-            "dataset": "DS_1"
-        },
-        {
-            "alias": "OUTPUT_2",
-            "analysis_process": "ANALYSIS_PROCESS_2",
-            "name": "SAMPLE_1_SPECIMEN_1_FILE_2.vcf.gz",
-            "format": "VCF",
-            "size": 71681,
-            "checksum": "5864b0ef8f3c25cd7da50fcb3b88f8884831ebbc87435dc3f84371437162d170",
-            "checksum_type": "SHA256",
-            "dataset": "DS_1"
-        },
-        {
-            "alias": "OUTPUT_3",
-            "analysis_process": "ANALYSIS_PROCESS_3",
-            "name": "SAMPLE_1_SPECIMEN_1_FILE_3.vcf.gz",
-            "format": "VCF",
-            "size": 122881,
-            "checksum": "68568c92cc9f836f9a2a1b701327ac089b7ff3c52228c4038b9de54edca876e0",
-            "checksum_type": "SHA256",
-            "dataset": "DS_1"
-        },
-        {
-            "alias": "OUTPUT_4",
-            "analysis_process": "ANALYSIS_PROCESS_4",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_4.vcf.gz",
-            "format": "VCF",
-            "size": 45057,
-            "checksum": "ef2b7a9496ac3e8d90a6b2317a0ddc05fdc8e2cb616a14431544b0920cca2d41",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "OUTPUT_5",
-            "analysis_process": "ANALYSIS_PROCESS_5",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_5.vcf.gz",
-            "format": "VCF",
-            "size": 65537,
-            "checksum": "b446a4e9cd57e2446e113b603be5e761672e88c0b3d87de5f12ca6bfa73cf110",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "OUTPUT_6",
-            "analysis_process": "ANALYSIS_PROCESS_6",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_6.vcf.gz",
-            "format": "VCF",
-            "size": 45057,
-            "checksum": "c3f451348e9c5cb0acbacd2df071392d151f007554bc2c08de667a1349eb0a86",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "OUTPUT_7",
-            "analysis_process": "ANALYSIS_PROCESS_7",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_7.vcf.gz",
-            "format": "VCF",
-            "size": 61441,
-            "checksum": "b17e8d803fb62757d41ccbe26ed719e6aa95119ffd55fac64dc100ea985d42f0",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "OUTPUT_8",
-            "analysis_process": "ANALYSIS_PROCESS_8",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_8.vcf.gz",
-            "format": "VCF",
-            "size": 92161,
-            "checksum": "2912879766f9c619fdebb8f10ba4dad02a367ee30f52c1a55bb8cad4999efa53",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "OUTPUT_9",
-            "analysis_process": "ANALYSIS_PROCESS_9",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_9.vcf.gz",
-            "format": "VCF",
-            "size": 43009,
-            "checksum": "2935b5685772b2c2778dfc6facde4186d59e516cc6ad55e92f96b3e63d44b68a",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        }
-    ],
-    "analysis_processes": [
-        {
-            "alias": "ANALYSIS_PROCESS_1",
-            "analysis": "ANALYSIS_1",
-            "sequencing_process_input_files": [
-                "SEQ_FILE_1"
-            ]
-        },
-        {
-            "alias": "ANALYSIS_PROCESS_2",
-            "analysis": "ANALYSIS_1",
-            "sequencing_process_input_files": [
-                "SEQ_FILE_2"
-            ]
-        },
-        {
-            "alias": "ANALYSIS_PROCESS_3",
-            "analysis": "ANALYSIS_1",
-            "sequencing_process_input_files": [
-                "SEQ_FILE_3"
-            ]
-        },
-        {
-            "alias": "ANALYSIS_PROCESS_4",
-            "analysis": "ANALYSIS_1",
-            "sequencing_process_input_files": [
-                "SEQ_FILE_4"
-            ]
-        },
-        {
-            "alias": "ANALYSIS_PROCESS_5",
-            "analysis": "ANALYSIS_1",
-            "sequencing_process_input_files": [
-                "SEQ_FILE_5"
-            ]
-        },
-        {
-            "alias": "ANALYSIS_PROCESS_6",
-            "analysis": "ANALYSIS_1",
-            "sequencing_process_input_files": [
-                "SEQ_FILE_6"
-            ]
-        },
-        {
-            "alias": "ANALYSIS_PROCESS_7",
-            "analysis": "ANALYSIS_1",
-            "sequencing_process_input_files": [
-                "SEQ_FILE_7"
-            ]
-        },
-        {
-            "alias": "ANALYSIS_PROCESS_8",
-            "analysis": "ANALYSIS_1",
-            "sequencing_process_input_files": [
-                "SEQ_FILE_8"
-            ]
-        },
-        {
-            "alias": "ANALYSIS_PROCESS_9",
-            "analysis": "ANALYSIS_1",
-            "sequencing_process_input_files": [
-                "SEQ_FILE_9"
-            ]
-        }
-    ],
-    "biospecimens": [
-        {
-            "alias": "BIOSPECIMEN_1",
-            "name": "Biospecmen material",
-            "type": "Blood",
-            "description": "Blood biospecimen",
-            "isolation": "Arterial blood specimen",
-            "storage": "refrigitation at 4 degree",
-            "individual": "INDV_1",
-            "age_at_sampling": "66_TO_70",
-            "tissue": "blood"
-        },
-        {
-            "alias": "BIOSPECIMEN_2",
-            "name": "Another biospecimen material",
-            "type": "Subcutaneous fat",
-            "description": "Subcutaneous fat biospecimen",
-            "isolation": "Biopsy of soft tissue ",
-            "storage": "refrigitation at 4 degree",
-            "individual": "INDV_1",
-            "age_at_sampling": "66_TO_70",
-            "tissue": "subcutaneous adipose tissue"
-        }
-    ],
-    "conditions": [
-        {
-            "alias": "COND_1",
-            "title": "Condition A",
-            "description": "Condition A is a condition",
-            "name": "Condition A",
-            "disease_or_healthy": "DISEASE",
-            "case_control_status": "TRUE_CASE_STATUS",
-            "mutant_or_wildtype": "MUTANT",
-            "study": "STUDY_A"
-        },
-        {
-            "alias": "COND_2",
-            "title": "Condition B",
-            "description": "Condition B is another condition",
-            "name": "Condition B",
-            "disease_or_healthy": "HEALTHY",
-            "case_control_status": "TRUE_CONTROL_STATUS",
-            "mutant_or_wildtype": "WILDTYPE",
-            "study": "STUDY_B"
-        }
-    ],
-    "data_access_committees": [
-        {
-            "alias": "DAC_1",
-            "email": "dac_institute_a@dac.dac",
-            "institute": "institute_a"
-        }
-    ],
-    "data_access_policies": [
-        {
-            "alias": "DAP_1",
-            "name": "DAP 1",
-            "description": "A Data Access Policy 1",
-            "policy_text": "This is a very permissible DAP",
-            "policy_url": "http://some/policy",
-            "data_access_committee": "DAC_1",
-            "data_use_permission": "disease specific research",
-            "data_use_modifiers": [
-                "clinical care use"
-            ]
-        },
-        {
-            "alias": "DAP_2",
-            "name": "DAP 2",
-            "description": "A Data Access Policy 2",
-            "policy_text": "This is a very strict DAP",
-            "policy_url": "http://some/other/policy",
-            "data_access_committee": "DAC_1",
-            "data_use_permission": "no restriction",
-            "data_use_modifiers": [
-                "user specific restriction"
-            ]
-        }
-    ],
-    "datasets": [
-        {
-            "alias": "DS_1",
-            "title": "The A dataset",
-            "description": "An interesting dataset A",
-            "types": [
-                "A Type",
-                "Another Type"
-            ],
-            "data_access_policy": "DAP_1"
-        },
-        {
-            "alias": "DS_2",
-            "title": "The B dataset",
-            "description": "An interesting dataset B",
-            "types": [
-                "And another Type"
-            ],
-            "data_access_policy": "DAP_2"
-        }
-    ],
-    "individuals": [
-        {
-            "alias": "INDV_1",
-            "sex": "MALE_SEX_FOR_CLINICAL_USE",
-            "karyotype": "OTHER",
-            "geographical_region": "Italy",
-            "ancestries": [
-                "European"
-            ],
-            "phenotypic_features": [
-                "Leukemia"
-            ]
-        },
-        {
-            "alias": "MOTHER_1",
-            "sex": "FEMALE_SEX_FOR_CLINICAL_USE",
-            "karyotype": "OTHER",
-            "geographical_region": "Italy",
-            "ancestries": [
-                "European"
-            ],
-            "phenotypic_features": [
-                "Leukemia"
-            ]
-        },
-        {
-            "alias": "FATHER_1",
-            "sex": "MALE_SEX_FOR_CLINICAL_USE",
-            "karyotype": "OTHER",
-            "geographical_region": "Italy",
-            "ancestries": [
-                "European"
-            ],
-            "phenotypic_features": [
-                "Leukemia"
-            ]
-        }
-    ],
-    "library_preparation_protocols": [
-        {
-            "alias": "LIB_PREP_1",
-            "description": "Sequence library is prepared like this. ",
-            "library_name": "Library A",
-            "library_layout": "PE",
-            "library_type": "WGS",
-            "library_selection": "UNSPECIFIED",
-            "library_preparation": "PCR-amplification",
-            "library_preparation_kit_retail_name": "ILLUMINA_TRU_SEQ_DNA",
-            "library_preparation_kit_manufacturer": "Illumina",
-            "primer": "GENE_SPECIFIC",
-            "end_bias": "FULL_LENGTH",
-            "target_regions": [
-                "chr6:123456-12345678"
-            ]
-        }
-    ],
-    "publications": [
-        {
-            "alias": "PUB_1",
-            "title": "A paper of a study",
-            "abstract": "This study aims finding findings.",
-            "author": "John Doe",
-            "year": 1965,
-            "journal": "Journal of Studies",
-            "doi": "10.1234/abcd.5678",
-            "study": "STUDY_A",
-            "xref": [
-                "abcd_pubmed_link.pubmed"
-            ]
-        },
-        {
-            "alias": "PUB_2",
-            "title": "Another paper of the same study",
-            "abstract": "This study aims finding more findings.",
-            "author": "Joe Dohn",
-            "year": 1967,
-            "journal": "Journal of Studies",
-            "doi": "10.9876/efgh.5432",
-            "study": "STUDY_B",
-            "xref": [
-                "efgh_pubmed_link.pubmed"
-            ]
-        }
-    ],
-    "sample_files": [],
-    "samples": [
-        {
-            "alias": "SAMPLE_1",
-            "name": "GHGAS_blood_sample1",
-            "type": "CF_DNA",
-            "description": "Arterial blood sample 1",
-            "isolation": "Blood collection tube holder/needle",
-            "storage": "frozen at -20",
-            "biospecimen": "BIOSPECIMEN_1",
-            "condition": "COND_1"
-        },
-        {
-            "alias": "SAMPLE_2",
-            "name": "GHGAS_tissue_sample1",
-            "type": "CF_DNA",
-            "description": "white adipose tissue sample 1",
-            "isolation": "Core needle biopsy",
-            "storage": "frozen at -80",
-            "biospecimen": "BIOSPECIMEN_2",
-            "condition": "COND_2"
-        }
-    ],
-    "sequencing_experiments": [
-        {
-            "alias": "SEQ_EXP_1",
-            "title": "GHGAE_SEQ_EXP_1",
-            "description": "Experiment is done like this. ",
-            "type": "Experiement type A",
-            "sequencing_protocol": "SEQ_PRO_1",
-            "library_preparation_protocol": "LIB_PREP_1"
-        }
-    ],
-    "sequencing_process_files": [
-        {
-            "alias": "SEQ_FILE_1",
-            "sequencing_process": "SEQ_PROCESS_1",
-            "name": "SAMPLE_1_SPECIMEN_1_FILE_1.fastq.gz",
-            "format": "FASTQ",
-            "size": 90113,
-            "checksum": "995254cf212686d88ea73cbaf49489c8dc2784dc31cb586452e0aa835498ab98",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_1"
-        },
-        {
-            "alias": "SEQ_FILE_2",
-            "sequencing_process": "SEQ_PROCESS_2",
-            "name": "SAMPLE_1_SPECIMEN_1_FILE_2.fastq.gz",
-            "format": "FASTQ",
-            "size": 104449,
-            "checksum": "b8de1729ef9b8a424749ce85815c9eeb166cb7f5f5eca4b02f04e2f9277501c6",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_1"
-        },
-        {
-            "alias": "SEQ_FILE_3",
-            "sequencing_process": "SEQ_PROCESS_3",
-            "name": "SAMPLE_1_SPECIMEN_1_FILE_3.fastq.gz",
-            "format": "FASTQ",
-            "size": 51201,
-            "checksum": "6b7f4b8fc774de4359c985835733c169f1731a109db7893dd35acd4afea3c5b4",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_1"
-        },
-        {
-            "alias": "SEQ_FILE_4",
-            "sequencing_process": "SEQ_PROCESS_4",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_4.fastq.gz",
-            "format": "FASTQ",
-            "size": 96257,
-            "checksum": "9aea8c99cc065836f1f2765a8590971c5b5d2a29c4c6569c475089c5b57d1180",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "SEQ_FILE_5",
-            "sequencing_process": "SEQ_PROCESS_5",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_5.fastq.gz",
-            "format": "FASTQ",
-            "size": 63489,
-            "checksum": "a13dfc276fe322cb1b7490441097662e60443fb8787b011eaec4621916842847",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "SEQ_FILE_6",
-            "sequencing_process": "SEQ_PROCESS_6",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_6.fastq.gz",
-            "format": "FASTQ",
-            "size": 104449,
-            "checksum": "e5c186653c619507cec6aa6b7affedeb5ec29a5e23d2814d2710076fa1f5000b",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "SEQ_FILE_7",
-            "sequencing_process": "SEQ_PROCESS_7",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_7.fastq.gz",
-            "format": "FASTQ",
-            "size": 53249,
-            "checksum": "f37c331e32ba71cfabbd88b9115eeb6a000c1085cc596dcee9db3c7552229049",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "SEQ_FILE_8",
-            "sequencing_process": "SEQ_PROCESS_8",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_8.fastq.gz",
-            "format": "FASTQ",
-            "size": 96257,
-            "checksum": "6c11379d7ce5625bdef86d2b72c0399280388f2532c26c3934f4ee88e7c25e4d",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        },
-        {
-            "alias": "SEQ_FILE_9",
-            "sequencing_process": "SEQ_PROCESS_9",
-            "name": "SAMPLE_2_SPECIMEN_1_FILE_9.fastq.gz",
-            "format": "FASTQ",
-            "size": 49153,
-            "checksum": "23ba42aeef99bffae8f1f4409c64d1a2e19c49dc74c2c6ad6c7b98c5bf04dd1f",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_2"
-        }
-    ],
-    "sequencing_processes": [
-        {
-            "alias": "SEQ_PROCESS_1",
-            "title": "Sequencing Process A",
-            "description": "Sequencing process A is conducted like this.",
-            "name": "Sequencing process A",
-            "sequencing_run_id": "RUN_123",
-            "sequencing_lane_id": "LANE_123",
-            "sequencing_machine_id": "SEQ_MACHINE_123",
-            "sequencing_experiment": "SEQ_EXP_1",
-            "index_sequence": "AGTCGATCGTAC",
-            "lane_number": "lane_1",
-            "sample": "SAMPLE_1"
-        },
-        {
-            "alias": "SEQ_PROCESS_2",
-            "title": "Sequencing Process B",
-            "description": "Sequencing process B is conducted like this.",
-            "name": "Sequencing process B",
-            "sequencing_run_id": "RUN_124",
-            "sequencing_lane_id": "LANE_124",
-            "sequencing_machine_id": "SEQ_MACHINE_123",
-            "sequencing_experiment": "SEQ_EXP_1",
-            "index_sequence": "AGTCGATCGTAC",
-            "lane_number": "lane_2",
-            "sample": "SAMPLE_1"
-        },
-        {
-            "alias": "SEQ_PROCESS_3",
-            "title": "Sequencing Process C",
-            "description": "Sequencing process C is conducted like this.",
-            "name": "Sequencing process C",
-            "sequencing_run_id": "RUN_125",
-            "sequencing_lane_id": "LANE_125",
-            "sequencing_machine_id": "SEQ_MACHINE_123",
-            "sequencing_experiment": "SEQ_EXP_1",
-            "index_sequence": "AGTCGATCGTAC",
-            "lane_number": "lane_3",
-            "sample": "SAMPLE_1"
-        },
-        {
-            "alias": "SEQ_PROCESS_4",
-            "title": "Sequencing Process D",
-            "description": "Sequencing process D is conducted like this.",
-            "name": "Sequencing process D",
-            "sequencing_run_id": "RUN_126",
-            "sequencing_lane_id": "LANE_126",
-            "sequencing_machine_id": "SEQ_MACHINE_123",
-            "sequencing_experiment": "SEQ_EXP_1",
-            "index_sequence": "AGTCGATCGTAC",
-            "lane_number": "lane_4",
-            "sample": "SAMPLE_2"
-        },
-        {
-            "alias": "SEQ_PROCESS_5",
-            "title": "Sequencing Process E",
-            "description": "Sequencing process E is conducted like this.",
-            "name": "Sequencing process E",
-            "sequencing_run_id": "RUN_127",
-            "sequencing_lane_id": "LANE_127",
-            "sequencing_machine_id": "SEQ_MACHINE_123",
-            "sequencing_experiment": "SEQ_EXP_1",
-            "index_sequence": "AGTCGATCGTAC",
-            "lane_number": "lane_5",
-            "sample": "SAMPLE_2"
-        },
-        {
-            "alias": "SEQ_PROCESS_6",
-            "title": "Sequencing Process F",
-            "description": "Sequencing process F is conducted like this.",
-            "name": "Sequencing process F",
-            "sequencing_run_id": "RUN_128",
-            "sequencing_lane_id": "LANE_128",
-            "sequencing_machine_id": "SEQ_MACHINE_123",
-            "sequencing_experiment": "SEQ_EXP_1",
-            "index_sequence": "AGTCGATCGTAC",
-            "lane_number": "lane_6",
-            "sample": "SAMPLE_2"
-        },
-        {
-            "alias": "SEQ_PROCESS_7",
-            "title": "Sequencing Process G",
-            "description": "Sequencing process G is conducted like this.",
-            "name": "Sequencing process G",
-            "sequencing_run_id": "RUN_129",
-            "sequencing_lane_id": "LANE_129",
-            "sequencing_machine_id": "SEQ_MACHINE_123",
-            "sequencing_experiment": "SEQ_EXP_1",
-            "index_sequence": "AGTCGATCGTAC",
-            "lane_number": "lane_7",
-            "sample": "SAMPLE_2"
-        },
-        {
-            "alias": "SEQ_PROCESS_8",
-            "title": "Sequencing Process H",
-            "description": "Sequencing process H is conducted like this.",
-            "name": "Sequencing process H",
-            "sequencing_run_id": "RUN_130",
-            "sequencing_lane_id": "LANE_130",
-            "sequencing_machine_id": "SEQ_MACHINE_123",
-            "sequencing_experiment": "SEQ_EXP_1",
-            "index_sequence": "AGTCGATCGTAC",
-            "lane_number": "lane_8",
-            "sample": "SAMPLE_2"
-        },
-        {
-            "alias": "SEQ_PROCESS_9",
-            "title": "Sequencing Process I",
-            "description": "Sequencing process I is conducted like this.",
-            "name": "Sequencing process I",
-            "sequencing_run_id": "RUN_131",
-            "sequencing_lane_id": "LANE_131",
-            "sequencing_machine_id": "SEQ_MACHINE_123",
-            "sequencing_experiment": "SEQ_EXP_1",
-            "index_sequence": "AGTCGATCGTAC",
-            "lane_number": "lane_9",
-            "sample": "SAMPLE_2"
-        }
-    ],
-    "sequencing_protocols": [
-        {
-            "alias": "SEQ_PRO_1",
-            "description": "Sequence protocol 1 is conducted like this. ",
-            "type": "DNA-seq",
-            "instrument_model": "ILLUMINA_NOVA_SEQ_6000",
-            "sequencing_center": "Center A",
-            "sequencing_read_length": "long",
-            "target_coverage": "x50",
-            "flow_cell_id": "ID_Cell 1_Lane_1",
-            "flow_cell_type": "ILLUMINA_NOVA_SEQ_S4",
-            "umi_barcode_read": "INDEX1",
-            "umi_barcode_offset": "16",
-            "umi_barcode_size": "10",
-            "cell_barcode_read": "INDEX1",
-            "cell_barcode_offset": "20",
-            "cell_barcode_size": "18",
-            "sample_barcode_read": "INDEX1"
-        }
-    ],
-    "studies": [
-        {
-            "alias": "STUDY_A",
-            "title": "The A Study",
-            "description": "A study that is the A study",
-            "type": "SYNTHETIC_GENOMICS",
-            "affiliations": [
-                "Some Institute",
-                "Some other Institute"
-            ],
-            "attributes": [
-                {
-                    "key": "budget",
-                    "value": "3.5M"
-                },
-                {
-                    "key": "funding",
-                    "value": "EU"
-                }
-            ]
-        },
-        {
-            "alias": "STUDY_B",
-            "title": "The B Study",
-            "description": "A study that is the B study",
-            "type": "WHOLE_GENOME_SEQUENCING",
-            "affiliations": [
-                "Some Institute"
-            ]
-        }
-    ],
-    "study_files": [
-        {
-            "alias": "STUDY_FILE_1",
-            "study": "STUDY_A",
-            "name": "STUDY_1_SPECIMEN_1_FILE_1.fastq.gz",
-            "format": "FASTQ",
-            "size": 106497,
-            "checksum": "7a586609dd8c7d6f53cbc2e82e1165de2c7aab6769c6dde9882b45048b0fdaa9",
-            "forward_or_reverse": "REVERSE",
-            "checksum_type": "SHA256",
-            "dataset": "DS_1"
-        }
-    ],
-    "trios": [
-        {
-            "alias": "TRIO_1",
-            "mother": "MOTHER_1",
-            "father": "FATHER_1",
-            "child": "INDV_1"
-        }
-    ]
+      ],
+      "description": "A study that is the A study",
+      "title": "The A Study",
+      "type": "SYNTHETIC_GENOMICS"
+    },
+    {
+      "affiliations": [
+        "Some Institute"
+      ],
+      "alias": "STUDY_B",
+      "description": "A study that is the B study",
+      "title": "The B Study",
+      "type": "WHOLE_GENOME_SEQUENCING"
+    }
+  ],
+  "study_files": [
+    {
+      "alias": "STUDY_FILE_1",
+      "checksum": "7a586609dd8c7d6f53cbc2e82e1165de2c7aab6769c6dde9882b45048b0fdaa9",
+      "checksum_type": "SHA256",
+      "dataset": "DS_1",
+      "format": "FASTQ",
+      "forward_or_reverse": "REVERSE",
+      "name": "STUDY_1_SPECIMEN_1_FILE_1.fastq.gz",
+      "size": 106497,
+      "study": "STUDY_A"
+    }
+  ],
+  "trios": [
+    {
+      "alias": "TRIO_1",
+      "child": "INDV_1",
+      "father": "FATHER_1",
+      "mother": "MOTHER_1"
+    }
+  ]
 }
