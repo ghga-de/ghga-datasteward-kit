@@ -88,7 +88,7 @@ system. This is performed with the following steps:
    in the submission registry to produce multiple query-specific metadata artifacts
    using the `ghga-datasteward-kit metadata transform` command. Please see
    [this section](#metadata) for further details.
-5. **Publish Metadata**: To publish all metadata artifacts of all submission to the
+5. **Publish Metadata**: To publish all metadata artifacts of all submissions to the
    running system so that they are available on the GHGA website, the
    `ghga-datasteward-kit load` command can be used.
 6. **Make Files Downloadable**: To make files downloadable, the file summary JSONs
