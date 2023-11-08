@@ -69,7 +69,7 @@ Central Data Steward and provide the summary JSONs obtained in step 2.
 
 ### Central Data Steward
 
-The responsible for ingesting the metadata and the upload summary files into the running
+The Central Data Steward is responsible for ingesting the metadata and the upload summary files into the running
 system. This is performed with the following steps:
 
 1. **Generate credentials**: As for the local data stewards, central data stewards need
