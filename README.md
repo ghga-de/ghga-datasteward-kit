@@ -25,8 +25,8 @@ of a submission and (B) for encrypting and uploading the corresponding files to 
 Data Hub's S3-compatible Object Storage.
 
 #### A. Metadata Preparation
-The metadata preparation does not happen using the data steward kit (however, is still
-described here for completeness of the workflow).
+The data steward kit has no functionality to help with metadata preparation, however,
+it is still described here for completeness of the workflow.
 
 For defining metadata for a submission, you have two options:
 
