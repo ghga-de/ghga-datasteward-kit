@@ -28,7 +28,7 @@ Data Hub's S3-compatible Object Storage.
 The data steward kit has no functionality to help with metadata preparation, however,
 it is still described here for completeness of the workflow.
 
-For defining metadata for a submission, you have two options:
+To define metadata for a submission, you have two options:
 
 **Option 1:** Use an excel spreadsheet (please do not use Google Spreadsheets because
 of data protection). Templates can be found
