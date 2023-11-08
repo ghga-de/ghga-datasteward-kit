@@ -54,7 +54,7 @@ This is achieved using the data steward kit, using the following steps:
 1. **Generate credentials**: The kit interacts with services at GHGA central. To
    authenticate yourself against these services you need to create a set of credentials
    using the `ghga-datasteward-kit generate-credentials` command. Please see
-   [this section](#generate-catalog-accessions) for further details.
+   [this section](#generate-credentials) for further details.
 
 2. **Encrypt and Upload**: File encryption and upload to the S3-compatible object
    storage is done in one go. This is achieved using either the
@@ -75,7 +75,7 @@ system. This is performed with the following steps:
 1. **Generate credentials**: As for the local data stewards, central data stewards need
    to have credentials for authentication with GHGA Central Services. To create these
    credentials the `ghga-datasteward-kit generate-credentials` command is used.
-   Please see [this section](#generate-catalog-accessions) for further details.
+   Please see [this section](#generate-credentials) for further details.
 2. **Transpile Metadata Spreadsheet**: If the Local Data Steward provided a metadata
    spreadsheet, this spreadsheet has to be first transpiled to the JSON format using the
    `ghga-datasteward-kit metadata transpile` command. Please see
@@ -167,7 +167,7 @@ The load command makes files and metadata available to user in the running syste
 
 It needs a configuration parameters as described [here](./load_config.md).
 
-### generate-catalog-accessions
+### generate-credentials
 
 A command to generate a token/hash pair for interacting with GHGA Central services.
 
