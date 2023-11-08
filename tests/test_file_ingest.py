@@ -33,7 +33,6 @@ from tests.fixtures.ingest import (  # noqa: F401
 @pytest.mark.asyncio
 async def test_alias_to_accession(legacy_ingest_fixture: IngestFixture):  # noqa: F811
     """Test alias->accession mapping"""
-
     submission_store = SubmissionStore(config=legacy_ingest_fixture.config)
     metadata = models.LegacyOutputMetadata.load(
         input_path=legacy_ingest_fixture.file_path
@@ -71,7 +70,6 @@ async def test_legacy_ingest_directly(
     legacy_ingest_fixture: IngestFixture, httpx_mock: HTTPXMock  # noqa: F811
 ):
     """Test file_ingest function directly"""
-
     endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}/legacy/ingest"
     token = generate_token()
 
@@ -115,7 +113,6 @@ async def test_ingest_directly(
     ingest_fixture: IngestFixture, httpx_mock: HTTPXMock  # noqa: F811
 ):
     """Test file_ingest function directly"""
-
     endpoint_url = (
         f"{ingest_fixture.config.file_ingest_baseurl}/federated/ingest_metadata"
     )
@@ -161,7 +158,6 @@ async def test_legacy_main(
     httpx_mock: HTTPXMock,
 ):
     """Test if main file ingest function works correctly"""
-
     endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}/legacy/ingest"
     config_path = legacy_ingest_fixture.config.input_dir / "config.yaml"
 

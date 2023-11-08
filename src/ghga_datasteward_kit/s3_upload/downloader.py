@@ -54,7 +54,6 @@ class ChunkedDownloader:  # pylint: disable=too-many-instance-attributes
 
     def _download_parts(self, download_url):
         """Download file parts"""
-
         for part_no, (start, stop) in enumerate(
             get_ranges(file_size=self.file_size, part_size=self.config.part_size),
             start=1,

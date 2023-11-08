@@ -15,8 +15,8 @@
 
 """A config fixture"""
 
+from collections.abc import Generator
 from tempfile import TemporaryDirectory
-from typing import Generator
 
 import pytest
 from ghga_service_commons.utils.crypt import encode_key, generate_key_pair
@@ -28,7 +28,6 @@ from ghga_datasteward_kit.s3_upload import Config, LegacyConfig
 @pytest.fixture
 def legacy_config_fixture() -> Generator[LegacyConfig, None, None]:
     """Generate a test Config file."""
-
     with TemporaryDirectory() as output_dir:
         yield LegacyConfig(
             s3_endpoint_url=SecretStr("s3://test_url"),
@@ -42,7 +41,6 @@ def legacy_config_fixture() -> Generator[LegacyConfig, None, None]:
 @pytest.fixture
 def config_fixture() -> Generator[Config, None, None]:
     """Generate a test Config file."""
-
     public_key = encode_key(generate_key_pair().public)
 
     with TemporaryDirectory() as output_dir:

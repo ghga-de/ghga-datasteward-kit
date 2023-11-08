@@ -69,7 +69,6 @@ def submit_metadata(
     config: MetadataConfig,
 ) -> str:
     """Submit metadata to the submission registry."""
-
     submission_store = SubmissionStore(config=config)
     event_publisher = FileSystemEventPublisher(config=config)
     source_event_publisher = SourceEventPublisher(
@@ -106,9 +105,9 @@ def submit_metadata_from_path(
     config_path: Path,
 ):
     """Read metadata and config from the specified paths and then submit
-    metadata to the submission registry."""
-
-    with open(metadata_path, "r", encoding="utf8") as metadata_file:
+    metadata to the submission registry.
+    """
+    with open(metadata_path, encoding="utf8") as metadata_file:
         metadata = yaml.safe_load(metadata_file)
 
     config = load_config_yaml(path=config_path, config_cls=MetadataConfig)
@@ -125,7 +124,6 @@ def save_artifact_models(
     *, artifact_models: dict[str, MetadataModel], artifact_model_dir: Path
 ):
     """Save an artifact model."""
-
     for artifact_name, artifact_model in artifact_models.items():
         artifact_model_path = artifact_model_dir / f"{artifact_name}_model.yaml"
         artifact_model.write_yaml(path=artifact_model_path)
@@ -135,7 +133,6 @@ def save_artifact_infos(
     *, artifact_infos: list[ArtifactInfo], artifact_model_dir: Path
 ):
     """Save artifact infos."""
-
     artifact_infos_path = artifact_model_dir / "artifact_infos.json"
     artifact_infos_json = [
         json.loads(artifact_info.json()) for artifact_info in artifact_infos
@@ -165,7 +162,6 @@ def get_artifact_infos(
     *, artifact_models: dict[str, MetadataModel]
 ) -> list[ArtifactInfo]:
     """Get artifact infos from artifact models."""
-
     return [
         load_artifact_info(
             name=artifact_name,
@@ -178,7 +174,6 @@ def get_artifact_infos(
 
 def generate_artifact_models(*, config: MetadataConfig) -> None:
     """Generate artifact models and artifact infos and save them to file."""
-
     if not config.artifact_model_dir.is_dir():
         raise RuntimeError(
             f"Artifact model path {config.artifact_model_dir} is not a directory."
@@ -205,7 +200,6 @@ def generate_artifact_models(*, config: MetadataConfig) -> None:
 
 def generate_artifact_models_from_path(*, config_path: Path) -> None:
     """Generate artifact models and artifact infos and save them to file."""
-
     config = load_config_yaml(path=config_path, config_cls=MetadataConfig)
 
     generate_artifact_models(config=config)
@@ -213,7 +207,6 @@ def generate_artifact_models_from_path(*, config_path: Path) -> None:
 
 def transform_metadata(*, config: MetadataConfig) -> None:
     """Run transformation workflow on submitted metadata to produce artifacts."""
-
     asyncio.run(
         run_workflow_on_all_source_events(
             event_config=config,
@@ -226,8 +219,8 @@ def transform_metadata(*, config: MetadataConfig) -> None:
 
 def transform_metadata_from_path(*, config_path: Path) -> None:
     """Load config from path and run transformation workflow on submitted
-    metadata to produce artifacts."""
-
+    metadata to produce artifacts.
+    """
     config = load_config_yaml(path=config_path, config_cls=MetadataConfig)
 
     transform_metadata(config=config)

@@ -36,15 +36,13 @@ class TokenNotExistError(RuntimeError):
 
 def load_config_yaml(path: Path, config_cls: type[ConfigType]) -> ConfigType:
     """Load config parameters from the specified YAML file."""
-
-    with open(path, "r", encoding="utf-8") as config_file:
+    with open(path, encoding="utf-8") as config_file:
         config_dict = yaml.safe_load(config_file)
     return config_cls(**config_dict)
 
 
 def save_token_and_hash():
     """Generate tokean and hash and save them into files"""
-
     token, hash_ = generate_token_and_hash()
 
     TOKEN_PATH.write_text(data=token)

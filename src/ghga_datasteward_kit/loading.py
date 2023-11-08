@@ -28,7 +28,6 @@ class LoadConfig(ArtifactLoaderClientConfig):
 
 def load(*, config_path: Path) -> None:
     """Load file and metadata artifacts to the loader API."""
-
     config = load_config_yaml(path=config_path, config_cls=LoadConfig)
     token = read_token()
 

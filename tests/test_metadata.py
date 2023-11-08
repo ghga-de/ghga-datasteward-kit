@@ -17,8 +17,8 @@
 
 import os
 import shutil
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 import pytest
 
@@ -58,7 +58,6 @@ archive_workdir = workdir_factory(ARCHIVE_ORIGINAL_MODEL_PATH)
 
 def test_happy(example_workdir: Path):
     """Test the 'happy' test case that is expected to run through without errors"""
-
     submit(
         submission_title="Test Title",
         submission_description="Test Description",
@@ -71,7 +70,6 @@ def test_happy(example_workdir: Path):
 
 def test_archive_happy(archive_workdir: Path):
     """Test the 'happy' test case that is expected to run through without errors"""
-
     submit(
         submission_title="Test Title",
         submission_description="Test Description",

@@ -15,9 +15,9 @@
 #
 """Functionality to decrypt Crypt4GH encrypted files on-the-fly for validation purposes."""
 
+from collections.abc import Generator
 from functools import partial
 from time import time
-from typing import Generator
 
 import crypt4gh.lib  # type: ignore
 

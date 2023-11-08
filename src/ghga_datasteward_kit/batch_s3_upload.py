@@ -45,8 +45,7 @@ class FileMetadata(BaseModel):
 
 def load_file_metadata(file_overview_tsv: Path) -> list[FileMetadata]:
     """Load file metadata from a tsv."""
-
-    with open(file_overview_tsv, "r", encoding="utf-8") as tsv_file:
+    with open(file_overview_tsv, encoding="utf-8") as tsv_file:
         files = [
             FileMetadata(
                 path=Path(line.split("\t")[0].strip()).resolve(),
@@ -68,7 +67,6 @@ def load_file_metadata(file_overview_tsv: Path) -> list[FileMetadata]:
 
 def check_file_upload(file: FileMetadata, output_dir: Path) -> bool:
     """Returns true if the file was already uploaded. Returns false otherwise."""
-
     output_yaml = output_dir / f"{file.alias}.json"
     return output_yaml.exists()
 
@@ -77,7 +75,6 @@ def prepare_upload_command_line(
     file: FileMetadata, output_dir: Path, config_path: Path, legacy_mode: bool
 ) -> str:
     """Returns a command line for uploading the specified file."""
-
     log_file_path = output_dir / f"{file.alias}.log"
     python_interpreter_path = Path(sys.executable)
 
@@ -102,7 +99,6 @@ def trigger_file_upload(
     Checks whether the file was already uploaded, if not, the upload is triggered
     in a separate process and the corresponding subprocess.Popen object is returned.
     """
-
     if check_file_upload(file=file, output_dir=output_dir):
         logging.info("File '%s' has already been uploaded: skipping.", file.alias)
         return None
@@ -132,7 +128,6 @@ def handle_file_uploads(  # noqa: R0913,C901
     legacy_mode: bool,
 ):
     """Handles the upload of multiple files in parallel."""
-
     files_to_do = copy(files)
     files_to_do.reverse()
     in_progress: dict[FileMetadata, subprocess.Popen] = {}
@@ -206,7 +201,6 @@ def main(
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     objectstorage.
     """
-
     config = load_config_yaml(path=config_path, config_cls=Config)
     files = load_file_metadata(file_overview_tsv=file_overview_tsv)
 

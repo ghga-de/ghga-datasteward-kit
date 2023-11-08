@@ -38,7 +38,6 @@ BUCKET_ID = "test-bucket"
 @pytest.mark.asyncio
 async def test_legacy_process(legacy_config_fixture: LegacyConfig):  # noqa: F811
     """Test whole upload/download process for s3_upload script"""
-
     with LocalStackContainer(image="localstack/localstack:0.14.2").with_services(
         "s3"
     ) as localstack:
@@ -73,7 +72,7 @@ async def test_process(config_fixture: Config, monkeypatch):  # noqa: F811
         secret: bytes,
         token: str,
         config: Config,
-        storage_cleaner: StorageCleaner
+        storage_cleaner: StorageCleaner,
     ):
         return "test-secret-id"
 

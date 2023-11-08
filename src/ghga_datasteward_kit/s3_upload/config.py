@@ -23,7 +23,6 @@ from pydantic import BaseSettings, Field, SecretStr, validator
 
 def expand_env_vars_in_path(path: Path) -> Path:
     """Expand environment variables in a Path."""
-
     with subprocess.Popen(  # nosec
         f"realpath {path}", shell=True, stdout=subprocess.PIPE
     ) as process:

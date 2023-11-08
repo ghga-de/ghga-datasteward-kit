@@ -106,7 +106,6 @@ async def exchange_secret_for_id(
     If storing the secret fails, the uploaded file is deleted from object storage and
     a ValueError is raised containing the file alias and response status code.
     """
-
     endpoint_url = f"{config.secret_ingest_baseurl}/federated/ingest_secret"
     file_secret = base64.b64encode(secret).decode("utf-8")
     payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
@@ -237,7 +236,6 @@ def main(
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     object storage.
     """
-
     config = load_config_yaml(config_path, Config)
 
     token = read_token()
@@ -255,7 +253,6 @@ def legacy_main(
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     object storage.
     """
-
     config = load_config_yaml(config_path, LegacyConfig)
     asyncio.run(legacy_async_main(input_path=input_path, alias=alias, config=config))
 

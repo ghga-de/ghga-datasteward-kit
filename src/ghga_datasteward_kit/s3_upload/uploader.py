@@ -54,7 +54,6 @@ class ChunkedUploader:  # pylint: disable=too-many-instance-attributes
 
     async def encrypt_and_upload(self):
         """Delegate encryption and perform multipart upload"""
-
         # compute encrypted_file_size
         num_segments = math.ceil(self.unencrypted_file_size / crypt4gh.lib.SEGMENT_SIZE)
         encrypted_file_size = self.unencrypted_file_size + num_segments * 28

@@ -61,7 +61,6 @@ def alias_to_accession(
     alias: str, map_fields: list[str], submission_store: SubmissionStore
 ) -> str:
     """Get all submissions to retrieve valid accessions from corresponding file aliases"""
-
     submission_ids = submission_store.get_all_submission_ids()
 
     all_submission_map = {}
@@ -87,7 +86,6 @@ def main(
     config_path: Path,
 ):
     """Handle ingestion of a folder of s3 upload file metadata"""
-
     config = utils.load_config_yaml(path=config_path, config_cls=IngestConfig)
     token = utils.read_token()
 
@@ -115,7 +113,6 @@ def file_ingest(
     Transform from s3 upload output representation to what the file ingest service expects.
     Then call the ingest endpoint
     """
-
     try:
         output_metadata = models.OutputMetadata.load(input_path=in_path)
         endpoint = "/federated/ingest_metadata"

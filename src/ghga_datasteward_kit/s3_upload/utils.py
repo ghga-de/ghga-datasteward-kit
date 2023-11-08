@@ -17,10 +17,10 @@
 
 import logging
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
 from io import BufferedReader
 from pathlib import Path
-from typing import Iterator
 
 import httpx
 from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
@@ -39,7 +39,6 @@ class HttpxClientState:
     @classmethod
     def configure(cls, max_retries: int):
         """Configure client with exponential backoff retry (using httpx's 0.5 default)"""
-
         # can't be negative - should we log this?
         cls.max_retries = max(0, max_retries)
 
@@ -47,7 +46,6 @@ class HttpxClientState:
 @contextmanager
 def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
-
     transport = httpx.HTTPTransport(retries=HttpxClientState.max_retries)
 
     with httpx.Client(transport=transport) as client:
@@ -66,7 +64,6 @@ def read_file_parts(
 
     Please note: opening and closing of the file MUST happen outside of this function.
     """
-
     initial_offset = part_size * (from_part - 1)
     file.seek(initial_offset)
 
@@ -170,7 +167,8 @@ def check_output_path(output_path: Path):
 
 class StorageCleaner:
     """Async context manager to wrap full upload path and clean storage up if any
-    exceptions were encountered along the way"""
+    exceptions were encountered along the way
+    """
 
     class ChecksumValidationError(RuntimeError):
         """Raised when checksum validation failed and the uploaded file needs removal."""

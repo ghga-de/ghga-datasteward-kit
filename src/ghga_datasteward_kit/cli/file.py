@@ -30,7 +30,6 @@ def legacy_upload(
     config_path: Path = typer.Option(..., help="Path to a config YAML."),
 ):
     """Upload a single file to S3."""
-
     s3_upload.legacy_main(input_path=input_path, alias=alias, config_path=config_path)
 
 
@@ -41,7 +40,6 @@ def upload(
     config_path: Path = typer.Option(..., help="Path to a config YAML."),
 ):
     """Upload a single file to S3."""
-
     s3_upload.main(input_path=input_path, alias=alias, config_path=config_path)
 
 
@@ -62,7 +60,6 @@ def legacy_batch_upload(
     ),
 ):
     """Upload multiple files to S3."""
-
     batch_s3_upload.main(
         file_overview_tsv=tsv,
         config_path=config_path,
@@ -89,7 +86,6 @@ def batch_upload(
     ),
 ):
     """Upload multiple files to S3."""
-
     batch_s3_upload.main(
         file_overview_tsv=tsv,
         config_path=config_path,
@@ -104,7 +100,6 @@ def ingest_upload_metadata(
     config_path: Path = typer.Option(..., help="Path to a config YAML."),
 ):
     """Upload all output metdata files from the given directory to the file ingest service"""
-
     errors = file_ingest.main(config_path=config_path)
 
     if errors:

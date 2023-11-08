@@ -57,7 +57,6 @@ def generate_accessions(
     Returns:
         list[str]: The generated accessions.
     """
-
     accessions = [
         accession_registry.get_accession(resource_type=resource_type)
         for _ in range(number)
@@ -67,7 +66,6 @@ def generate_accessions(
 
 def get_config(*, store_path: Path) -> Config:
     """Get the config."""
-
     prefix_mapping = {
         f"{resource_type}": f"{BASE_PREFIX}{resource_prefix}"
         for resource_type, resource_prefix in RESOURCE_PREFIXES.items()
@@ -82,7 +80,6 @@ def get_config(*, store_path: Path) -> Config:
 
 def main(*, store_path: Path, resource_type: str, number: int) -> list[str]:
     """Inject dependencies and run the accession generation."""
-
     if not store_path.exists():
         raise ValueError(f"The specified store path '{store_path}' does not exist.")
 

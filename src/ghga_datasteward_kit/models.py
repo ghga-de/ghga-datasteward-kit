@@ -81,7 +81,6 @@ class FileUploadMetadataBase(BaseModel):
 
     def encrypt_metadata(self, pubkey: str) -> EncryptedPayload:
         """Create payload by encryption FileUploadMetadata"""
-
         payload = self.json()
         encrypted = encrypt(data=payload, key=pubkey)
 
@@ -129,7 +128,6 @@ class LegacyOutputMetadata(
 
     def serialize(self, output_path: Path):
         """Serialize metadata to file"""
-
         output: dict[str, Any] = {}
         output["Alias"] = self.alias
         output["File UUID"] = self.file_uuid
@@ -156,7 +154,6 @@ class LegacyOutputMetadata(
 
     def to_upload_metadata(self, file_id: str):
         """Convert internal output file representation to unencrypted request model"""
-
         return LegacyFileUploadMetadata(
             file_id=file_id,
             object_id=self.file_uuid,
@@ -172,7 +169,6 @@ class LegacyOutputMetadata(
     @classmethod
     def load(cls, input_path: Path):
         """Load metadata from serialized file"""
-
         with input_path.open("r") as infile:
             data = json.load(infile)
 
@@ -202,7 +198,6 @@ class OutputMetadata(
 
     def serialize(self, output_path: Path):
         """Serialize metadata to file"""
-
         output: dict[str, Any] = {}
         output["Alias"] = self.alias
         output["File UUID"] = self.file_uuid
@@ -227,7 +222,6 @@ class OutputMetadata(
 
     def to_upload_metadata(self, file_id: str):
         """Convert internal output file representation to unencrypted request model"""
-
         return FileUploadMetadata(
             file_id=file_id,
             object_id=self.file_uuid,
@@ -243,7 +237,6 @@ class OutputMetadata(
     @classmethod
     def load(cls, input_path: Path):
         """Load metadata from serialized file"""
-
         with input_path.open("r") as infile:
             data = json.load(infile)
 

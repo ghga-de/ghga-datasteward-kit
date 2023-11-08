@@ -58,7 +58,6 @@ def generate_catalog_accessions(
     The accessions will be stored in the specified accession store and returned to
     stdout.
     """
-
     accessions = catalog_accession_generator.main(
         store_path=store_path, resource_type=resource_type.lower(), number=number
     )
