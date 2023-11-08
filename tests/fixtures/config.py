@@ -16,6 +16,7 @@
 """A config fixture"""
 
 from collections.abc import Generator
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -34,7 +35,7 @@ def legacy_config_fixture() -> Generator[LegacyConfig, None, None]:
             s3_access_key_id=SecretStr("test_access_key"),
             s3_secret_access_key=SecretStr("test_secret_key"),
             bucket_id="test_bucket",
-            output_dir=output_dir,
+            output_dir=Path(output_dir),
         )
 
 
@@ -49,7 +50,7 @@ def config_fixture() -> Generator[Config, None, None]:
             s3_access_key_id=SecretStr("test_access_key"),
             s3_secret_access_key=SecretStr("test_secret_key"),
             bucket_id="test_bucket",
-            output_dir=output_dir,
+            output_dir=Path(output_dir),
             secret_ingest_pubkey=public_key,
             secret_ingest_baseurl="https://not-a-real-url",
         )

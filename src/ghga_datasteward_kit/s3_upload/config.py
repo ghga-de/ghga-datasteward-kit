@@ -62,7 +62,7 @@ class LegacyConfig(BaseSettings):
         ),
     )
     part_size: int = Field(
-        16, description="Upload part size in MiB. Has to be between 5 and 5120."
+        default=16, description="Upload part size in MiB. Has to be between 5 and 5120."
     )
     output_dir: Path = Field(
         ...,
