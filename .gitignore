@@ -27,9 +27,6 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-demo/store
-demo/input/metadata.json
-
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -53,6 +50,8 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.ruff_cache/
+prof/
 
 # Translations
 *.mo
@@ -104,8 +103,8 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
+# Virtual environments and environment files
+*.env
 .venv
 env/
 venv/
@@ -131,8 +130,14 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# ingore vscode settings:
+# ignore VS Code settings:
 .vscode/
+
+# key stores
+*.key
+*.rnd
+.keystore
+.ssl/
 
 # desktop settings and thumbnails
 .DS_Store

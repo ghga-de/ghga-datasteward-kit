@@ -1,0 +1,53 @@
+# List of all files that are considered static.
+# They should never be changed in a service repo
+# directly.
+# If changes are needed, please first make them in
+# the microservice_template_repository at:
+# https://github.com/ghga-de/microservice-repository-template
+# You pull the updates from the template repository to
+# your repo by running the script at:
+# ./scripts/update_static_files.py
+
+.devcontainer/dev_install
+.devcontainer/license_header.txt
+.devcontainer/Dockerfile
+.devcontainer/devcontainer.json
+
+scripts/script_utils/__init__.py
+scripts/script_utils/cli.py
+
+scripts/__init__.py
+scripts/update_all.py
+scripts/license_checker.py
+scripts/get_package_name.py
+scripts/update_config_docs.py
+scripts/update_template_files.py
+scripts/update_openapi_docs.py
+scripts/update_readme.py
+scripts/update_lock.py
+scripts/update_hook_revs.py
+scripts/list_outdated_dependencies.py
+scripts/README.md
+
+.github/workflows/check_config_docs.yaml
+.github/workflows/check_template_files.yaml
+.github/workflows/static_code_analysis.yaml
+.github/workflows/tests.yaml
+.github/workflows/check_openapi_spec.yaml
+.github/workflows/check_readme.yaml
+.github/workflows/cd.yaml
+
+example_data/README.md
+
+.coveragerc
+.gitattributes
+.gitignore
+.mypy.ini
+.ruff.toml
+pytest.ini
+
+LICENSE
+requirements-dev-common.in
+
+.readme_template.md
+readme_generation.md

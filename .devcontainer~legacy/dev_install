@@ -1,0 +1,16 @@
+#!/bin/bash
+# install service in dev container
+
+cd /workspace
+
+# upgrade pip
+python -m pip install --upgrade pip
+
+# install with all extras in editable mode
+pip install -e .[all]
+
+# install or upgrade dependencies for development and testing
+pip install -r requirements-dev.txt
+
+# install pre-commit hooks to git
+pre-commit install
