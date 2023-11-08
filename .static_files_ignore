@@ -1,2 +1,3 @@
 # Optional list of files which are actually static in the template
 # but are allowed to have different content in the current repository
+.readme_template.md

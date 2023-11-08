@@ -1,6 +1,21 @@
-# GHGA Data Steward Kit
 
-Utilities for data stewards interacting with GHGA infrastructure.
+[![tests](https://github.com/ghga-de/ghga-datasteward-kit/actions/workflows/tests.yaml/badge.svg)](https://github.com/ghga-de/ghga-datasteward-kit/actions/workflows/unit_and_int_tests.yaml)
+[![Coverage Status](https://coveralls.io/repos/github/ghga-de/ghga-datasteward-kit/badge.svg?branch=main)](https://coveralls.io/github/ghga-de/ghga-datasteward-kit?branch=main)
+
+# Ghga Datasteward Kit
+
+GHGA Data Steward Kit - A utils package for GHGA data stewards.
+
+## Description
+
+The datasteward-kit is a GHGA-internal utility to enable GHGA staff to perform the following tasks:
+
+* Encrypt and transfer Research Data to the local Data Hub S3 storage
+* Transfer encryption secrets and other metadata generated during the Research Data encryption and transfer process to the GHGA Central Service Backend
+* Generate accession numbers for the Metadata Catalog
+* Transpile metadata from XLSX to JSON format
+* Process metadata of new submissions and store it in a local metadata store on disk
+* Load the local metadata store to the Service Backend
 
 ## Installation:
 
@@ -99,3 +114,8 @@ docker exec -it devcontainer_app_1 /bin/bash
 
 ## License
 This repository is free to use and modify according to the [Apache 2.0 License](./LICENSE).
+
+## README Generation
+
+This README file is auto-generated, please see [`readme_generation.md`](./readme_generation.md)
+for details.
