@@ -15,7 +15,7 @@ pip install ghga-datasteward-kit
 It is important to outline that some commands can only be used by Central Data
 Stewards while other commands address Local Data Stewards.
 
-The workflow for both the Local and Central Data Stewards is outlines in the following
+The workflow for both the Local and Central Data Stewards is outlined in the following
 paragraphs:
 
 ### Local Data Steward
