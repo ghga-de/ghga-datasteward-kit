@@ -35,7 +35,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
 class ChunkedUploader:  # pylint: disable=too-many-instance-attributes
     """Handler class dealing with upload functionality"""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # noqa: PLR0913
         self,
         input_path: Path,
         alias: str,
@@ -97,7 +97,7 @@ class ChunkedUploader:  # pylint: disable=too-many-instance-attributes
 class MultipartUpload:
     """Context manager to handle init + complete/abort for S3 multipart upload"""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # noqa: PLR0913
         self,
         config: LegacyConfig,
         file_id: str,

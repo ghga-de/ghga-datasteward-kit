@@ -36,6 +36,7 @@ class Checksums:
         self.encrypted_sha256: list[str] = []
 
     def __repr__(self) -> str:
+        """Returns a human readable representation of the Checksums object."""
         return (
             f"Unencrypted: {self.unencrypted_sha256.hexdigest()}\n"
             + f"Encrypted MD5: {self.encrypted_md5}\n"

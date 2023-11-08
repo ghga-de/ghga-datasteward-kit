@@ -14,9 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Contains functionality to actually run the S3 upload.
-"""
+"""Contains functionality to actually run the S3 upload."""
 
 import asyncio
 import base64

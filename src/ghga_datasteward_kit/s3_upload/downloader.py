@@ -33,7 +33,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
 class ChunkedDownloader:  # pylint: disable=too-many-instance-attributes
     """Handler class dealing with download functionality"""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # noqa: PLR0913
         self,
         config: LegacyConfig,
         file_id: str,
@@ -88,7 +88,7 @@ class ChunkedDownloader:  # pylint: disable=too-many-instance-attributes
 
     async def validate_checksums(self, checkums: models.Checksums):
         """Confirm checksums for upload and download match"""
-        if not self.target_checksums.get() == checkums.get():
+        if self.target_checksums.get() != checkums.get():
             message = (
                 "Checksum mismatch:\n"
                 + f"Upload:\n{checkums}\nDownload:\n{self.target_checksums}\n"

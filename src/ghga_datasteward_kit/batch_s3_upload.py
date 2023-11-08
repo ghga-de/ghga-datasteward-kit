@@ -115,11 +115,13 @@ def trigger_file_upload(
         return None
 
     logging.info("The upload of the file with alias '%s' has started.", file.alias)
-    return subprocess.Popen(command_line, shell=True, executable="/bin/bash")  # nosec
+    return subprocess.Popen(
+        command_line, shell=True, executable="/bin/bash"  # noqa: S602
+    )
 
 
 # pylint: disable=too-many-nested-blocks,too-many-branches, too-many-arguments
-def handle_file_uploads(  # noqa: R0913,C901
+def handle_file_uploads(  # noqa: PLR0913, PLR0912
     files: list[FileMetadata],
     output_dir: Path,
     config_path: Path,

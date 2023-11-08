@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""File ingest tests."""
+
 import pytest
 import yaml
 from ghga_service_commons.utils.simple_token import generate_token
@@ -43,7 +45,7 @@ async def test_alias_to_accession(legacy_ingest_fixture: IngestFixture):  # noqa
         map_fields=legacy_ingest_fixture.config.map_files_fields,
         submission_store=submission_store,
     )
-    example_accession = list(
+    example_accession = list(  # noqa: RUF015
         EXAMPLE_SUBMISSION.accession_map[
             legacy_ingest_fixture.config.map_files_fields[0]
         ].values()

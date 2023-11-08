@@ -23,8 +23,8 @@ from pydantic import BaseSettings, Field, SecretStr, validator
 
 def expand_env_vars_in_path(path: Path) -> Path:
     """Expand environment variables in a Path."""
-    with subprocess.Popen(  # nosec
-        f"realpath {path}", shell=True, stdout=subprocess.PIPE
+    with subprocess.Popen(
+        f"realpath {path}", shell=True, stdout=subprocess.PIPE  # noqa: S602
     ) as process:
         if process.wait() != 0 or not process.stdout:
             raise RuntimeError(f"Parsing of path failed: {path}")
@@ -35,9 +35,7 @@ def expand_env_vars_in_path(path: Path) -> Path:
 
 
 class LegacyConfig(BaseSettings):
-    """
-    Required options for legacy file uploads.
-    """
+    """Required options for legacy file uploads."""
 
     s3_endpoint_url: SecretStr = Field(
         ..., description="URL of the local data hub's S3 server."
@@ -78,17 +76,13 @@ class LegacyConfig(BaseSettings):
     )
 
     @validator("output_dir")
-    def expand_env_vars_output_dir(
-        cls, output_dir: Path
-    ):  # pylint: disable=no-self-argument
+    def expand_env_vars_output_dir(cls, output_dir: Path):  # noqa: N805
         """Expand vars in path"""
         return expand_env_vars_in_path(output_dir)
 
 
 class Config(LegacyConfig):
-    """
-    Required options for file uploads.
-    """
+    """Required options for file uploads."""
 
     secret_ingest_pubkey: str = Field(
         ...,

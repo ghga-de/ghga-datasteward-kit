@@ -228,9 +228,11 @@ class StorageCleaner:
         self.storage = get_object_storage(config=config)
 
     async def __aenter__(self):
+        """The context manager enter function."""
         return self
 
     async def __aexit__(self, exc_t, exc_v, exc_tb):
+        """The context manager exit function."""
         # error handling while upload is still ongoing
         if isinstance(
             exc_v, (self.MultipartUploadCompletionError, self.PartUploadError)
