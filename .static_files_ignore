@@ -3,3 +3,4 @@
 .readme_template.md
 scripts/update_openapi_docs.py
 .github/workflows/check_openapi_spec.yaml
+scripts/update_config_docs.py
