@@ -12,7 +12,7 @@ services:
         INSTALL_NODE: "true"
         NODE_VERSION: "lts/*"
         # Please adapt to package name:
-        PACKAGE_NAME: "my_microservice"
+        PACKAGE_NAME: "ghga_datasteward_kit"
         # On Linux, you may need to update USER_UID and USER_GID below if not your local UID is not 1000.
         USER_UID: 1000
         USER_GID: 1000
@@ -28,15 +28,6 @@ services:
 
     # Uncomment the next line to use a non-root user for all processes.
     user: vscode
-
-
-
-    # Please remove service dependencies that are not needed:
-  mongodb:
-    image: mongo:latest
-    restart: unless-stopped
-    volumes:
-      - mongo_fs:/data/db
 
   localstack:
     image: localstack/localstack
