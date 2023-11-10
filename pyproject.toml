@@ -21,10 +21,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dependencies = [
-    "crypt4gh==1.6",
-    "hexkit[s3]>=0.10,<0.11",
+    "crypt4gh >=1.6, <2",
+    "hexkit[s3]~=0.11",
     "ghga-transpiler>=1.2.0,<2.0",
-    "metldata>=0.4.1,<0.5",
+    "metldata~=0.4.1",
 ]
 
 [project.urls]
