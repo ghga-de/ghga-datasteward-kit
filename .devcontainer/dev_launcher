@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# adapt to package name
-ghga-datasteward-kit "$@"
