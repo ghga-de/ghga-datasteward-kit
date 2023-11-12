@@ -1,0 +1,242 @@
+{
+  "payload": {
+    "annotation": {
+      "accession_map": {
+        "analyses": {
+          "ANALYSIS_1": "GHGAZ27015623002226"
+        },
+        "analysis_process_output_files": {
+          "OUTPUT_1": "GHGAF60227492784158",
+          "OUTPUT_2": "GHGAF98095735942999",
+          "OUTPUT_3": "GHGAF03542347431941",
+          "OUTPUT_4": "GHGAF00240854404941",
+          "OUTPUT_5": "GHGAF70399258952657",
+          "OUTPUT_6": "GHGAF48722477903529",
+          "OUTPUT_7": "GHGAF52403457644815",
+          "OUTPUT_8": "GHGAF64039739056861",
+          "OUTPUT_9": "GHGAF00202976705407"
+        },
+        "analysis_processes": {
+          "ANALYSIS_PROCESS_1": "GHGAR39274427357650",
+          "ANALYSIS_PROCESS_2": "GHGAR69880405010665",
+          "ANALYSIS_PROCESS_3": "GHGAR56199553295675",
+          "ANALYSIS_PROCESS_4": "GHGAR75043017740512",
+          "ANALYSIS_PROCESS_5": "GHGAR24081486884193",
+          "ANALYSIS_PROCESS_6": "GHGAR30835311417129",
+          "ANALYSIS_PROCESS_7": "GHGAR38458015046073",
+          "ANALYSIS_PROCESS_8": "GHGAR93850957626599",
+          "ANALYSIS_PROCESS_9": "GHGAR96450411800508"
+        },
+        "biospecimens": {
+          "BIOSPECIMEN_1": "GHGAM87645148934949",
+          "BIOSPECIMEN_2": "GHGAM09721498223028"
+        },
+        "conditions": {
+          "COND_1": "GHGAK19290740394392",
+          "COND_2": "GHGAK13090423773754"
+        },
+        "data_access_committees": {
+          "DAC_1": "GHGAC27979815690400"
+        },
+        "data_access_policies": {
+          "DAP_1": "GHGAP80911357088984",
+          "DAP_2": "GHGAP60953192127193"
+        },
+        "datasets": {
+          "DS_1": "GHGAD09598790897621",
+          "DS_2": "GHGAD13934222639683"
+        },
+        "individuals": {
+          "FATHER_1": "GHGAI04639299227616",
+          "INDV_1": "GHGAI69689243593970",
+          "MOTHER_1": "GHGAI67844275544626"
+        },
+        "library_preparation_protocols": {
+          "LIB_PREP_1": "GHGAL47102665026041"
+        },
+        "publications": {
+          "PUB_1": "GHGAU83435125182534",
+          "PUB_2": "GHGAU43563073899203"
+        },
+        "sample_files": {},
+        "samples": {
+          "SAMPLE_1": "GHGAN13712948112566",
+          "SAMPLE_2": "GHGAN46177740365005"
+        },
+        "sequencing_experiments": {
+          "SEQ_EXP_1": "GHGAX83851934458528"
+        },
+        "sequencing_process_files": {
+          "SEQ_FILE_1": "GHGAF98787275505937",
+          "SEQ_FILE_2": "GHGAF88846609319878",
+          "SEQ_FILE_3": "GHGAF35359790750617",
+          "SEQ_FILE_4": "GHGAF02723287849704",
+          "SEQ_FILE_5": "GHGAF19339989618442",
+          "SEQ_FILE_6": "GHGAF82574397155238",
+          "SEQ_FILE_7": "GHGAF07328380425408",
+          "SEQ_FILE_8": "GHGAF62118300340019",
+          "SEQ_FILE_9": "GHGAF86681016295324"
+        },
+        "sequencing_processes": {
+          "SEQ_PROCESS_1": "GHGAO62191423783852",
+          "SEQ_PROCESS_2": "GHGAO26926467690962",
+          "SEQ_PROCESS_3": "GHGAO51030339704752",
+          "SEQ_PROCESS_4": "GHGAO97365634927261",
+          "SEQ_PROCESS_5": "GHGAO06622800988515",
+          "SEQ_PROCESS_6": "GHGAO66715047871416",
+          "SEQ_PROCESS_7": "GHGAO36629966744948",
+          "SEQ_PROCESS_8": "GHGAO59081664899908",
+          "SEQ_PROCESS_9": "GHGAO35933687766366"
+        },
+        "sequencing_protocols": {
+          "SEQ_PRO_1": "GHGAQ91563202933697"
+        },
+        "studies": {
+          "STUDY_A": "GHGAS36422481396751",
+          "STUDY_B": "GHGAS55941946021084"
+        },
+        "study_files": {
+          "STUDY_FILE_1": "GHGAF29699992445931"
+        },
+        "trios": {
+          "TRIO_1": "GHGAT29935793267059"
+        }
+      }
+    },
+    "content": {
+      "dataset_stats": [
+        {
+          "accession": "GHGAD09598790897621",
+          "dac_email": "dac_institute_a@dac.dac",
+          "experiment_summary": {
+            "count": 1,
+            "stats": {
+              "protocol": [
+                {
+                  "count": 1,
+                  "value": "ILLUMINA_NOVA_SEQ_6000"
+                }
+              ]
+            }
+          },
+          "file_summary": {
+            "count": 7,
+            "stats": {
+              "format": [
+                {
+                  "count": 4,
+                  "value": "FASTQ"
+                },
+                {
+                  "count": 3,
+                  "value": "VCF"
+                }
+              ]
+            }
+          },
+          "sample_summary": {
+            "count": 1,
+            "stats": {
+              "phenotypes": [
+                {
+                  "count": 1,
+                  "value": "Leukemia"
+                }
+              ],
+              "sex": [
+                {
+                  "count": 1,
+                  "value": "MALE_SEX_FOR_CLINICAL_USE"
+                }
+              ],
+              "tissues": [
+                {
+                  "count": 1,
+                  "value": "blood"
+                }
+              ]
+            }
+          },
+          "study_summary": {
+            "count": 1,
+            "stats": {
+              "accession": "GHGAS36422481396751",
+              "title": "The A Study"
+            }
+          },
+          "title": "The A dataset",
+          "types": [
+            "Another Type",
+            "A Type"
+          ]
+        },
+        {
+          "accession": "GHGAD13934222639683",
+          "dac_email": "dac_institute_a@dac.dac",
+          "experiment_summary": {
+            "count": 1,
+            "stats": {
+              "protocol": [
+                {
+                  "count": 1,
+                  "value": "ILLUMINA_NOVA_SEQ_6000"
+                }
+              ]
+            }
+          },
+          "file_summary": {
+            "count": 12,
+            "stats": {
+              "format": [
+                {
+                  "count": 6,
+                  "value": "FASTQ"
+                },
+                {
+                  "count": 6,
+                  "value": "VCF"
+                }
+              ]
+            }
+          },
+          "sample_summary": {
+            "count": 1,
+            "stats": {
+              "phenotypes": [
+                {
+                  "count": 1,
+                  "value": "Leukemia"
+                }
+              ],
+              "sex": [
+                {
+                  "count": 1,
+                  "value": "MALE_SEX_FOR_CLINICAL_USE"
+                }
+              ],
+              "tissues": [
+                {
+                  "count": 1,
+                  "value": "subcutaneous adipose tissue"
+                }
+              ]
+            }
+          },
+          "study_summary": {
+            "count": 1,
+            "stats": {
+              "accession": "GHGAS55941946021084",
+              "title": "The B Study"
+            }
+          },
+          "title": "The B dataset",
+          "types": [
+            "And another Type"
+          ]
+        }
+      ]
+    },
+    "submission_id": "5e5f1f85-890f-4fa2-9db1-9939ac283ef0"
+  },
+  "type_": "stats_public"
+}

@@ -1,3 +1,6 @@
+[![tests](https://github.com/ghga-de/ghga-datasteward-kit/actions/workflows/tests.yaml/badge.svg)](https://github.com/ghga-de/ghga-datasteward-kit/actions/workflows/tests.yaml)
+[![Coverage Status](https://coveralls.io/repos/github/ghga-de/ghga-datasteward-kit/badge.svg?branch=main)](https://coveralls.io/github/ghga-de/ghga-datasteward-kit?branch=main)
+
 # GHGA Data Steward Kit
 
 Utilities for data stewards interacting with GHGA infrastructure.

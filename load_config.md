@@ -7,7 +7,7 @@
 ## Properties
 
 
-- **`event_store_path`** *(string)*: Path of the directory on the file system where all events are stored. Each topic is a sub-directory. Each event is stored as a JSON file within the sub-directory for the topic. The file name corresponds to the event key. The event type is stored together with the payload in the event file.
+- **`event_store_path`** *(string, format: path)*: Path of the directory on the file system where all events are stored. Each topic is a sub-directory. Each event is stored as a JSON file within the sub-directory for the topic. The file name corresponds to the event key. The event type is stored together with the payload in the event file.
 
 - **`artifact_topic_prefix`** *(string)*: The prefix used for topics containing artifacts. The topic name is expected to be '{prefix}.{artifact_type}'. The prefix must not contain dots.
 

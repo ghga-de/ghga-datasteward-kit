@@ -1,4 +1,4 @@
-name: Check if the config docs are up to date.
+name: Check if the config schema and the example are up to date.
 
 on: push
 
@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - id: common
-        uses: ghga-de/gh-action-common@v2
+        uses: ghga-de/gh-action-common@v3
 
       - name: Check config docs
         run: |

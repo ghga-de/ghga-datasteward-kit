@@ -1,0 +1,8 @@
+# Optional list of files which are actually static in the template
+# but are allowed to have different content in the current repository
+.readme_template.md
+scripts/update_openapi_docs.py
+scripts/update_readme.py
+.github/workflows/check_openapi_spec.yaml
+.github/workflows/check_readme.yaml
+scripts/update_config_docs.py

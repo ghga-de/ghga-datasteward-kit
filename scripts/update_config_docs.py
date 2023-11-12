@@ -25,9 +25,9 @@ from pathlib import Path
 
 import jsonschema2md
 from pydantic import BaseSettings
-from script_utils.cli import echo_failure, echo_success, run
 
 from ghga_datasteward_kit.config import CONFIG_CLASSES
+from script_utils.cli import echo_failure, echo_success, run
 
 HERE = Path(__file__).parent.resolve()
 REPO_ROOT_DIR = HERE.parent
@@ -91,7 +91,7 @@ def check_docs(config_type: str):
 
     expected_docs = generate_config_docs(config_cls)
     with open(
-        get_docs_file_path(config_type=config_type), "r", encoding="utf-8"
+        get_docs_file_path(config_type=config_type), encoding="utf-8"
     ) as schema_file:
         observed_docs = schema_file.read()
     if expected_docs != observed_docs:

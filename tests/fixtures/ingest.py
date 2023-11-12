@@ -16,10 +16,10 @@
 
 import base64
 import os
+from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Generator
 
 import pytest
 from ghga_service_commons.utils.crypt import KeyPair, encode_key, generate_key_pair
@@ -64,7 +64,6 @@ class IngestFixture:
 @pytest.fixture
 def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
     """Generate necessary data for file ingest."""
-
     with TemporaryDirectory() as input_dir:
         with TemporaryDirectory() as submission_store_dir:
             token, token_hash = generate_token_and_hash()
@@ -110,7 +109,6 @@ def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
 @pytest.fixture
 def ingest_fixture() -> Generator[IngestFixture, None, None]:
     """Generate necessary data for file ingest."""
-
     with TemporaryDirectory() as input_dir:
         with TemporaryDirectory() as submission_store_dir:
             token, token_hash = generate_token_and_hash()
