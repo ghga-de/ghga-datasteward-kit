@@ -1,0 +1,5 @@
+#!/bin/bash
+# install service in dev container
+
+echo "This repository does not provide any service. Aborting." >&2
+exit 1
