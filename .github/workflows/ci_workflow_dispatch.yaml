@@ -1,0 +1,30 @@
+name: Build on PR or dispatch
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+
+jobs:
+  fetch-tag:
+    runs-on: ubuntu-latest
+    if: ( github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'build') ) || ( github.event.action == 'labeled' && github.event.label.name == 'build' )
+    steps:
+      - id: fetch-tag
+        uses: ghga-de/gh-action-fetch-tag@v1
+    outputs:
+      latest_tag: ${{ steps.fetch-tag.outputs.latest_tag }}
+
+  push_to_docker_hub:
+    needs: fetch-tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ghga-de/gh-action-ci@v1
+        with:
+          tag: ${{ needs.fetch-tag.outputs.latest_tag }}-${{ github.sha }}
+          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}

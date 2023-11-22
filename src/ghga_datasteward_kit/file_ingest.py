@@ -135,7 +135,7 @@ def file_ingest(
     with httpx.Client() as client:
         response = client.post(
             f"{endpoint_url}",
-            json=encrypted.dict(),
+            json=encrypted.model_dump(),
             headers=headers,
             timeout=60,
         )

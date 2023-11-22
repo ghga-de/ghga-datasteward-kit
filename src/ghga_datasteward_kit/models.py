@@ -82,7 +82,7 @@ class FileUploadMetadataBase(BaseModel):
 
     def encrypt_metadata(self, pubkey: str) -> EncryptedPayload:
         """Create payload by encryption FileUploadMetadata"""
-        payload = self.json()
+        payload = self.model_dump_json()
         encrypted = encrypt(data=payload, key=pubkey)
 
         return EncryptedPayload(payload=encrypted)
