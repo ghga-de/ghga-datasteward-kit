@@ -39,17 +39,12 @@ class ValidationError(RuntimeError):
 
 def get_schema(config_cls: type[BaseSettings]) -> dict:
     """Returns a JSON schema generated from a Config class."""
-    try:
-        schema_json = config_cls.schema_json(indent=2)
-        return json.loads(schema_json)
-    except Exception as e:
-        raise RuntimeError(  # noqa: B904
-            f"Error generating schema for {config_cls.__name__}: {e}"
-        )
+    schema_json = config_cls.schema_json(indent=2)
+    return json.loads(schema_json)
 
 
 def generate_config_docs(config_cls: type[BaseSettings]) -> str:
-    """Generate markdown-formatted documentation for the configration parameters
+    """Generate markdown-formatted documentation for the configuration parameters
     listed in the config schema."""
 
     config_schema = get_schema(config_cls)
@@ -109,10 +104,13 @@ def main(check: bool = False):
     if check:
         try:
             for config_type in CONFIG_CLASSES:
-                check_docs(config_type=config_type)
-        except RuntimeError as error:  # FIXME
-            if config_type == "metadata":
-                echo_failure(f"Validation skipped for metadata config due to: {error}")
+                try:
+                    check_docs(config_type=config_type)
+                except Exception as error:  # FIXME
+                    if config_type == "metadata":
+                        echo_failure(
+                            f"Validation skipped for metadata config due to: {error}"
+                        )
         except ValidationError as error:
             echo_failure(f"Validation failed: {error}")
             sys.exit(1)
@@ -120,7 +118,11 @@ def main(check: bool = False):
         return
 
     for config_type in CONFIG_CLASSES:
-        update_docs(config_type=config_type)
+        try:
+            update_docs(config_type=config_type)
+        except Exception as error:  # FIXME
+            if config_type == "metadata":
+                echo_failure(f"Doc update skipped for metadata config due to: {error}")
     echo_success("Successfully updated the config docs.")
 
 
