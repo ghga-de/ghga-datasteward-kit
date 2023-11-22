@@ -18,7 +18,8 @@
 import subprocess  # nosec
 from pathlib import Path
 
-from pydantic import BaseSettings, Field, SecretStr, validator
+from pydantic import Field, SecretStr, field_validator
+from pydantic_settings import BaseSettings
 
 
 def expand_env_vars_in_path(path: Path) -> Path:
@@ -75,7 +76,7 @@ class LegacyConfig(BaseSettings):
         ),
     )
 
-    @validator("output_dir")
+    @field_validator("output_dir")
     def expand_env_vars_output_dir(cls, output_dir: Path):  # noqa: N805
         """Expand vars in path"""
         return expand_env_vars_in_path(output_dir)

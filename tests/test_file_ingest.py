@@ -163,7 +163,7 @@ async def test_legacy_main(
     endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}/legacy/ingest"
     config_path = legacy_ingest_fixture.config.input_dir / "config.yaml"
 
-    config = legacy_ingest_fixture.config.dict()
+    config = legacy_ingest_fixture.config.model_dump()
     config["input_dir"] = str(config["input_dir"])
     config["submission_store_dir"] = str(config["submission_store_dir"])
 

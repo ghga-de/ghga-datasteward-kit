@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 import jsonschema2md
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 from ghga_datasteward_kit.config import CONFIG_CLASSES
 from script_utils.cli import echo_failure, echo_success, run

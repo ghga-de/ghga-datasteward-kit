@@ -43,7 +43,7 @@ async def test_legacy_process(legacy_config_fixture: LegacyConfig):  # noqa: F81
     ) as localstack:
         s3_config = config_from_localstack_container(localstack)
 
-        config = legacy_config_fixture.copy(
+        config = legacy_config_fixture.model_copy(
             update={
                 "s3_endpoint_url": SecretStr(s3_config.s3_endpoint_url),
                 "s3_access_key_id": SecretStr(s3_config.s3_access_key_id),
@@ -81,7 +81,7 @@ async def test_process(config_fixture: Config, monkeypatch):  # noqa: F811
     ) as localstack:
         s3_config = config_from_localstack_container(localstack)
 
-        config = config_fixture.copy(
+        config = config_fixture.model_copy(
             update={
                 "s3_endpoint_url": SecretStr(s3_config.s3_endpoint_url),
                 "s3_access_key_id": SecretStr(s3_config.s3_access_key_id),

@@ -21,7 +21,7 @@ from typing import TypeVar
 
 import yaml
 from ghga_service_commons.utils.simple_token import generate_token_and_hash
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 TOKEN_PATH = Path.home() / ".ghga_data_steward_token.txt"
 TOKEN_HASH_PATH = Path.home() / ".ghga_data_steward_token_hash.txt"
