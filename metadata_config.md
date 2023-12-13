@@ -29,7 +29,7 @@
 
 - **`artifact_model_dir`** *(string, format: path)*: Path to save the artifact models and artifact infos to.
 
-- **`workflow_config`**: Configuration for the metadata transfornation workflow.
+- **`workflow_config`**: Configuration for the metadata transformation workflow.
 
   - **All of**
 

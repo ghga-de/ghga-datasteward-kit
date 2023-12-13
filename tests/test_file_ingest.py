@@ -178,7 +178,7 @@ async def test_legacy_main(
     ingest_upload_metadata(config_path=config_path)
     out, _ = capfd.readouterr()
 
-    assert "Sucessfully sent all file upload metadata for ingest" in out
+    assert "Successfully sent all file upload metadata for ingest" in out
 
     httpx_mock.add_response(
         url=endpoint_url,

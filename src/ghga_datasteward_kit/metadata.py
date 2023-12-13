@@ -57,7 +57,7 @@ class MetadataConfig(
     )
 
     workflow_config: GHGA_ARCHIVE_WORKFLOW.config_cls = Field(
-        ..., description="Configuration for the metadata transfornation workflow."
+        ..., description="Configuration for the metadata transformation workflow."
     )
 
 
@@ -142,8 +142,8 @@ def save_artifact_infos(
 
     simplified_artifact_infos = deepcopy(artifact_infos)
     for artifact_info in simplified_artifact_infos:
-        for resource_classe in artifact_info.resource_classes.values():
-            resource_classe.json_schema = {}
+        for resource_class in artifact_info.resource_classes.values():
+            resource_class.json_schema = {}
     simplified_artifact_infos_path = (
         artifact_model_dir / "simplified_artifact_infos.json"
     )
@@ -212,7 +212,7 @@ def transform_metadata(*, config: MetadataConfig) -> None:
         run_workflow_on_all_source_events(
             event_config=config,
             workflow_definition=GHGA_ARCHIVE_WORKFLOW,
-            worflow_config=config.workflow_config,
+            workflow_config=config.workflow_config,
             original_model=config.metadata_model,
         )
     )
