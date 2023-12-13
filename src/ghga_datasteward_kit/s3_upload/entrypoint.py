@@ -172,7 +172,7 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
         LOGGER.info("(7/7) Writing metadata to %s.", output_path)
         try:
             metadata.serialize(output_path)
-        except (  # pylint: disable=broad-except
+        except (
             Exception,
             KeyboardInterrupt,
         ) as exc:
@@ -216,7 +216,7 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
         LOGGER.info("(7/7) Writing metadata to %s.", output_path)
         try:
             metadata.serialize(output_path)
-        except (  # pylint: disable=broad-except
+        except (
             Exception,
             KeyboardInterrupt,
         ) as exc:

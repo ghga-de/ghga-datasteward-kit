@@ -30,7 +30,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
 )
 
 
-class ChunkedDownloader:  # pylint: disable=too-many-instance-attributes
+class ChunkedDownloader:
     """Handler class dealing with download functionality"""
 
     def __init__(  # noqa: PLR0913
@@ -64,7 +64,7 @@ class ChunkedDownloader:  # pylint: disable=too-many-instance-attributes
                 with httpx_client() as client:
                     response = client.get(download_url, timeout=60, headers=headers)
                     yield response.content
-            except (  # pylint: disable=broad-except
+            except (
                 Exception,
                 KeyboardInterrupt,
             ) as exc:

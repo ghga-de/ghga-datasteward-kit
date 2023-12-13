@@ -45,7 +45,7 @@ from pydantic import Field
 from ghga_datasteward_kit.utils import load_config_yaml
 
 
-class MetadataConfig(  # pylint: disable=too-many-ancestors
+class MetadataConfig(
     SubmissionConfig,
     AccessionConfig,
     TransformationEventHandlingConfig,

@@ -122,7 +122,6 @@ def trigger_file_upload(
     )
 
 
-# pylint: disable=too-many-nested-blocks,too-many-branches, too-many-arguments
 def handle_file_uploads(  # noqa: PLR0913, PLR0912
     files: list[FileMetadata],
     output_dir: Path,
@@ -188,7 +187,7 @@ def handle_file_uploads(  # noqa: PLR0913, PLR0912
             str(len(files_failed)),
             str(len(files_skipped)),
         )
-        logging.info(  # pylint: disable=logging-not-lazy
+        logging.info(
             "The files with following aliases failed: "
             + ", ".join([file.alias for file in files_failed])
         )

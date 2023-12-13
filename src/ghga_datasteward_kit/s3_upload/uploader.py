@@ -32,7 +32,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
 )
 
 
-class ChunkedUploader:  # pylint: disable=too-many-instance-attributes
+class ChunkedUploader:
     """Handler class dealing with upload functionality"""
 
     def __init__(  # noqa: PLR0913
@@ -130,7 +130,7 @@ class MultipartUpload:
                 anticipated_part_quantity=math.ceil(self.file_size / self.part_size),
                 anticipated_part_size=self.part_size,
             )
-        except (Exception, KeyboardInterrupt) as exc:  # pylint: disable=broad-except
+        except (Exception, KeyboardInterrupt) as exc:
             raise self.storage_cleaner.MultipartUploadCompletionError(
                 bucket_id=self.config.bucket_id,
                 object_id=self.file_id,
@@ -148,7 +148,7 @@ class MultipartUpload:
             )
             with httpx_client() as client:
                 client.put(url=upload_url, content=part)
-        except (  # pylint: disable=broad-except
+        except (
             Exception,
             KeyboardInterrupt,
         ) as exc:

@@ -26,7 +26,6 @@ from pydantic_settings import BaseSettings
 TOKEN_PATH = Path.home() / ".ghga_data_steward_token.txt"
 TOKEN_HASH_PATH = Path.home() / ".ghga_data_steward_token_hash.txt"
 
-# pylint: disable=invalid-name
 ConfigType = TypeVar("ConfigType", bound=BaseSettings)
 
 
