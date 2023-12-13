@@ -76,9 +76,7 @@ class ChunkedUploader:
                     await upload.send_part(part_number=part_number, part=part)
 
                     delta = time() - start
-                    avg_speed = (
-                        part_number * (self.config.part_size / 1024**2) / delta
-                    )
+                    avg_speed = part_number * (self.config.part_size / 1024**2) / delta
                     LOGGER.info(
                         "(2/7) Processing upload for file part %i/%i (%.2f MiB/s)",
                         part_number,
