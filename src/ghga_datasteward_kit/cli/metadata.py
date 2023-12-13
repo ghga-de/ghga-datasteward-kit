@@ -70,7 +70,7 @@ def generate_artifact_models(
         file_okay=True,
         dir_okay=False,
         readable=True,
-    )
+    ),
 ):
     """Run transformation workflow to generate artifact models."""
     logging.basicConfig(level=logging.CRITICAL)
@@ -86,7 +86,7 @@ def transform(
         file_okay=True,
         dir_okay=False,
         readable=True,
-    )
+    ),
 ):
     """Run transformation workflow on submitted metadata to produce artifacts."""
     logging.basicConfig(level=logging.CRITICAL)

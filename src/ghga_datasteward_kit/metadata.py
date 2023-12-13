@@ -159,7 +159,8 @@ def save_artifact_infos(
 
 
 def get_artifact_infos(
-    *, artifact_models: dict[str, MetadataModel]
+    *,
+    artifact_models: dict[str, MetadataModel],
 ) -> list[ArtifactInfo]:
     """Get artifact infos from artifact models."""
     return [

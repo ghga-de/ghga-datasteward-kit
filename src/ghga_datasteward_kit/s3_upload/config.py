@@ -25,7 +25,9 @@ from pydantic_settings import BaseSettings
 def expand_env_vars_in_path(path: Path) -> Path:
     """Expand environment variables in a Path."""
     with subprocess.Popen(
-        f"realpath {path}", shell=True, stdout=subprocess.PIPE  # noqa: S602
+        f"realpath {path}",
+        shell=True,  # noqa: S602
+        stdout=subprocess.PIPE,
     ) as process:
         if process.wait() != 0 or not process.stdout:
             raise RuntimeError(f"Parsing of path failed: {path}")

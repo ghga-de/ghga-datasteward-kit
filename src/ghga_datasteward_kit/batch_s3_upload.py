@@ -116,7 +116,9 @@ def trigger_file_upload(
 
     logging.info("The upload of the file with alias '%s' has started.", file.alias)
     return subprocess.Popen(
-        command_line, shell=True, executable="/bin/bash"  # noqa: S602
+        command_line,
+        shell=True,  # noqa: S602
+        executable="/bin/bash",
     )
 
 

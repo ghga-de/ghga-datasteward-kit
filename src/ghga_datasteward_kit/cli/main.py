@@ -86,7 +86,7 @@ def load(
 def generate_credentials(
     overwrite: bool = typer.Option(
         False, help="If specify, overwrite the existing credentials"
-    )
+    ),
 ):
     """Generate credentials, save them into file and return hash together with file paths"""
     if not overwrite:
