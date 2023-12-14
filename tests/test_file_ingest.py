@@ -69,7 +69,8 @@ async def test_alias_to_accession(legacy_ingest_fixture: IngestFixture):  # noqa
 
 @pytest.mark.asyncio
 async def test_legacy_ingest_directly(
-    legacy_ingest_fixture: IngestFixture, httpx_mock: HTTPXMock  # noqa: F811
+    legacy_ingest_fixture: IngestFixture,  # noqa: F811
+    httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
     endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}/legacy/ingest"
@@ -112,7 +113,8 @@ async def test_legacy_ingest_directly(
 
 @pytest.mark.asyncio
 async def test_ingest_directly(
-    ingest_fixture: IngestFixture, httpx_mock: HTTPXMock  # noqa: F811
+    ingest_fixture: IngestFixture,  # noqa: F811
+    httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
     endpoint_url = (
@@ -176,7 +178,7 @@ async def test_legacy_main(
     ingest_upload_metadata(config_path=config_path)
     out, _ = capfd.readouterr()
 
-    assert "Sucessfully sent all file upload metadata for ingest" in out
+    assert "Successfully sent all file upload metadata for ingest" in out
 
     httpx_mock.add_response(
         url=endpoint_url,

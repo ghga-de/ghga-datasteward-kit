@@ -45,7 +45,7 @@ from pydantic import Field
 from ghga_datasteward_kit.utils import load_config_yaml
 
 
-class MetadataConfig(  # pylint: disable=too-many-ancestors
+class MetadataConfig(
     SubmissionConfig,
     AccessionConfig,
     TransformationEventHandlingConfig,
@@ -57,7 +57,7 @@ class MetadataConfig(  # pylint: disable=too-many-ancestors
     )
 
     workflow_config: GHGA_ARCHIVE_WORKFLOW.config_cls = Field(
-        ..., description="Configuration for the metadata transfornation workflow."
+        ..., description="Configuration for the metadata transformation workflow."
     )
 
 
@@ -142,8 +142,8 @@ def save_artifact_infos(
 
     simplified_artifact_infos = deepcopy(artifact_infos)
     for artifact_info in simplified_artifact_infos:
-        for resource_classe in artifact_info.resource_classes.values():
-            resource_classe.json_schema = {}
+        for resource_class in artifact_info.resource_classes.values():
+            resource_class.json_schema = {}
     simplified_artifact_infos_path = (
         artifact_model_dir / "simplified_artifact_infos.json"
     )
@@ -159,7 +159,8 @@ def save_artifact_infos(
 
 
 def get_artifact_infos(
-    *, artifact_models: dict[str, MetadataModel]
+    *,
+    artifact_models: dict[str, MetadataModel],
 ) -> list[ArtifactInfo]:
     """Get artifact infos from artifact models."""
     return [

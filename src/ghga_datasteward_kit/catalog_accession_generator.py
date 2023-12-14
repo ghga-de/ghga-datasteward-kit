@@ -92,7 +92,7 @@ def main(*, store_path: Path, resource_type: str, number: int) -> list[str]:
     if resource_type not in RESOURCE_PREFIXES:
         raise ValueError(
             f"Unknown resource type '{resource_type}'. Please choose one of: "
-            f"{list(RESOURCE_PREFIXES.keys())}"
+            f"{list(RESOURCE_PREFIXES)}"
         )
 
     config = get_config(store_path=store_path)

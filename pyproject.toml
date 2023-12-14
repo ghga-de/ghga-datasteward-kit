@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 # please adapt to package name
 name = "ghga_datasteward_kit"
-version = "1.1.0"
+version = "1.1.1"
 description = "GHGA Data Steward Kit - A utils package for GHGA data stewards."
 readme = "README.md"
 authors = [
@@ -24,7 +24,7 @@ dependencies = [
     "crypt4gh >=1.6, <2",
     "hexkit[s3]~=1.0.0",
     "ghga-transpiler~=1.4.0",
-    "metldata~=1.0.0",
+    "metldata~=1.1.0",
 ]
 
 [project.urls]

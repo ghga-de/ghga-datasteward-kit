@@ -48,7 +48,7 @@ def generate_catalog_accessions(
         ...,
         help=(
             "The resource type for which to generate accessions. Can be one of: "
-            f"{list(catalog_accession_generator.RESOURCE_PREFIXES.keys())}"
+            f"{list(catalog_accession_generator.RESOURCE_PREFIXES)}"
         ),
     ),
     number: int = typer.Option(..., help="The number of accessions to generate."),
@@ -86,7 +86,7 @@ def load(
 def generate_credentials(
     overwrite: bool = typer.Option(
         False, help="If specify, overwrite the existing credentials"
-    )
+    ),
 ):
     """Generate credentials, save them into file and return hash together with file paths"""
     if not overwrite:

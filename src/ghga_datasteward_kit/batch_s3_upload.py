@@ -116,11 +116,12 @@ def trigger_file_upload(
 
     logging.info("The upload of the file with alias '%s' has started.", file.alias)
     return subprocess.Popen(
-        command_line, shell=True, executable="/bin/bash"  # noqa: S602
+        command_line,
+        shell=True,  # noqa: S602
+        executable="/bin/bash",
     )
 
 
-# pylint: disable=too-many-nested-blocks,too-many-branches, too-many-arguments
 def handle_file_uploads(  # noqa: PLR0913, PLR0912
     files: list[FileMetadata],
     output_dir: Path,
@@ -186,7 +187,7 @@ def handle_file_uploads(  # noqa: PLR0913, PLR0912
             str(len(files_failed)),
             str(len(files_skipped)),
         )
-        logging.info(  # pylint: disable=logging-not-lazy
+        logging.info(
             "The files with following aliases failed: "
             + ", ".join([file.alias for file in files_failed])
         )

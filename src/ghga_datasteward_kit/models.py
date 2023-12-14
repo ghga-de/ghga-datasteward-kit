@@ -101,7 +101,7 @@ class FileUploadMetadata(FileUploadMetadataBase):
 
 
 @dataclass
-class OutputMetadataBase:  # pylint: disable=too-many-instance-attributes
+class OutputMetadataBase:
     """Container class for output metadata"""
 
     alias: str
@@ -120,9 +120,7 @@ class OutputMetadataBase:  # pylint: disable=too-many-instance-attributes
 
 
 @dataclass
-class LegacyOutputMetadata(
-    OutputMetadataBase
-):  # pylint: disable=too-many-instance-attributes
+class LegacyOutputMetadata(OutputMetadataBase):
     """Container class for output metadata"""
 
     file_secret: bytes
@@ -190,9 +188,7 @@ class LegacyOutputMetadata(
 
 
 @dataclass
-class OutputMetadata(
-    OutputMetadataBase
-):  # pylint: disable=too-many-instance-attributes
+class OutputMetadata(OutputMetadataBase):
     """Container class for output metadata"""
 
     secret_id: str
