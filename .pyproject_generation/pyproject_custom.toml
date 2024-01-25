@@ -1,0 +1,16 @@
+[project]
+name = "ghga_datasteward_kit"
+version = "1.1.2"
+description = "GHGA Data Steward Kit - A utils package for GHGA data stewards."
+dependencies = [
+    "crypt4gh >=1.6, <2",
+    "hexkit[s3]~=2.1.0",
+    "ghga-transpiler~=1.4.0",
+    "metldata~=1.1.0",
+]
+
+[project.urls]
+Repository = "https://github.com/ghga-de/ghga-datasteward-kit"
+
+[project.scripts]
+ghga-datasteward-kit = "ghga_datasteward_kit.__main__:run"
