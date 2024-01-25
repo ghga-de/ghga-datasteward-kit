@@ -78,7 +78,7 @@ def prepare_upload_command_line(
     log_file_path = output_dir / f"{file.alias}.log"
     python_interpreter_path = Path(sys.executable)
 
-    subcommand = "legacy_upload" if legacy_mode else "upload"
+    subcommand = "legacy-upload" if legacy_mode else "upload"
 
     return (
         f"{python_interpreter_path} -m ghga_datasteward_kit files {subcommand}"

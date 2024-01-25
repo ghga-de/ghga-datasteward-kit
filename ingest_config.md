@@ -11,6 +11,10 @@
 
 - **`file_ingest_baseurl`** *(string)*: Base URL under which the /ingest endpoint is available. This is an endpoint exposed by GHGA Central. This value is provided by GHGA Central on demand.
 
+- **`file_ingest_federated_endpoint`** *(string)*: Path to the FIS endpoint (relative to baseurl) expecting the new style"+" upload metadata including a secret ID instead of the actual secret.
+
+- **`file_ingest_legacy_endpoint`** *(string)*: Path to the FIS endpoint (relative to baseurl) expecting the old style"+"upload metadata including the encryption secret.
+
 - **`file_ingest_pubkey`** *(string)*: Public key provided by GHGA Central used to encrypt the communication with GHGA Central.
 
 - **`input_dir`** *(string, format: path)*: Path to directory containing output files from the upload/batch_upload command.

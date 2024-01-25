@@ -53,11 +53,13 @@ class MetadataConfig(
     """Config parameters used for submission and transformation of metadata."""
 
     artifact_model_dir: Path = Field(
-        ..., description="Path to save the artifact models and artifact infos to."
+        default=...,
+        description="Path to save the artifact models and artifact infos to.",
     )
 
     workflow_config: GHGA_ARCHIVE_WORKFLOW.config_cls = Field(
-        ..., description="Configuration for the metadata transformation workflow."
+        default=...,
+        description="Configuration for the metadata transformation workflow.",
     )
 
 
