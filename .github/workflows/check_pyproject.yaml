@@ -11,8 +11,6 @@ jobs:
       - id: common
         uses: ghga-de/gh-action-common@v4
 
-      - name: Check config docs
+      - name: Check pyproject.toml
         run: |
-          export ${{ steps.common.outputs.CONFIG_YAML_ENV_VAR_NAME }}="${{ steps.common.outputs.CONFIG_YAML }}"
-
-          ./scripts/update_config_docs.py --check
+          ./scripts/update_pyproject.py --check
