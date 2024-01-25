@@ -41,10 +41,10 @@ class LegacyConfig(BaseSettings):
     """Required options for legacy file uploads."""
 
     s3_endpoint_url: SecretStr = Field(
-        ..., description="URL of the local data hub's S3 server."
+        default=..., description="URL of the local data hub's S3 server."
     )
     s3_access_key_id: SecretStr = Field(
-        ...,
+        default=...,
         description=(
             "This parameter plus the s3_secret_access_key serve as credentials for"
             + " accessing the internal staging bucket (as in"
@@ -54,11 +54,11 @@ class LegacyConfig(BaseSettings):
         ),
     )
     s3_secret_access_key: SecretStr = Field(
-        ...,
+        default=...,
         description=("Secret access key corresponding to the `s3_access_key_id`."),
     )
     bucket_id: str = Field(
-        ...,
+        default=...,
         description=(
             "Bucket ID of the internal staging bucket of the local data hub's S3 system"
             "where the encrypted files are uploaded to."
@@ -68,7 +68,7 @@ class LegacyConfig(BaseSettings):
         default=16, description="Upload part size in MiB. Has to be between 5 and 5120."
     )
     output_dir: Path = Field(
-        ...,
+        default=...,
         description=(
             "Directory for the output metadata files. For each file upload one metadata"
             + " file in yaml format will be generated. It contains details on the files"
@@ -88,14 +88,14 @@ class Config(LegacyConfig):
     """Required options for file uploads."""
 
     secret_ingest_pubkey: str = Field(
-        ...,
+        default=...,
         description=(
             "Public key provided by GHGA Central used to encrypt the communication with"
             + " GHGA Central."
         ),
     )
     secret_ingest_baseurl: str = Field(
-        ...,
+        default=...,
         description=(
             "Base URL under which the /ingest_secret endpoint is available."
             + " This is an endpoint exposed by GHGA Central. This value is provided by"

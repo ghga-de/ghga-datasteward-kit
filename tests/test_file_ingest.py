@@ -73,7 +73,7 @@ async def test_legacy_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}/legacy/ingest"
+    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}{legacy_ingest_fixture.config.file_ingest_legacy_endpoint}"
     token = generate_token()
 
     httpx_mock.add_response(
@@ -117,9 +117,7 @@ async def test_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = (
-        f"{ingest_fixture.config.file_ingest_baseurl}/federated/ingest_metadata"
-    )
+    endpoint_url = f"{ingest_fixture.config.file_ingest_baseurl}{ingest_fixture.config.file_ingest_federated_endpoint}"
     token = generate_token()
 
     httpx_mock.add_response(url=endpoint_url, status_code=202)
@@ -162,7 +160,7 @@ async def test_legacy_main(
     httpx_mock: HTTPXMock,
 ):
     """Test if main file ingest function works correctly"""
-    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}/legacy/ingest"
+    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}{legacy_ingest_fixture.config.file_ingest_legacy_endpoint}"
     config_path = legacy_ingest_fixture.config.input_dir / "config.yaml"
 
     config = legacy_ingest_fixture.config.model_dump()

@@ -31,27 +31,41 @@ class IngestConfig(SubmissionStoreConfig):
     """Config options for calling the file ingest endpoint"""
 
     file_ingest_baseurl: str = Field(
-        ...,
+        default=...,
         description=(
             "Base URL under which the /ingest endpoint is available."
             + " This is an endpoint exposed by GHGA Central. This value is provided by"
             + " GHGA Central on demand."
         ),
     )
+    file_ingest_federated_endpoint: str = Field(
+        default="/federated/ingest_metadata",
+        description=(
+            "Path to the FIS endpoint (relative to baseurl) expecting the new style"
+            + " upload metadata including a secret ID instead of the actual secret."
+        ),
+    )
+    file_ingest_legacy_endpoint: str = Field(
+        default="/legacy/ingest",
+        description=(
+            "Path to the FIS endpoint (relative to baseurl) expecting the old style"
+            + "upload metadata including the encryption secret."
+        ),
+    )
     file_ingest_pubkey: str = Field(
-        ...,
+        default=...,
         description=(
             "Public key provided by GHGA Central used to encrypt the communication with"
             + " GHGA Central."
         ),
     )
     input_dir: Path = Field(
-        ...,
+        default=...,
         description="Path to directory containing output files from the "
         + "upload/batch_upload command.",
     )
     map_files_fields: list[str] = Field(
-        ["study_files"],
+        default=["study_files"],
         description="Names of the accession map fields for looking up the"
         + " alias->accession mapping.",
     )
@@ -115,10 +129,10 @@ def file_ingest(
     """
     try:
         output_metadata = models.OutputMetadata.load(input_path=in_path)
-        endpoint = "/federated/ingest_metadata"
+        endpoint = config.file_ingest_federated_endpoint
     except (KeyError, ValidationError):
         output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
-        endpoint = "/legacy/ingest"
+        endpoint = config.file_ingest_legacy_endpoint
 
     endpoint_url = f"{config.file_ingest_baseurl}{endpoint}"
 
