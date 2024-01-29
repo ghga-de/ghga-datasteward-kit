@@ -26,7 +26,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from ghga_datasteward_kit.s3_upload import Config, load_config_yaml
+from ghga_datasteward_kit.s3_upload import Config, LegacyConfig, load_config_yaml
 
 HERE = Path(__file__).parent
 
@@ -204,7 +204,8 @@ def main(
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     objectstorage.
     """
-    config = load_config_yaml(path=config_path, config_cls=Config)
+    config_class = LegacyConfig if legacy_mode else Config
+    config = load_config_yaml(path=config_path, config_cls=config_class)
     files = load_file_metadata(file_overview_tsv=file_overview_tsv)
 
     handle_file_uploads(
