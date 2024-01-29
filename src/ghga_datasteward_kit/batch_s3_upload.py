@@ -22,7 +22,7 @@ import sys
 from copy import copy
 from pathlib import Path
 from time import sleep
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -204,7 +204,9 @@ def main(
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     objectstorage.
     """
-    config_class = LegacyConfig if legacy_mode else Config
+    config_class: type[Union[LegacyConfig, Config]] = (
+        LegacyConfig if legacy_mode else Config
+    )
     config = load_config_yaml(path=config_path, config_cls=config_class)
     files = load_file_metadata(file_overview_tsv=file_overview_tsv)
 
