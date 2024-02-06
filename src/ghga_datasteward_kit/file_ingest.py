@@ -101,7 +101,7 @@ def main(
 ):
     """Handle ingestion of a folder of s3 upload file metadata"""
     config = utils.load_config_yaml(path=config_path, config_cls=IngestConfig)
-    token = utils.read_token()
+    token = utils.STEWARD_TOKEN.read_token()
 
     errors = {}
 

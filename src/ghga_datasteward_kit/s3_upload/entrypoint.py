@@ -37,7 +37,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
     handle_superficial_error,
     httpx_client,
 )
-from ghga_datasteward_kit.utils import load_config_yaml, read_token
+from ghga_datasteward_kit.utils import STEWARD_TOKEN, load_config_yaml
 
 
 async def validate_and_transfer_content(
@@ -236,7 +236,7 @@ def main(
     """
     config = load_config_yaml(config_path, Config)
 
-    token = read_token()
+    token = STEWARD_TOKEN.read_token()
     asyncio.run(
         async_main(input_path=input_path, alias=alias, config=config, token=token)
     )

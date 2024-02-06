@@ -12,23 +12,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-"""Data loading related functionality."""
 from pathlib import Path
 
-from metldata.load.client import upload_artifacts_via_http_api as upload_metadata
-from metldata.load.config import ArtifactLoaderClientConfig
-
-from ghga_datasteward_kit.utils import STEWARD_TOKEN, load_config_yaml
+from pydantic import Field, SecretStr, field_validator
+from pydantic_settings import BaseSettings
 
 
-class LoadConfig(ArtifactLoaderClientConfig):
-    """Load Config"""
+class FileDeletionConfig(BaseException):
+    """TODO"""
 
 
-def load(*, config_path: Path) -> None:
-    """Load file and metadata artifacts to the loader API."""
-    config = load_config_yaml(path=config_path, config_cls=LoadConfig)
-    token = STEWARD_TOKEN.read_token()
-
-    upload_metadata(config=config, token=token)
+def main(file_id: str, config_path: Path):
+    """TODO"""
