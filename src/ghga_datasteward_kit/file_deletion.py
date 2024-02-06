@@ -47,7 +47,7 @@ class FileDeletionConfig(BaseSettings):
     )
 
 
-def main(file_id: str, config_path: Path):
+def main(*, file_id: str, config_path: Path):
     """Call PCS to delete all data in the file services for the given file ID."""
     config = load_config_yaml(path=config_path, config_cls=FileDeletionConfig)
 
