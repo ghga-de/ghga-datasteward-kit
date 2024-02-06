@@ -13,16 +13,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""Provides functionality to request file service data deleteion."""
 
+import logging
 from pathlib import Path
 
-from pydantic import Field, SecretStr, field_validator
+import httpx
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from ghga_datasteward_kit.utils import DELETION_TOKEN, load_config_yaml
 
-class FileDeletionConfig(BaseException):
-    """TODO"""
+log = logging.getLogger(__name__)
+
+
+class FileDeletionConfig(BaseSettings):
+    """Config for calling the PCS file deletion endpoint"""
+
+    file_deletion_baseurl: str = Field(
+        default=...,
+        description=(
+            "Base URL under which the delete /files endpoint is available."
+            + " This is an endpoint exposed by GHGA Central. This value is provided by"
+            + " GHGA Central on demand."
+        ),
+    )
+    file_deletion_endpoint: str = Field(
+        default="/files",
+        description=(
+            "Path to the PCS endpoint (relative to baseurl) expecting a delete request including"
+            + " the ID of the file for which data should be deleted in the file services."
+        ),
+    )
 
 
 def main(file_id: str, config_path: Path):
-    """TODO"""
+    """Call PCS to delete all data in the file services for the given file ID."""
+    config = load_config_yaml(path=config_path, config_cls=FileDeletionConfig)
+
+    url = f"{config.file_deletion_baseurl}{config.file_deletion_endpoint}/{file_id}"
+    token = DELETION_TOKEN.read_token()
+    headers = httpx.Headers({"Authorization": f"Bearer {token}"})
+
+    with httpx.Client() as client:
+        response = client.delete(url=url, headers=headers, timeout=60)
+
+        status_code = response.status_code
+        if status_code != 202:
+            log.error(
+                f"Deletion request to '{url}' failed with response code {status_code}."
+            )
+            return
+
+    log.info(f"Successfully sent deletion request for file '{file_id}'.")
