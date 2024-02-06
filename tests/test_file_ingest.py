@@ -170,20 +170,24 @@ async def test_legacy_main(
     with config_path.open("w") as config_file:
         yaml.safe_dump(config, config_file)
 
-    monkeypatch.setattr("ghga_datasteward_kit.utils.read_token", generate_token)
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            "ghga_datasteward_kit.utils.AuthorizationToken.read_token",
+            lambda self: generate_token(),
+        )
 
-    httpx_mock.add_response(url=endpoint_url, status_code=202)
-    ingest_upload_metadata(config_path=config_path)
-    out, _ = capfd.readouterr()
+        httpx_mock.add_response(url=endpoint_url, status_code=202)
+        ingest_upload_metadata(config_path=config_path)
+        out, _ = capfd.readouterr()
 
-    assert "Successfully sent all file upload metadata for ingest" in out
+        assert "Successfully sent all file upload metadata for ingest" in out
 
-    httpx_mock.add_response(
-        url=endpoint_url,
-        json={"detail": "Unauthorized"},
-        status_code=403,
-    )
-    ingest_upload_metadata(config_path=config_path)
-    out, _ = capfd.readouterr()
+        httpx_mock.add_response(
+            url=endpoint_url,
+            json={"detail": "Unauthorized"},
+            status_code=403,
+        )
+        ingest_upload_metadata(config_path=config_path)
+        out, _ = capfd.readouterr()
 
-    assert "Encountered 1 errors during processing" in out
+        assert "Encountered 1 errors during processing" in out
