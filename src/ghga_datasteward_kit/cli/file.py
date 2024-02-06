@@ -115,8 +115,7 @@ def delete_file(
     file_id: str = typer.Option(
         ...,
         help=(
-            "Path to a tsv file with the first column containing the file path and the"
-            + " second column containing the file alias."
+            "Public ID of the file for which all associated data across file services should be deleted."
         ),
     ),
     config_path: Path = typer.Option(..., help="Path to a config YAML."),

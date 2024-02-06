@@ -20,7 +20,8 @@ from pathlib import Path
 
 import pytest
 
-from ghga_datasteward_kit import file_deletion
+from ghga_datasteward_kit.cli.file import delete_file
+from ghga_datasteward_kit.config import FileDeletionConfig
 from ghga_datasteward_kit.utils import DELETION_TOKEN, load_config_yaml
 
 CONFIG_PATH = Path(__file__).parent / "fixtures" / "file_deletion_config.yaml"
@@ -31,9 +32,7 @@ def test_pcs_call(caplog, monkeypatch, httpx_mock, tmp_path, file_id: str):
     """Call mock endpoint to validate client functionality."""
     # only capture file deletion logs
     caplog.set_level(logging.INFO, logger="ghga_datasteward_kit.file_deletion")
-    config = load_config_yaml(
-        path=CONFIG_PATH, config_cls=file_deletion.FileDeletionConfig
-    )
+    config = load_config_yaml(path=CONFIG_PATH, config_cls=FileDeletionConfig)
     url = f"{config.file_deletion_baseurl}{config.file_deletion_endpoint}/{file_id}"
 
     # mock endpoints
@@ -54,7 +53,7 @@ def test_pcs_call(caplog, monkeypatch, httpx_mock, tmp_path, file_id: str):
         patch.setattr(DELETION_TOKEN, "token_hash_path", tmp_path / "_token_hash.txt")
         DELETION_TOKEN.save_token_and_hash()
 
-        file_deletion.main(file_id=file_id, config_path=CONFIG_PATH)
+        delete_file(file_id=file_id, config_path=CONFIG_PATH)
 
         assert len(caplog.messages) == 1
         assert message in caplog.messages
