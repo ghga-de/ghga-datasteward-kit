@@ -108,7 +108,7 @@ def generate_credentials(
         False, help="If specify, overwrite the existing credentials"
     ),
 ):
-    """Generate credentials, save them into file and return hash together with file paths"""
+    """Generate data steward credentials, save them into file and return hash together with file paths"""
     generate_specific_credentials(overwrite=overwrite, token=STEWARD_TOKEN)
 
 
