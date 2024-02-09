@@ -18,7 +18,7 @@ from pathlib import Path
 
 import typer
 
-from ghga_datasteward_kit import batch_s3_upload, file_ingest, s3_upload
+from ghga_datasteward_kit import batch_s3_upload, file_deletion, file_ingest, s3_upload
 
 cli = typer.Typer()
 
@@ -108,3 +108,17 @@ def ingest_upload_metadata(
             print(f" -{file_path}: {cause}")
     else:
         print("Successfully sent all file upload metadata for ingest.")
+
+
+@cli.command()
+def delete_file(
+    file_id: str = typer.Option(
+        ...,
+        help=(
+            "Public ID of the file for which all associated data across file services should be deleted."
+        ),
+    ),
+    config_path: Path = typer.Option(..., help="Path to a config YAML."),
+):
+    """Call purge controller to remove all data associated with the given file ID from all file services."""
+    file_deletion.main(file_id=file_id, config_path=config_path)

@@ -23,11 +23,10 @@ from ghga_datasteward_kit import catalog_accession_generator, loading
 from ghga_datasteward_kit.cli.file import cli as file_cli
 from ghga_datasteward_kit.cli.metadata import cli as metadata_cli
 from ghga_datasteward_kit.utils import (
-    TOKEN_HASH_PATH,
-    TOKEN_PATH,
+    DELETION_TOKEN,
+    STEWARD_TOKEN,
+    AuthorizationToken,
     TokenNotExistError,
-    assert_token_exist,
-    save_token_and_hash,
 )
 
 cli = typer.Typer()
@@ -82,25 +81,52 @@ def load(
     loading.load(config_path=config_path)
 
 
+def generate_specific_credentials(overwrite: bool, token: AuthorizationToken):
+    """Common functionality for auth token/token hash pair generation"""
+    if not overwrite:
+        try:
+            token.assert_token_exists()
+        except TokenNotExistError:
+            pass
+        else:
+            typer.echo(
+                'The token file already exist, use the "overwrite" option to overwrite'
+            )
+            raise typer.Abort()
+
+    _, hash_ = token.save_token_and_hash()
+
+    typer.echo("Successfully generated credentials")
+    typer.echo(f"The token can be found in file: {token.token_path}")
+    typer.echo(f"The token hash can be found in file: {token.token_hash_path}")
+    typer.echo(f'The token hash is: "{hash_}"')
+
+
 @cli.command()
 def generate_credentials(
     overwrite: bool = typer.Option(
         False, help="If specify, overwrite the existing credentials"
     ),
 ):
-    """Generate credentials, save them into file and return hash together with file paths"""
-    if not overwrite:
-        try:
-            assert_token_exist()
-        except TokenNotExistError:
-            pass
-        else:
-            typer.echo('The token file already exist, use the "overwrite" to overwrite')
-            raise typer.Abort()
+    """Generate data steward credentials, save them into file and return hash together with file paths."""
+    generate_steward_credentials(overwrite=overwrite)
 
-    _, hash_ = save_token_and_hash()
 
-    typer.echo("Successfully generated credentials")
-    typer.echo(f"The token can be found in file: {TOKEN_PATH}")
-    typer.echo(f"The token hash can be found in file: {TOKEN_HASH_PATH}")
-    typer.echo(f'The token hash: "{hash_}"')
+@cli.command()
+def generate_steward_credentials(
+    overwrite: bool = typer.Option(
+        False, help="If specify, overwrite the existing credentials"
+    ),
+):
+    """Generate data steward credentials, save them into file and return hash together with file paths"""
+    generate_specific_credentials(overwrite=overwrite, token=STEWARD_TOKEN)
+
+
+@cli.command()
+def generate_deletion_credentials(
+    overwrite: bool = typer.Option(
+        False, help="If specify, overwrite the existing credentials"
+    ),
+):
+    """Generate file deletion credentials, save them into file and return hash together with file paths"""
+    generate_specific_credentials(overwrite=overwrite, token=DELETION_TOKEN)

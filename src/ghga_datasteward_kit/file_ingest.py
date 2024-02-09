@@ -14,6 +14,7 @@
 # limitations under the License.
 """Interaction with file ingest service"""
 
+import urllib.parse
 from pathlib import Path
 from typing import Callable
 
@@ -101,7 +102,7 @@ def main(
 ):
     """Handle ingestion of a folder of s3 upload file metadata"""
     config = utils.load_config_yaml(path=config_path, config_cls=IngestConfig)
-    token = utils.read_token()
+    token = utils.STEWARD_TOKEN.read_token()
 
     errors = {}
 
@@ -134,7 +135,7 @@ def file_ingest(
         output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
         endpoint = config.file_ingest_legacy_endpoint
 
-    endpoint_url = f"{config.file_ingest_baseurl}{endpoint}"
+    endpoint_url = urllib.parse.urljoin(base=config.file_ingest_baseurl, url=endpoint)
 
     submission_store = SubmissionStore(config=config)
 

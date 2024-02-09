@@ -15,6 +15,8 @@
 
 """File ingest tests."""
 
+import urllib.parse
+
 import pytest
 import yaml
 from ghga_service_commons.utils.simple_token import generate_token
@@ -73,7 +75,10 @@ async def test_legacy_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}{legacy_ingest_fixture.config.file_ingest_legacy_endpoint}"
+    endpoint_url = urllib.parse.urljoin(
+        base=legacy_ingest_fixture.config.file_ingest_baseurl,
+        url=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
+    )
     token = generate_token()
 
     httpx_mock.add_response(
@@ -117,7 +122,10 @@ async def test_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = f"{ingest_fixture.config.file_ingest_baseurl}{ingest_fixture.config.file_ingest_federated_endpoint}"
+    endpoint_url = urllib.parse.urljoin(
+        base=ingest_fixture.config.file_ingest_baseurl,
+        url=ingest_fixture.config.file_ingest_federated_endpoint,
+    )
     token = generate_token()
 
     httpx_mock.add_response(url=endpoint_url, status_code=202)
@@ -160,7 +168,10 @@ async def test_legacy_main(
     httpx_mock: HTTPXMock,
 ):
     """Test if main file ingest function works correctly"""
-    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}{legacy_ingest_fixture.config.file_ingest_legacy_endpoint}"
+    endpoint_url = urllib.parse.urljoin(
+        base=legacy_ingest_fixture.config.file_ingest_baseurl,
+        url=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
+    )
     config_path = legacy_ingest_fixture.config.input_dir / "config.yaml"
 
     config = legacy_ingest_fixture.config.model_dump()
@@ -170,20 +181,24 @@ async def test_legacy_main(
     with config_path.open("w") as config_file:
         yaml.safe_dump(config, config_file)
 
-    monkeypatch.setattr("ghga_datasteward_kit.utils.read_token", generate_token)
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            "ghga_datasteward_kit.utils.AuthorizationToken.read_token",
+            lambda self: generate_token(),
+        )
 
-    httpx_mock.add_response(url=endpoint_url, status_code=202)
-    ingest_upload_metadata(config_path=config_path)
-    out, _ = capfd.readouterr()
+        httpx_mock.add_response(url=endpoint_url, status_code=202)
+        ingest_upload_metadata(config_path=config_path)
+        out, _ = capfd.readouterr()
 
-    assert "Successfully sent all file upload metadata for ingest" in out
+        assert "Successfully sent all file upload metadata for ingest" in out
 
-    httpx_mock.add_response(
-        url=endpoint_url,
-        json={"detail": "Unauthorized"},
-        status_code=403,
-    )
-    ingest_upload_metadata(config_path=config_path)
-    out, _ = capfd.readouterr()
+        httpx_mock.add_response(
+            url=endpoint_url,
+            json={"detail": "Unauthorized"},
+            status_code=403,
+        )
+        ingest_upload_metadata(config_path=config_path)
+        out, _ = capfd.readouterr()
 
-    assert "Encountered 1 errors during processing" in out
+        assert "Encountered 1 errors during processing" in out
