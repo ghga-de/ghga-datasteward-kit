@@ -79,7 +79,6 @@ async def test_legacy_ingest_directly(
         base=legacy_ingest_fixture.config.file_ingest_baseurl,
         url=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
     )
-    raise ValueError(endpoint_url, legacy_ingest_fixture.config.file_ingest_baseurl)
     token = generate_token()
 
     httpx_mock.add_response(
