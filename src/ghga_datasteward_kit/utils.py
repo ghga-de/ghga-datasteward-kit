@@ -37,7 +37,7 @@ class TokenNotExistError(RuntimeError):
 
 @dataclass
 class AuthorizationToken:
-    """TODO"""
+    """Wrapper class to bundle functionality for different tokens used for file service authorization"""
 
     token_path: Path
     token_hash_path: Path
