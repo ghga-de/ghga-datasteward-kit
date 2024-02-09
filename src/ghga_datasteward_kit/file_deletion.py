@@ -33,7 +33,7 @@ class FileDeletionConfig(BaseSettings):
     file_deletion_baseurl: str = Field(
         default=...,
         description=(
-            "Base URL under which the delete /files endpoint is available."
+            "Base URL under which the file deletion endpoint is available."
             + " This is an endpoint exposed by GHGA Central. This value is provided by"
             + " GHGA Central on demand."
         ),
