@@ -15,6 +15,8 @@
 
 """File ingest tests."""
 
+import urllib.parse
+
 import pytest
 import yaml
 from ghga_service_commons.utils.simple_token import generate_token
@@ -73,7 +75,11 @@ async def test_legacy_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}{legacy_ingest_fixture.config.file_ingest_legacy_endpoint}"
+    endpoint_url = urllib.parse.urljoin(
+        base=legacy_ingest_fixture.config.file_ingest_baseurl,
+        url=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
+    )
+    raise ValueError(endpoint_url, legacy_ingest_fixture.config.file_ingest_baseurl)
     token = generate_token()
 
     httpx_mock.add_response(
@@ -117,7 +123,10 @@ async def test_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = f"{ingest_fixture.config.file_ingest_baseurl}{ingest_fixture.config.file_ingest_federated_endpoint}"
+    endpoint_url = urllib.parse.urljoin(
+        base=ingest_fixture.config.file_ingest_baseurl,
+        url=ingest_fixture.config.file_ingest_federated_endpoint,
+    )
     token = generate_token()
 
     httpx_mock.add_response(url=endpoint_url, status_code=202)
@@ -160,7 +169,10 @@ async def test_legacy_main(
     httpx_mock: HTTPXMock,
 ):
     """Test if main file ingest function works correctly"""
-    endpoint_url = f"{legacy_ingest_fixture.config.file_ingest_baseurl}{legacy_ingest_fixture.config.file_ingest_legacy_endpoint}"
+    endpoint_url = urllib.parse.urljoin(
+        base=legacy_ingest_fixture.config.file_ingest_baseurl,
+        url=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
+    )
     config_path = legacy_ingest_fixture.config.input_dir / "config.yaml"
 
     config = legacy_ingest_fixture.config.model_dump()

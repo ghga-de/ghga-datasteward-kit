@@ -33,7 +33,9 @@ def test_pcs_call(caplog, monkeypatch, httpx_mock, tmp_path, file_id: str):
     # only capture file deletion logs
     caplog.set_level(logging.INFO, logger="ghga_datasteward_kit.file_deletion")
     config = load_config_yaml(path=CONFIG_PATH, config_cls=FileDeletionConfig)
-    url = f"{config.file_deletion_baseurl}{config.file_deletion_endpoint}/{file_id}"
+    base = config.file_deletion_baseurl.rstrip("/")
+    endpoint = config.file_deletion_endpoint.strip("/")
+    url = f"{base}/{endpoint}/{file_id}"
 
     # mock endpoints
     if file_id == "exists":

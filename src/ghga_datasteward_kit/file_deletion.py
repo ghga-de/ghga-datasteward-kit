@@ -51,7 +51,11 @@ def main(*, file_id: str, config_path: Path):
     """Call PCS to delete all data in the file services for the given file ID."""
     config = load_config_yaml(path=config_path, config_cls=FileDeletionConfig)
 
-    url = f"{config.file_deletion_baseurl}{config.file_deletion_endpoint}/{file_id}"
+    # custom solution, as urllib.parse.urljoin has some problems with the middle part
+    base = config.file_deletion_baseurl.rstrip("/")
+    endpoint = config.file_deletion_endpoint.strip("/")
+    url = f"{base}/{endpoint}/{file_id}"
+
     token = DELETION_TOKEN.read_token()
     headers = httpx.Headers({"Authorization": f"Bearer {token}"})
 

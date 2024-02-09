@@ -108,6 +108,16 @@ def generate_credentials(
         False, help="If specify, overwrite the existing credentials"
     ),
 ):
+    """Generate data steward credentials, save them into file and return hash together with file paths."""
+    generate_steward_credentials(overwrite=overwrite)
+
+
+@cli.command()
+def generate_steward_credentials(
+    overwrite: bool = typer.Option(
+        False, help="If specify, overwrite the existing credentials"
+    ),
+):
     """Generate data steward credentials, save them into file and return hash together with file paths"""
     generate_specific_credentials(overwrite=overwrite, token=STEWARD_TOKEN)
 
