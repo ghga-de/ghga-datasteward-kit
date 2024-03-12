@@ -22,7 +22,7 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 name = "ghga_datasteward_kit"
-version = "1.2.0"
+version = "1.2.1"
 description = "GHGA Data Steward Kit - A utils package for GHGA data stewards."
 dependencies = [
     "crypt4gh >=1.6, <2",
