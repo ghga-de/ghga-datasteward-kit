@@ -139,9 +139,9 @@ class LegacyOutputMetadata(OutputMetadataBase):
         ).decode("utf-8")
         output["Unencrypted file checksum"] = self.unencrypted_checksum
         output["Encrypted file part checksums (MD5)"] = self.encrypted_md5_checksums
-        output[
-            "Encrypted file part checksums (SHA256)"
-        ] = self.encrypted_sha256_checksums
+        output["Encrypted file part checksums (SHA256)"] = (
+            self.encrypted_sha256_checksums
+        )
 
         if not output_path.parent.exists():
             output_path.mkdir(parents=True)
@@ -205,9 +205,9 @@ class OutputMetadata(OutputMetadataBase):
         output["Symmetric file encryption secret ID"] = self.secret_id
         output["Unencrypted file checksum"] = self.unencrypted_checksum
         output["Encrypted file part checksums (MD5)"] = self.encrypted_md5_checksums
-        output[
-            "Encrypted file part checksums (SHA256)"
-        ] = self.encrypted_sha256_checksums
+        output["Encrypted file part checksums (SHA256)"] = (
+            self.encrypted_sha256_checksums
+        )
 
         if not output_path.parent.exists():
             output_path.mkdir(parents=True)
