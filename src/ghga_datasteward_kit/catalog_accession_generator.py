@@ -17,7 +17,6 @@
 
 """Generate Accessions to be used in the Metadata Catalog."""
 
-
 from pathlib import Path
 
 from metldata.accession_registry.accession_registry import AccessionRegistry

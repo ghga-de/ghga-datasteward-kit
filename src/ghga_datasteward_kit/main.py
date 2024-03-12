@@ -15,7 +15,6 @@
 
 """Main entry point of the package."""
 
-
 import logging
 
 from ghga_datasteward_kit.cli import cli

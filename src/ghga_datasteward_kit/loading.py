@@ -14,6 +14,7 @@
 # limitations under the License.
 
 """Data loading related functionality."""
+
 from pathlib import Path
 
 from metldata.load.client import upload_artifacts_via_http_api as upload_metadata
