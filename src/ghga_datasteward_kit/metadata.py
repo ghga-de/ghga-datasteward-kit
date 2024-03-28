@@ -214,7 +214,7 @@ def transform_metadata(*, config: MetadataConfig) -> None:
         run_workflow_on_all_source_events(
             event_config=config,
             workflow_definition=GHGA_ARCHIVE_WORKFLOW,
-            worflow_config=config.workflow_config,
+            workflow_config=config.workflow_config,
             original_model=config.metadata_model,
         )
     )
