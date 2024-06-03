@@ -23,7 +23,7 @@ from io import BufferedReader
 from pathlib import Path
 
 import httpx
-from hexkit.providers.s3 import S3Config, S3ObjectStorage  # type: ignore
+from hexkit.providers.s3 import S3Config, S3ObjectStorage
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 
@@ -81,7 +81,9 @@ def get_object_storage(config: LegacyConfig):
     s3_config = S3Config(
         s3_endpoint_url=config.s3_endpoint_url.get_secret_value(),
         s3_access_key_id=config.s3_access_key_id.get_secret_value(),
-        s3_secret_access_key=config.s3_secret_access_key.get_secret_value(),
+        s3_secret_access_key=config.s3_secret_access_key.get_secret_value(),  # type: ignore
+        s3_session_token=None,
+        aws_config_ini=None,
     )
     return S3ObjectStorage(config=s3_config)
 
@@ -235,7 +237,7 @@ class StorageCleaner:
         """The context manager exit function."""
         # error handling while upload is still ongoing
         if isinstance(
-            exc_v, (self.MultipartUploadCompletionError, self.PartUploadError)
+            exc_v, self.MultipartUploadCompletionError | self.PartUploadError
         ):
             await self.storage.abort_multipart_upload(
                 upload_id=exc_v.upload_id,
@@ -246,12 +248,10 @@ class StorageCleaner:
         # error handling after upload has been completed
         if isinstance(
             exc_v,
-            (
-                self.ChecksumValidationError,
-                self.PartDownloadError,
-                self.SecretExchangeError,
-                self.WritingOutputError,
-            ),
+            self.ChecksumValidationError
+            | self.PartDownloadError
+            | self.SecretExchangeError
+            | self.WritingOutputError,
         ):
             await self.storage.delete_object(
                 bucket_id=exc_v.bucket_id,

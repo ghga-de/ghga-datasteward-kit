@@ -19,8 +19,8 @@ import sys
 from pathlib import Path
 
 import pytest
-from ghga_service_commons.utils.temp_files import big_temp_file  # type: ignore
-from hexkit.providers.s3.testutils import (  # type: ignore
+from ghga_service_commons.utils.temp_files import big_temp_file
+from hexkit.providers.s3.testutils import (
     config_from_localstack_container,
 )
 from pydantic import SecretStr

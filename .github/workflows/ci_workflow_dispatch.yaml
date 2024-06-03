@@ -11,6 +11,7 @@ on:
 
 jobs:
   fetch-tag:
+    name: Fetch Tag
     runs-on: ubuntu-latest
     if:  github.event_name == 'workflow_dispatch' || ( github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'build') ) || ( github.event.action == 'labeled' && github.event.label.name == 'build' )
     steps:
@@ -20,6 +21,7 @@ jobs:
       latest_tag: ${{ steps.fetch-tag.outputs.latest_tag }}
 
   push_to_docker_hub:
+    name: Push to Docker Hub
     needs: fetch-tag
     runs-on: ubuntu-latest
     steps:

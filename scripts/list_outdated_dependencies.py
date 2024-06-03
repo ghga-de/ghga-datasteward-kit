@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -139,12 +139,14 @@ def print_table(
     header_lengths = [len(header) for header in headers]
 
     # Find the maximum length of each column
-    col_widths = [max(len(str(cell)) for cell in col) for col in zip(*rows)]
+    col_widths = [
+        max(len(str(cell)) for cell in col) for col in zip(*rows, strict=True)
+    ]
 
     # Create a row format based on the maximum column widths
     row_format = delimiter.join(
         f"{{:<{max(width, header_len)}}}"
-        for width, header_len in zip(col_widths, header_lengths)
+        for width, header_len in zip(col_widths, header_lengths, strict=True)
     )
 
     print("  " + row_format.format(*headers))
