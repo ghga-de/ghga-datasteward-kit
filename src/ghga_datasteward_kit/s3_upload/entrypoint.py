@@ -19,7 +19,6 @@
 import asyncio
 import base64
 import logging
-import urllib.parse
 from pathlib import Path
 
 import typer
@@ -37,6 +36,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
     check_output_path,
     handle_superficial_error,
     httpx_client,
+    safe_urljoin,
 )
 from ghga_datasteward_kit.utils import STEWARD_TOKEN, load_config_yaml
 
@@ -105,9 +105,8 @@ async def exchange_secret_for_id(
     If storing the secret fails, the uploaded file is deleted from object storage and
     a ValueError is raised containing the file alias and response status code.
     """
-    endpoint_url = urllib.parse.urljoin(
-        base=config.secret_ingest_baseurl, url="/federated/ingest_secret"
-    )
+    endpoint = "/federated/ingest_secret"
+    endpoint_url = safe_urljoin(config.secret_ingest_baseurl, endpoint)
     file_secret = base64.b64encode(secret).decode("utf-8")
     payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
     encrypted_secret = models.EncryptedPayload(payload=payload)

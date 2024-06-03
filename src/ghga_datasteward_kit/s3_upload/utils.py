@@ -21,6 +21,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from io import BufferedReader
 from pathlib import Path
+from urllib.parse import urljoin
 
 import httpx
 from hexkit.providers.s3 import S3Config, S3ObjectStorage
@@ -261,3 +262,11 @@ class StorageCleaner:
         # simply reraise unhandled exceptions with unknown upload status
         if exc_v is not None:
             raise exc_v
+
+
+def safe_urljoin(base: str, *paths) -> str:
+    """Join URL parts safely, removing any trailing or leading slashes."""
+    url = base
+    for path in paths:
+        url = urljoin(url.rstrip("/") + "/", path.lstrip("/"))
+    return url

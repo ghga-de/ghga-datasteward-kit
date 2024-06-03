@@ -15,8 +15,6 @@
 
 """File ingest tests."""
 
-import urllib.parse
-
 import pytest
 import yaml
 from ghga_service_commons.utils.simple_token import generate_token
@@ -26,6 +24,7 @@ from pytest_httpx import HTTPXMock
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.cli.file import ingest_upload_metadata
 from ghga_datasteward_kit.file_ingest import alias_to_accession, file_ingest
+from ghga_datasteward_kit.s3_upload.utils import safe_urljoin
 from tests.fixtures.ingest import (  # noqa: F401
     EXAMPLE_SUBMISSION,
     IngestFixture,
@@ -75,9 +74,9 @@ async def test_legacy_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = urllib.parse.urljoin(
-        base=legacy_ingest_fixture.config.file_ingest_baseurl,
-        url=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
+    endpoint_url = safe_urljoin(
+        legacy_ingest_fixture.config.file_ingest_baseurl,
+        legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
     )
     token = generate_token()
 
@@ -122,9 +121,9 @@ async def test_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = urllib.parse.urljoin(
-        base=ingest_fixture.config.file_ingest_baseurl,
-        url=ingest_fixture.config.file_ingest_federated_endpoint,
+    endpoint_url = safe_urljoin(
+        ingest_fixture.config.file_ingest_baseurl,
+        ingest_fixture.config.file_ingest_federated_endpoint,
     )
     token = generate_token()
 
@@ -168,9 +167,9 @@ async def test_legacy_main(
     httpx_mock: HTTPXMock,
 ):
     """Test if main file ingest function works correctly"""
-    endpoint_url = urllib.parse.urljoin(
-        base=legacy_ingest_fixture.config.file_ingest_baseurl,
-        url=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
+    endpoint_url = safe_urljoin(
+        legacy_ingest_fixture.config.file_ingest_baseurl,
+        legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
     )
     config_path = legacy_ingest_fixture.config.input_dir / "config.yaml"
 

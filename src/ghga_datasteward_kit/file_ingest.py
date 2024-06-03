@@ -14,9 +14,8 @@
 # limitations under the License.
 """Interaction with file ingest service"""
 
-import urllib.parse
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import httpx
 from metldata.submission_registry.submission_store import (
@@ -26,6 +25,7 @@ from metldata.submission_registry.submission_store import (
 from pydantic import Field, ValidationError
 
 from ghga_datasteward_kit import models, utils
+from ghga_datasteward_kit.s3_upload.utils import safe_urljoin
 
 
 class IngestConfig(SubmissionStoreConfig):
@@ -135,7 +135,7 @@ def file_ingest(
         output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
         endpoint = config.file_ingest_legacy_endpoint
 
-    endpoint_url = urllib.parse.urljoin(base=config.file_ingest_baseurl, url=endpoint)
+    endpoint_url = safe_urljoin(config.file_ingest_baseurl, endpoint)
 
     submission_store = SubmissionStore(config=config)
 
