@@ -97,4 +97,4 @@ class ChunkedDownloader:
             raise self.storage_cleaner.ChecksumValidationError(
                 bucket_id=self.config.bucket_id, object_id=self.file_id, message=message
             )
-        LOGGER.info("(6/7) Succesfully validated checksums for %s.", self.file_id)
+        LOGGER.info("(6/7) Successfully validated checksums for %s.", self.file_id)
