@@ -22,8 +22,7 @@ import httpx
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from ghga_datasteward_kit.s3_upload.utils import join_url_parts
-from ghga_datasteward_kit.utils import DELETION_TOKEN, load_config_yaml
+from ghga_datasteward_kit.utils import DELETION_TOKEN, load_config_yaml, path_join
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ def main(*, file_id: str, config_path: Path):
     """Call PCS to delete all data in the file services for the given file ID."""
     config = load_config_yaml(path=config_path, config_cls=FileDeletionConfig)
 
-    url = join_url_parts(
+    url = path_join(
         config.file_deletion_baseurl, config.file_deletion_endpoint, file_id
     )
 

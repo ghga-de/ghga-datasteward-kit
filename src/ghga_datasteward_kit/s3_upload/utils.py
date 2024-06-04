@@ -21,7 +21,6 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from io import BufferedReader
 from pathlib import Path
-from urllib.parse import urljoin
 
 import httpx
 from hexkit.providers.s3 import S3Config, S3ObjectStorage
@@ -262,13 +261,3 @@ class StorageCleaner:
         # simply reraise unhandled exceptions with unknown upload status
         if exc_v is not None:
             raise exc_v
-
-
-def join_url_parts(base: str, *paths) -> str:
-    """Concatenate multiple URL parts to the base URL."""
-    url = base
-    for path in paths:
-        if not url.endswith("/"):
-            url += "/"
-        url = urljoin(url, path.lstrip("/"))
-    return url

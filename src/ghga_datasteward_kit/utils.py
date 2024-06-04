@@ -17,7 +17,8 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, TypeVar
+from urllib.parse import urljoin
 
 import yaml
 from ghga_service_commons.utils.simple_token import generate_token_and_hash
@@ -75,3 +76,23 @@ DELETION_TOKEN = AuthorizationToken(
 STEWARD_TOKEN = AuthorizationToken(
     token_path=TOKEN_PATH, token_hash_path=TOKEN_HASH_PATH
 )
+
+
+def path_join(base: Any, *paths) -> str | Path:
+    """Concatenate multiple URL parts to the base URL."""
+    is_base_path = isinstance(base, Path)
+    if is_base_path:
+        base = str(base)
+    url = base
+
+    for path in paths:
+        if isinstance(path, Path):
+            path = str(path)
+        if not url.endswith("/"):
+            url += "/"
+        url = urljoin(url, path.lstrip("/"))
+
+    if is_base_path:
+        return Path(url)
+
+    return url

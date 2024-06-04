@@ -15,60 +15,64 @@
 
 """Test for utils package"""
 
+from pathlib import Path
+
 import pytest
 
-from ghga_datasteward_kit.s3_upload.utils import join_url_parts
+from ghga_datasteward_kit.utils import path_join
 
 
 @pytest.mark.parametrize(
     "base, paths, expected",
     [
         # Base URL without trailing slash
-        ("http://fis:8080", ["/some"], "http://fis:8080/some"),
-        ("http://fis:8080", ["some"], "http://fis:8080/some"),
-        ("http://fis:8080", ["some", "extra"], "http://fis:8080/some/extra"),
-        ("http://fis:8080", ["some", "/extra"], "http://fis:8080/some/extra"),
+        ("http://fis:8080", ["/a"], "http://fis:8080/a"),
+        ("http://fis:8080", ["a"], "http://fis:8080/a"),
+        ("http://fis:8080", ["a", "b"], "http://fis:8080/a/b"),
+        ("http://fis:8080", ["a", "/b"], "http://fis:8080/a/b"),
         (
             "http://fis:8080",
-            ["/some", "more", "extra"],
-            "http://fis:8080/some/more/extra",
+            ["/a", "b", "c"],
+            "http://fis:8080/a/b/c",
         ),
         # Base URL with trailing slash
-        ("http://fis:8080/", ["some"], "http://fis:8080/some"),
-        ("http://fis:8080/", ["some", "more"], "http://fis:8080/some/more"),
+        ("http://fis:8080/", ["a"], "http://fis:8080/a"),
+        ("http://fis:8080/", ["a", "b"], "http://fis:8080/a/b"),
         (
             "http://fis:8080/",
-            ["/some", "more", "/extra"],
-            "http://fis:8080/some/more/extra",
+            ["/a", "b", "/c"],
+            "http://fis:8080/a/b/c",
         ),
         # Base URL with nested paths without trailing slash
-        ("https://testing/api/fis", ["/some"], "https://testing/api/fis/some"),
-        ("https://testing/api/fis", ["some"], "https://testing/api/fis/some"),
+        ("https://test/api/fis", ["/a"], "https://test/api/fis/a"),
+        ("https://test/api/fis", ["a"], "https://test/api/fis/a"),
         (
-            "https://testing/api/fis",
-            ["some", "more"],
-            "https://testing/api/fis/some/more",
+            "https://test/api/fis",
+            ["a", "b"],
+            "https://test/api/fis/a/b",
         ),
         (
-            "https://testing/api/fis",
-            ["/some", "more"],
-            "https://testing/api/fis/some/more",
+            "https://test/api/fis",
+            ["/a", "b"],
+            "https://test/api/fis/a/b",
         ),
         # Base URL with nested paths with trailing slash
-        ("https://testing/api/fis/", ["some"], "https://testing/api/fis/some"),
-        (
-            "https://testing/api/fis/",
-            ["some", "more"],
-            "https://testing/api/fis/some/more",
-        ),
-        (
-            "https://testing/api/fis/",
-            ["/some", "more", "extra"],
-            "https://testing/api/fis/some/more/extra",
-        ),
+        ("https://test/api/fis/", ["a"], "https://test/api/fis/a"),
+        ("https://test/api/fis/", ["a", "b"], "https://test/api/fis/a/b"),
+        ("https://test/api/fis/", ["/a", "b", "c"], "https://test/api/fis/a/b/c"),
+        # Base URL as POSIX paths with combined parts
+        (Path("/folder"), ["/a", "b", "c"], Path("/folder/a/b/c")),
+        (Path("folder"), [Path("/a/b")], Path("folder/a/b")),
+        (Path("/folder/a"), ["/b", "c"], Path("/folder/a/b/c")),
+        (Path("/folder/a"), [Path("/b"), "c"], Path("/folder/a/b/c")),
+        (Path("/folder/a"), [Path("/b"), Path("c")], Path("/folder/a/b/c")),
+        (Path("folder/a"), [Path("/b/c")], Path("folder/a/b/c")),
+        (Path("folder/a/b/"), ["c"], Path("folder/a/b/c")),
+        (Path("folder/a/b/"), [Path("/c")], Path("folder/a/b/c")),
+        (Path("folder/a/b/"), [Path("c")], Path("folder/a/b/c")),
     ],
 )
-def test_join_url_parts(base, paths, expected):
-    """Test join_url_parts function"""
-    result = join_url_parts(base, *paths)
+def test_path_join(base, paths, expected):
+    """Test path_join function"""
+    result = path_join(base, *paths)
     assert result == expected
