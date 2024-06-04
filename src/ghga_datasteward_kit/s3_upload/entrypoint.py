@@ -36,7 +36,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
     check_output_path,
     handle_superficial_error,
     httpx_client,
-    safe_urljoin,
+    join_url_parts,
 )
 from ghga_datasteward_kit.utils import STEWARD_TOKEN, load_config_yaml
 
@@ -106,7 +106,7 @@ async def exchange_secret_for_id(
     a ValueError is raised containing the file alias and response status code.
     """
     endpoint = "/federated/ingest_secret"
-    endpoint_url = safe_urljoin(config.secret_ingest_baseurl, endpoint)
+    endpoint_url = join_url_parts(config.secret_ingest_baseurl, endpoint)
     file_secret = base64.b64encode(secret).decode("utf-8")
     payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
     encrypted_secret = models.EncryptedPayload(payload=payload)

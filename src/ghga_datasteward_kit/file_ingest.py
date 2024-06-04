@@ -25,7 +25,7 @@ from metldata.submission_registry.submission_store import (
 from pydantic import Field, ValidationError
 
 from ghga_datasteward_kit import models, utils
-from ghga_datasteward_kit.s3_upload.utils import safe_urljoin
+from ghga_datasteward_kit.s3_upload.utils import join_url_parts
 
 
 class IngestConfig(SubmissionStoreConfig):
@@ -135,7 +135,7 @@ def file_ingest(
         output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
         endpoint = config.file_ingest_legacy_endpoint
 
-    endpoint_url = safe_urljoin(config.file_ingest_baseurl, endpoint)
+    endpoint_url = join_url_parts(config.file_ingest_baseurl, endpoint)
 
     submission_store = SubmissionStore(config=config)
 

@@ -15,38 +15,60 @@
 
 """Test for utils package"""
 
-from ghga_datasteward_kit.s3_upload.utils import safe_urljoin
+import pytest
+
+from ghga_datasteward_kit.s3_upload.utils import join_url_parts
 
 
-def test_safe_urljoin():
-    """Test custom safe_urljoin function."""
-    test_cases = {
-        "http://fis:8080": [
-            (["/some"], "http://fis:8080/some"),
-            (["some"], "http://fis:8080/some"),
-            (["some", "extra"], "http://fis:8080/some/extra"),
-            (["some", "/extra"], "http://fis:8080/some/extra"),
-            (["/some", "more", "extra"], "http://fis:8080/some/more/extra"),
-        ],
-        "http://fis:8080/": [
-            (["/some"], "http://fis:8080/some"),
-            (["some", "more"], "http://fis:8080/some/more"),
-            (["/some", "more", "/extra"], "http://fis:8080/some/more/extra"),
-        ],
-        "https://testing/api/fis": [
-            (["/some"], "https://testing/api/fis/some"),
-            (["some"], "https://testing/api/fis/some"),
-            (["some", "more"], "https://testing/api/fis/some/more"),
-            (["/some", "more"], "https://testing/api/fis/some/more"),
-        ],
-        "https://testing/api/fis/": [
-            (["/some"], "https://testing/api/fis/some"),
-            (["some", "more"], "https://testing/api/fis/some/more"),
-            (["/some", "/more", "extra"], "https://testing/api/fis/some/more/extra"),
-        ],
-    }
-
-    for base, paths_with_expected in test_cases.items():
-        for paths, expected in paths_with_expected:
-            result = safe_urljoin(base, *paths)
-            assert result == expected
+@pytest.mark.parametrize(
+    "base, paths, expected",
+    [
+        # Base URL without trailing slash
+        ("http://fis:8080", ["/some"], "http://fis:8080/some"),
+        ("http://fis:8080", ["some"], "http://fis:8080/some"),
+        ("http://fis:8080", ["some", "extra"], "http://fis:8080/some/extra"),
+        ("http://fis:8080", ["some", "/extra"], "http://fis:8080/some/extra"),
+        (
+            "http://fis:8080",
+            ["/some", "more", "extra"],
+            "http://fis:8080/some/more/extra",
+        ),
+        # Base URL with trailing slash
+        ("http://fis:8080/", ["some"], "http://fis:8080/some"),
+        ("http://fis:8080/", ["some", "more"], "http://fis:8080/some/more"),
+        (
+            "http://fis:8080/",
+            ["/some", "more", "/extra"],
+            "http://fis:8080/some/more/extra",
+        ),
+        # Base URL with nested paths without trailing slash
+        ("https://testing/api/fis", ["/some"], "https://testing/api/fis/some"),
+        ("https://testing/api/fis", ["some"], "https://testing/api/fis/some"),
+        (
+            "https://testing/api/fis",
+            ["some", "more"],
+            "https://testing/api/fis/some/more",
+        ),
+        (
+            "https://testing/api/fis",
+            ["/some", "more"],
+            "https://testing/api/fis/some/more",
+        ),
+        # Base URL with nested paths with trailing slash
+        ("https://testing/api/fis/", ["some"], "https://testing/api/fis/some"),
+        (
+            "https://testing/api/fis/",
+            ["some", "more"],
+            "https://testing/api/fis/some/more",
+        ),
+        (
+            "https://testing/api/fis/",
+            ["/some", "more", "extra"],
+            "https://testing/api/fis/some/more/extra",
+        ),
+    ],
+)
+def test_join_url_parts(base, paths, expected):
+    """Test join_url_parts function"""
+    result = join_url_parts(base, *paths)
+    assert result == expected

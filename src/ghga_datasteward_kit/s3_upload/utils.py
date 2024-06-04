@@ -264,8 +264,8 @@ class StorageCleaner:
             raise exc_v
 
 
-def safe_urljoin(base: str, *paths) -> str:
-    """Join URL parts safely, removing any trailing or leading slashes."""
+def join_url_parts(base: str, *paths) -> str:
+    """Concatenate multiple URL parts to the base URL."""
     url = base
     for path in paths:
         if not url.endswith("/"):

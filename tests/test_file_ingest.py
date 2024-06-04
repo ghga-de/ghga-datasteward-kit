@@ -24,7 +24,7 @@ from pytest_httpx import HTTPXMock
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.cli.file import ingest_upload_metadata
 from ghga_datasteward_kit.file_ingest import alias_to_accession, file_ingest
-from ghga_datasteward_kit.s3_upload.utils import safe_urljoin
+from ghga_datasteward_kit.s3_upload.utils import join_url_parts
 from tests.fixtures.ingest import (  # noqa: F401
     EXAMPLE_SUBMISSION,
     IngestFixture,
@@ -74,7 +74,7 @@ async def test_legacy_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = safe_urljoin(
+    endpoint_url = join_url_parts(
         legacy_ingest_fixture.config.file_ingest_baseurl,
         legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
     )
@@ -121,7 +121,7 @@ async def test_ingest_directly(
     httpx_mock: HTTPXMock,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = safe_urljoin(
+    endpoint_url = join_url_parts(
         ingest_fixture.config.file_ingest_baseurl,
         ingest_fixture.config.file_ingest_federated_endpoint,
     )
@@ -167,7 +167,7 @@ async def test_legacy_main(
     httpx_mock: HTTPXMock,
 ):
     """Test if main file ingest function works correctly"""
-    endpoint_url = safe_urljoin(
+    endpoint_url = join_url_parts(
         legacy_ingest_fixture.config.file_ingest_baseurl,
         legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
     )
