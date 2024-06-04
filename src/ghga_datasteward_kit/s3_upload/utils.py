@@ -268,5 +268,7 @@ def safe_urljoin(base: str, *paths) -> str:
     """Join URL parts safely, removing any trailing or leading slashes."""
     url = base
     for path in paths:
-        url = urljoin(url.rstrip("/") + "/", path.lstrip("/"))
+        if not url.endswith("/"):
+            url += "/"
+        url = urljoin(url, path.lstrip("/"))
     return url
