@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
 """Utility functions"""
 
 from dataclasses import dataclass
+from functools import reduce
 from pathlib import Path
 from typing import TypeVar
 
@@ -75,3 +76,14 @@ DELETION_TOKEN = AuthorizationToken(
 STEWARD_TOKEN = AuthorizationToken(
     token_path=TOKEN_PATH, token_hash_path=TOKEN_HASH_PATH
 )
+
+
+def path_join(base: str, *paths: str) -> str:
+    """Join paths, fixing duplicate or missing slashes between parts.
+
+    The paths can be arbitrary URL paths or POSIX file paths,
+    they are not checked for validity and concatenated as they are.
+    """
+    return reduce(
+        lambda base, path: f"{base.rstrip('/')}/{path.lstrip('/')}", paths, base
+    )

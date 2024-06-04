@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,6 @@
 import asyncio
 import base64
 import logging
-import urllib.parse
 from pathlib import Path
 
 import typer
@@ -38,7 +37,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
     handle_superficial_error,
     httpx_client,
 )
-from ghga_datasteward_kit.utils import STEWARD_TOKEN, load_config_yaml
+from ghga_datasteward_kit.utils import STEWARD_TOKEN, load_config_yaml, path_join
 
 
 async def validate_and_transfer_content(
@@ -105,9 +104,8 @@ async def exchange_secret_for_id(
     If storing the secret fails, the uploaded file is deleted from object storage and
     a ValueError is raised containing the file alias and response status code.
     """
-    endpoint_url = urllib.parse.urljoin(
-        base=config.secret_ingest_baseurl, url="/federated/ingest_secret"
-    )
+    endpoint = "/federated/ingest_secret"
+    endpoint_url = path_join(config.secret_ingest_baseurl, endpoint)
     file_secret = base64.b64encode(secret).decode("utf-8")
     payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
     encrypted_secret = models.EncryptedPayload(payload=payload)

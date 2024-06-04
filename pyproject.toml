@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=67.7.2",
+    "setuptools>=69",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -9,26 +9,25 @@ readme = "README.md"
 authors = [
     { name = "German Human Genome Phenome Archive (GHGA)", email = "contact@ghga.de" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 1 - Planning",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: Apache Software License",
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
     "Topic :: Software Development :: Libraries",
     "Intended Audience :: Developers",
 ]
 name = "ghga_datasteward_kit"
-version = "2.0.0"
+version = "2.1.0"
 description = "GHGA Data Steward Kit - A utils package for GHGA data stewards."
 dependencies = [
     "crypt4gh >=1.6, <2",
-    "hexkit[s3] >=2.1.1, <3",
-    "ghga-transpiler >=2, <3",
-    "metldata~=1.2.1",
+    "hexkit[s3] >=3, <4",
+    "ghga-transpiler >=2.1, <3",
+    "metldata~=1.3.0",
 ]
 
 [project.license]
@@ -60,7 +59,7 @@ src = [
     "examples",
     "scripts",
 ]
-target-version = "py39"
+target-version = "py312"
 
 [tool.ruff.lint]
 fixable = [
@@ -69,8 +68,9 @@ fixable = [
     "D",
 ]
 ignore = [
-    "E",
-    "W",
+    "E111",
+    "E114",
+    "E116",
     "PLW",
     "RUF001",
     "RUF010",
@@ -84,6 +84,7 @@ ignore = [
     "D107",
     "D206",
     "D300",
+    "UP040",
 ]
 select = [
     "C90",
@@ -143,7 +144,7 @@ check_untyped_defs = true
 no_site_packages = false
 
 [tool.pytest.ini_options]
-minversion = "7.1"
+minversion = "8.0"
 asyncio_mode = "strict"
 
 [tool.coverage.paths]

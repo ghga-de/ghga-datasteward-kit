@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +19,8 @@ import sys
 from pathlib import Path
 
 import pytest
-from ghga_service_commons.utils.temp_files import big_temp_file  # type: ignore
-from hexkit.providers.s3.testutils import (  # type: ignore
+from ghga_service_commons.utils.temp_files import big_temp_file
+from hexkit.providers.s3.testutils import (
     config_from_localstack_container,
 )
 from pydantic import SecretStr

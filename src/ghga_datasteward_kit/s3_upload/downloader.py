@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -97,4 +97,4 @@ class ChunkedDownloader:
             raise self.storage_cleaner.ChecksumValidationError(
                 bucket_id=self.config.bucket_id, object_id=self.file_id, message=message
             )
-        LOGGER.info("(6/7) Succesfully validated checksums for %s.", self.file_id)
+        LOGGER.info("(6/7) Successfully validated checksums for %s.", self.file_id)

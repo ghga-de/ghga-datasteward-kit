@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,12 @@
 #
 """Contains utils for working with dependencies, lock files, etc."""
 
+import tomllib
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import stringcase
-import tomli
 
 
 def exclude_from_dependency_list(*, package_name: str, dependencies: list) -> list:
@@ -69,7 +69,7 @@ def remove_self_dependencies(pyproject: dict) -> dict:
 def get_modified_pyproject(pyproject_toml_path: Path) -> dict[str, Any]:
     """Get a copy of pyproject.toml with any self-referencing dependencies removed."""
     with open(pyproject_toml_path, "rb") as pyproject_toml:
-        pyproject = tomli.load(pyproject_toml)
+        pyproject = tomllib.load(pyproject_toml)
 
     modified_pyproject = remove_self_dependencies(pyproject)
     return modified_pyproject

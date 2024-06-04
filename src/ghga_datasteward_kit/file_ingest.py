@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,8 @@
 # limitations under the License.
 """Interaction with file ingest service"""
 
-import urllib.parse
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import httpx
 from metldata.submission_registry.submission_store import (
@@ -135,7 +134,7 @@ def file_ingest(
         output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
         endpoint = config.file_ingest_legacy_endpoint
 
-    endpoint_url = urllib.parse.urljoin(base=config.file_ingest_baseurl, url=endpoint)
+    endpoint_url = utils.path_join(config.file_ingest_baseurl, endpoint)
 
     submission_store = SubmissionStore(config=config)
 

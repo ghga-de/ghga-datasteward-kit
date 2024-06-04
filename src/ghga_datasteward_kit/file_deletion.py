@@ -1,4 +1,4 @@
-# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@ import httpx
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from ghga_datasteward_kit.utils import DELETION_TOKEN, load_config_yaml
+from ghga_datasteward_kit.utils import DELETION_TOKEN, load_config_yaml, path_join
 
 log = logging.getLogger(__name__)
 
@@ -51,10 +51,9 @@ def main(*, file_id: str, config_path: Path):
     """Call PCS to delete all data in the file services for the given file ID."""
     config = load_config_yaml(path=config_path, config_cls=FileDeletionConfig)
 
-    # custom solution, as urllib.parse.urljoin has some problems with the middle part
-    base = config.file_deletion_baseurl.rstrip("/")
-    endpoint = config.file_deletion_endpoint.strip("/")
-    url = f"{base}/{endpoint}/{file_id}"
+    url = path_join(
+        config.file_deletion_baseurl, config.file_deletion_endpoint, file_id
+    )
 
     token = DELETION_TOKEN.read_token()
     headers = httpx.Headers({"Authorization": f"Bearer {token}"})

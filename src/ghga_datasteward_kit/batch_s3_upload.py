@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2021 - 2023 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,6 @@ import sys
 from copy import copy
 from pathlib import Path
 from time import sleep
-from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -94,7 +93,7 @@ def trigger_file_upload(
     config_path: Path,
     dry_run: bool,
     legacy_mode: bool,
-) -> Optional[subprocess.Popen]:
+) -> subprocess.Popen | None:
     """
     Checks whether the file was already uploaded, if not, the upload is triggered
     in a separate process and the corresponding subprocess.Popen object is returned.
@@ -122,7 +121,7 @@ def trigger_file_upload(
     )
 
 
-def handle_file_uploads(  # noqa: PLR0913, PLR0912
+def handle_file_uploads(  # noqa: PLR0913
     files: list[FileMetadata],
     output_dir: Path,
     config_path: Path,
@@ -204,9 +203,7 @@ def main(
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
     objectstorage.
     """
-    config_class: type[Union[LegacyConfig, Config]] = (
-        LegacyConfig if legacy_mode else Config
-    )
+    config_class: type[LegacyConfig | Config] = LegacyConfig if legacy_mode else Config
     config = load_config_yaml(path=config_path, config_cls=config_class)
     files = load_file_metadata(file_overview_tsv=file_overview_tsv)
 

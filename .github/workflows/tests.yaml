@@ -1,19 +1,24 @@
-name: Tests
+name: Run test suite and measure coverage
 
 on: push
 
 jobs:
   tests:
+    name: Run test suite
+
     runs-on: ubuntu-latest
-    name: Tests
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        id: checkout
+        uses: actions/checkout@v4
 
-      - id: common
-        uses: ghga-de/gh-action-common@v4
+      - name: Common steps
+        id: common
+        uses: ghga-de/gh-action-common@v6
 
-      - id: pytest
+      - name: Run tests
+        id: pytest
         run: |
           export ${{ steps.common.outputs.CONFIG_YAML_ENV_VAR_NAME }}="${{ steps.common.outputs.CONFIG_YAML }}"
 
@@ -22,8 +27,8 @@ jobs:
             --cov-report=xml \
             tests
 
-      - id: coveralls
-        name: Upload coverage to coveralls
+      - name: Upload coverage to coveralls
+        id: coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
