@@ -16,9 +16,9 @@
 """Utility functions"""
 
 from dataclasses import dataclass
+from functools import reduce
 from pathlib import Path
-from typing import Any, TypeVar
-from urllib.parse import urljoin
+from typing import TypeVar
 
 import yaml
 from ghga_service_commons.utils.simple_token import generate_token_and_hash
@@ -78,21 +78,12 @@ STEWARD_TOKEN = AuthorizationToken(
 )
 
 
-def path_join(base: Any, *paths) -> str | Path:
-    """Concatenate multiple URL parts to the base URL."""
-    is_base_path = isinstance(base, Path)
-    if is_base_path:
-        base = str(base)
-    url = base
+def path_join(base: str, *paths: str) -> str:
+    """Join paths, fixing duplicate or missing slashes between parts.
 
-    for path in paths:
-        if isinstance(path, Path):
-            path = str(path)
-        if not url.endswith("/"):
-            url += "/"
-        url = urljoin(url, path.lstrip("/"))
-
-    if is_base_path:
-        return Path(url)
-
-    return url
+    The paths can be arbitrary URL paths or POSIX file paths,
+    they are not checked for validity and concatenated as they are.
+    """
+    return reduce(
+        lambda base, path: f"{base.rstrip('/')}/{path.lstrip('/')}", paths, base
+    )

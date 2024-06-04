@@ -15,8 +15,6 @@
 
 """Test for utils package"""
 
-from pathlib import Path
-
 import pytest
 
 from ghga_datasteward_kit.utils import path_join
@@ -61,15 +59,14 @@ from ghga_datasteward_kit.utils import path_join
         ("https://test/api/fis/", ["a", "b"], "https://test/api/fis/a/b"),
         ("https://test/api/fis/", ["/a", "b", "c"], "https://test/api/fis/a/b/c"),
         # Base URL as POSIX paths with combined parts
-        (Path("/folder"), ["/a", "b", "c"], Path("/folder/a/b/c")),
-        (Path("folder"), [Path("/a/b")], Path("folder/a/b")),
-        (Path("/folder/a"), ["/b", "c"], Path("/folder/a/b/c")),
-        (Path("/folder/a"), [Path("/b"), "c"], Path("/folder/a/b/c")),
-        (Path("/folder/a"), [Path("/b"), Path("c")], Path("/folder/a/b/c")),
-        (Path("folder/a"), [Path("/b/c")], Path("folder/a/b/c")),
-        (Path("folder/a/b/"), ["c"], Path("folder/a/b/c")),
-        (Path("folder/a/b/"), [Path("/c")], Path("folder/a/b/c")),
-        (Path("folder/a/b/"), [Path("c")], Path("folder/a/b/c")),
+        ("folder/", ["a", "b", "c/"], "folder/a/b/c/"),
+        ("/folder", ["/a", "b", "c"], "/folder/a/b/c"),
+        ("folder", ["a", "b", "c", "d", "e"], "folder/a/b/c/d/e"),
+        ("folder", ["/a/b"], "folder/a/b"),
+        ("/folder/a", ["/b", "c"], "/folder/a/b/c"),
+        ("folder/a", ["/b/c"], "folder/a/b/c"),
+        ("folder/a/b/", ["c", "/d/"], "folder/a/b/c/d/"),
+        ("folder/a/b/", ["c", "/d/e/f", "g"], "folder/a/b/c/d/e/f/g"),
     ],
 )
 def test_path_join(base, paths, expected):
