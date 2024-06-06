@@ -442,9 +442,9 @@ ghga-service-commons==3.1.4 \
     --hash=sha256:63450bed2f0ca7431f064b640d35e15a29f93b7f4c67b5fd3b812afc8ced5151 \
     --hash=sha256:eb78042aeb17bb70e17f7c7185fbcf87a54968a410de99f968a7e944cd0f6f78
     # via metldata
-ghga-transpiler==2.1.0 \
-    --hash=sha256:2f41ad45a5262a6e7aab0f9d0abbb3ee4acb423c8b3a1d49c245c8639773df1b \
-    --hash=sha256:bd2b720e8a57dadce6fa6cea909f8e2e9e2493554734a37c8cdf69f2cea83840
+ghga-transpiler==2.1.1 \
+    --hash=sha256:1b9ee5ed59166bc0c5824c9b2c8cab0200515c070b0e9c99c72c6f3e28225e79 \
+    --hash=sha256:699155532390c452fd464053cb3a5b71513460a63c41ad881db84846395a8e52
     # via ghga-datasteward-kit (pyproject.toml)
 graphviz==0.20.3 \
     --hash=sha256:09d6bc81e6a9fa392e7ba52135a9d49f1ed62526f96499325930e87ca1b5925d \

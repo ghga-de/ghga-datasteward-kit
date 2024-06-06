@@ -14,7 +14,7 @@
 # limitations under the License.
 
 ## creating building container
-FROM python:3.10.9-slim-bullseye AS builder
+FROM python:3.12-slim-bookworm AS builder
 # update and install dependencies
 RUN apt update
 RUN apt upgrade -y
@@ -26,7 +26,7 @@ WORKDIR /service
 RUN python -m build
 
 # creating running container
-FROM python:3.10.9-slim-bullseye
+FROM python:3.12-slim-bookworm
 # update and install dependencies
 RUN apt update
 RUN apt upgrade -y

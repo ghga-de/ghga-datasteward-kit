@@ -419,9 +419,9 @@ ghga-service-commons==3.1.4 \
     # via
     #   -c lock/requirements-dev.txt
     #   metldata
-ghga-transpiler==2.1.0 \
-    --hash=sha256:2f41ad45a5262a6e7aab0f9d0abbb3ee4acb423c8b3a1d49c245c8639773df1b \
-    --hash=sha256:bd2b720e8a57dadce6fa6cea909f8e2e9e2493554734a37c8cdf69f2cea83840
+ghga-transpiler==2.1.1 \
+    --hash=sha256:1b9ee5ed59166bc0c5824c9b2c8cab0200515c070b0e9c99c72c6f3e28225e79 \
+    --hash=sha256:699155532390c452fd464053cb3a5b71513460a63c41ad881db84846395a8e52
     # via
     #   -c lock/requirements-dev.txt
     #   ghga-datasteward-kit (pyproject.toml)
