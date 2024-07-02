@@ -22,7 +22,7 @@ from time import time
 import crypt4gh.lib  # type: ignore
 
 from ghga_datasteward_kit import models
-from ghga_datasteward_kit.s3_upload.utils import LOGGER, get_segments
+from ghga_datasteward_kit.s3_upload.utils import LOG, get_segments
 
 
 class Decryptor:
@@ -75,7 +75,7 @@ class Decryptor:
 
             delta = time() - start
             avg_speed = (part_number * (self.part_size / 1024**2)) / delta
-            LOGGER.info(
+            LOG.info(
                 "(5/7) Downloading part %i/%i (%.2f MiB/s)",
                 part_number,
                 self.num_parts,

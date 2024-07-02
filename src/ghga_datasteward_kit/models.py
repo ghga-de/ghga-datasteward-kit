@@ -79,6 +79,7 @@ class FileUploadMetadataBase(BaseModel):
     unencrypted_checksum: str
     encrypted_md5_checksums: list[str]
     encrypted_sha256_checksums: list[str]
+    storage_alias: str
 
     def encrypt_metadata(self, pubkey: str) -> EncryptedPayload:
         """Create payload by encryption FileUploadMetadata"""
@@ -113,6 +114,7 @@ class OutputMetadataBase:
     encrypted_sha256_checksums: list[str]
     unencrypted_size: int
     encrypted_size: int
+    storage_alias: str
 
     @abstractmethod
     def to_upload_metadata(self, file_id: str) -> FileUploadMetadataBase:
@@ -142,6 +144,7 @@ class LegacyOutputMetadata(OutputMetadataBase):
         output["Encrypted file part checksums (SHA256)"] = (
             self.encrypted_sha256_checksums
         )
+        output["Storage alias"] = self.storage_alias
 
         if not output_path.parent.exists():
             output_path.mkdir(parents=True)
@@ -163,15 +166,23 @@ class LegacyOutputMetadata(OutputMetadataBase):
             unencrypted_checksum=self.unencrypted_checksum,
             encrypted_md5_checksums=self.encrypted_md5_checksums,
             encrypted_sha256_checksums=self.encrypted_sha256_checksums,
+            storage_alias=self.storage_alias,
         )
 
     @classmethod
-    def load(cls, input_path: Path):
+    def load(cls, input_path: Path, selected_alias: str):
         """Load metadata from serialized file"""
         with input_path.open("r") as infile:
             data = json.load(infile)
 
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
+
+        # Support for older file uploads without explicit storage alias
+        # Ingest the configured selected alias if none can be found in the metadata
+        try:
+            storage_alias = data["Storage alias"]
+        except KeyError:
+            storage_alias = selected_alias
 
         return LegacyOutputMetadata(
             alias=data["Alias"],
@@ -184,6 +195,7 @@ class LegacyOutputMetadata(OutputMetadataBase):
             encrypted_sha256_checksums=data["Encrypted file part checksums (SHA256)"],
             unencrypted_size=int(data["Unencrypted file size"]),
             encrypted_size=int(data["Encrypted file size"]),
+            storage_alias=storage_alias,
         )
 
 
@@ -208,6 +220,7 @@ class OutputMetadata(OutputMetadataBase):
         output["Encrypted file part checksums (SHA256)"] = (
             self.encrypted_sha256_checksums
         )
+        output["Storage alias"] = self.storage_alias
 
         if not output_path.parent.exists():
             output_path.mkdir(parents=True)
@@ -229,15 +242,23 @@ class OutputMetadata(OutputMetadataBase):
             unencrypted_checksum=self.unencrypted_checksum,
             encrypted_md5_checksums=self.encrypted_md5_checksums,
             encrypted_sha256_checksums=self.encrypted_sha256_checksums,
+            storage_alias=self.storage_alias,
         )
 
     @classmethod
-    def load(cls, input_path: Path):
+    def load(cls, input_path: Path, selected_alias: str):
         """Load metadata from serialized file"""
         with input_path.open("r") as infile:
             data = json.load(infile)
 
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
+
+        # Support for older file uploads without explicit storage alias
+        # Ingest the configured selected alias if none can be found in the metadata
+        try:
+            storage_alias = data["Storage alias"]
+        except KeyError:
+            storage_alias = selected_alias
 
         return OutputMetadata(
             alias=data["Alias"],
@@ -250,4 +271,5 @@ class OutputMetadata(OutputMetadataBase):
             encrypted_sha256_checksums=data["Encrypted file part checksums (SHA256)"],
             unencrypted_size=int(data["Unencrypted file size"]),
             encrypted_size=int(data["Encrypted file size"]),
+            storage_alias=storage_alias,
         )

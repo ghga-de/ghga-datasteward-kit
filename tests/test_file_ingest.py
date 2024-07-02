@@ -38,7 +38,8 @@ async def test_alias_to_accession(legacy_ingest_fixture: IngestFixture):  # noqa
     """Test alias->accession mapping"""
     submission_store = SubmissionStore(config=legacy_ingest_fixture.config)
     metadata = models.LegacyOutputMetadata.load(
-        input_path=legacy_ingest_fixture.file_path
+        input_path=legacy_ingest_fixture.file_path,
+        selected_alias=legacy_ingest_fixture.config.selected_storage_alias,
     )
 
     accession = alias_to_accession(

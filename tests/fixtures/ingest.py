@@ -82,6 +82,7 @@ def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
                 unencrypted_checksum="def",
                 encrypted_md5_checksums=["a", "b", "c"],
                 encrypted_sha256_checksums=["a", "b", "c"],
+                storage_alias="test",
             )
 
             metadata.serialize(file_path)
@@ -92,6 +93,7 @@ def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
                 input_dir=Path(input_dir),
                 map_files_fields=["study_files"],
                 submission_store_dir=Path(submission_store_dir),
+                selected_storage_alias="test",
             )
 
             submission_store = SubmissionStore(config=config)
@@ -127,6 +129,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
                 unencrypted_checksum="def",
                 encrypted_md5_checksums=["a", "b", "c"],
                 encrypted_sha256_checksums=["a", "b", "c"],
+                storage_alias="test",
             )
 
             metadata.serialize(file_path)
@@ -137,6 +140,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
                 input_dir=Path(input_dir),
                 map_files_fields=["study_files"],
                 submission_store_dir=Path(submission_store_dir),
+                selected_storage_alias="test",
             )
 
             submission_store = SubmissionStore(config=config)
