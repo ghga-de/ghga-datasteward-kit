@@ -47,7 +47,7 @@ BUCKET_ID = "test-bucket"
 @pytest.fixture
 def non_mocked_hosts() -> list[str]:
     """Overwrite default behaviour"""
-    return ["host.docker.internal"]
+    return ["localhost", "host.docker.internal"]
 
 
 @pytest.mark.asyncio
