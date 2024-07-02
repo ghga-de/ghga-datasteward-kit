@@ -154,14 +154,18 @@ def file_ingest(
         output_metadata.alias, config.map_files_fields, submission_store
     )
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
-    encrypted = upload_metadata.encrypt_metadata(pubkey=config.file_ingest_pubkey)
+
+    if isinstance(upload_metadata, models.LegacyFileUploadMetadata):
+        payload = upload_metadata.encrypt_metadata(pubkey=config.file_ingest_pubkey)
+    else:
+        payload = upload_metadata
 
     headers = {"Authorization": f"Bearer {token}"}
 
     with httpx.Client() as client:
         response = client.post(
             f"{endpoint_url}",
-            json=encrypted.model_dump(),
+            json=payload.model_dump(),
             headers=headers,
             timeout=60,
         )

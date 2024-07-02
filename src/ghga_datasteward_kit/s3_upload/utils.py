@@ -120,10 +120,17 @@ def retrieve_endpoint_urls(config: LegacyConfig, path: str = "storage_aliases"):
     """Get S3 endpoint URLS from WKVS"""
     url = path_join(config.wkvs_api_url, path)
     with httpx_client() as client:
-        response = client.get(url)
+        try:
+            response = client.get(url)
+        except httpx.RequestError:
+            LOG.error(f"Could not retrieve data from '{url}' due to connection issues.")
+            raise
 
-    if response.status_code != 200:
-        ...  # TODO
+    status_code = response.status_code
+    if status_code != 200:
+        raise ValueError(
+            f"Received unexpected response code '{status_code}' from '{url}'."
+        )
 
     return response.json()
 
