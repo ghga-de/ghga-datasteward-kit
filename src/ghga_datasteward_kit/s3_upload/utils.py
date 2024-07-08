@@ -29,26 +29,14 @@ from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.utils import path_join
 
 LOG = logging.getLogger("s3_upload")
+NUM_RETRIES = 5
 PART_SIZE = 16 * 1024**2
-
-
-class HttpxClientState:
-    """Helper class to make max_retries user configurable"""
-
-    max_retries: int = 3
-
-    @classmethod
-    def configure(cls, max_retries: int):
-        """Configure client with exponential backoff retry (using httpx's 0.5 default)"""
-        if max_retries < 0:
-            LOG.info("Number of retries has to be non-negative. Set to 0.")
-        cls.max_retries = max(0, max_retries)
 
 
 @contextmanager
 def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
-    transport = httpx.HTTPTransport(retries=HttpxClientState.max_retries)
+    transport = httpx.HTTPTransport(retries=NUM_RETRIES)
 
     with httpx.Client(transport=transport) as client:
         yield client

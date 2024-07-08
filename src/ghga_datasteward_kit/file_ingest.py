@@ -155,8 +155,8 @@ def file_ingest(
     )
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
 
-    if isinstance(upload_metadata, models.LegacyFileUploadMetadata):
-        payload = upload_metadata.encrypt_metadata(pubkey=config.file_ingest_pubkey)
+    if isinstance(upload_metadata, models.LegacyMetadata):
+        payload = upload_metadata.encrypt_metadata(public_key=config.file_ingest_pubkey)
     else:
         payload = upload_metadata
 

@@ -30,7 +30,6 @@ from ghga_datasteward_kit.s3_upload.downloader import ChunkedDownloader
 from ghga_datasteward_kit.s3_upload.uploader import ChunkedUploader
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
-    HttpxClientState,
     StorageCleaner,
     check_adjust_part_size,
     check_output_path,
@@ -63,9 +62,6 @@ async def validate_and_transfer_content(
 
     file_size = input_path.stat().st_size
     check_adjust_part_size(config=config, file_size=file_size)
-
-    # set retry policy
-    HttpxClientState.configure(5)
 
     uploader = ChunkedUploader(
         input_path=input_path,
@@ -160,7 +156,8 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
 
         metadata = models.OutputMetadata(
             alias=uploader.alias,
-            file_uuid=uploader.file_id,
+            file_id=uploader.file_id,
+            object_id=uploader.file_id,
             original_path=input_path,
             part_size=config.part_size,
             secret_id=secret_id,
@@ -203,12 +200,15 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
             encrypted_sha256_checksums,
         ) = uploader.encryptor.checksums.get()
 
+        file_secret = base64.b64encode(uploader.encryptor.file_secret).decode("utf-8")
+
         metadata = models.LegacyOutputMetadata(
             alias=uploader.alias,
-            file_uuid=uploader.file_id,
+            file_id=uploader.file_id,
+            object_id=uploader.file_id,
             original_path=input_path,
             part_size=config.part_size,
-            file_secret=uploader.encryptor.file_secret,
+            file_secret=file_secret,
             unencrypted_checksum=unencrypted_checksum,
             encrypted_md5_checksums=encrypted_md5_checksums,
             encrypted_sha256_checksums=encrypted_sha256_checksums,
