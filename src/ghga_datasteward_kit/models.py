@@ -17,7 +17,6 @@
 import hashlib
 import json
 import os
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -102,7 +101,6 @@ class Metadata(MetadataBase):
     secret_id: str
 
 
-@dataclass
 class OutputMetadata(Metadata):
     """Current output metadata model with (de)serialization logic"""
 
