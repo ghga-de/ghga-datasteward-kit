@@ -26,27 +26,17 @@ import httpx
 from hexkit.providers.s3 import S3Config, S3ObjectStorage
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
+from ghga_datasteward_kit.utils import path_join
 
-LOGGER = logging.getLogger("s3_upload")
+LOG = logging.getLogger("s3_upload")
+NUM_RETRIES = 5
 PART_SIZE = 16 * 1024**2
-
-
-class HttpxClientState:
-    """Helper class to make max_retries user configurable"""
-
-    max_retries: int
-
-    @classmethod
-    def configure(cls, max_retries: int):
-        """Configure client with exponential backoff retry (using httpx's 0.5 default)"""
-        # can't be negative - should we log this?
-        cls.max_retries = max(0, max_retries)
 
 
 @contextmanager
 def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
-    transport = httpx.HTTPTransport(retries=HttpxClientState.max_retries)
+    transport = httpx.HTTPTransport(retries=NUM_RETRIES)
 
     with httpx.Client(transport=transport) as client:
         yield client
@@ -76,16 +66,61 @@ def read_file_parts(
         yield file_part
 
 
+def get_bucket_id(config: LegacyConfig):
+    """Get configured bucket ID for the selected storage"""
+    storage_alias = config.selected_storage_alias
+
+    try:
+        storage_config = config.object_storages[storage_alias]
+    except KeyError as error:
+        raise ValueError(
+            f"No storage configured for the given alias {storage_alias}."
+        ) from error
+
+    return storage_config.bucket_id
+
+
 def get_object_storage(config: LegacyConfig):
     """Configure S3 and return S3 DAO"""
+    storage_alias = config.selected_storage_alias
+    storage_endpoint_map = retrieve_endpoint_urls(config)
+
+    # fetch correct config
+    try:
+        endpoint_url = storage_endpoint_map[storage_alias]
+        storage_config = config.object_storages[storage_alias]
+    except KeyError as error:
+        raise ValueError(
+            f"No storage configured for the given alias {storage_alias}."
+        ) from error
+
     s3_config = S3Config(
-        s3_endpoint_url=config.s3_endpoint_url.get_secret_value(),
-        s3_access_key_id=config.s3_access_key_id.get_secret_value(),
-        s3_secret_access_key=config.s3_secret_access_key.get_secret_value(),  # type: ignore
+        s3_endpoint_url=endpoint_url,
+        s3_access_key_id=storage_config.credentials.s3_access_key_id.get_secret_value(),
+        s3_secret_access_key=storage_config.credentials.s3_secret_access_key.get_secret_value(),  # type: ignore
         s3_session_token=None,
         aws_config_ini=None,
     )
     return S3ObjectStorage(config=s3_config)
+
+
+def retrieve_endpoint_urls(config: LegacyConfig, path: str = "storage_aliases"):
+    """Get S3 endpoint URLS from WKVS"""
+    url = path_join(config.wkvs_api_url, path)
+    with httpx_client() as client:
+        try:
+            response = client.get(url)
+        except httpx.RequestError:
+            LOG.error(f"Could not retrieve data from '{url}' due to connection issues.")
+            raise
+
+    status_code = response.status_code
+    if status_code != 200:
+        raise ValueError(
+            f"Received unexpected response code '{status_code}' from '{url}'."
+        )
+
+    return response.json()
 
 
 def get_segments(part: bytes, segment_size: int):
@@ -114,7 +149,7 @@ def get_ranges(file_size: int, part_size: int):
 
 def handle_superficial_error(msg: str):
     """Don't want user dealing with stacktrace on simple input/output issues, log instead"""
-    LOGGER.critical(msg)
+    LOG.critical(msg)
     sys.exit(-1)
 
 
@@ -150,7 +185,7 @@ def check_adjust_part_size(config: LegacyConfig, file_size: int):
             )
 
     if part_size != config.part_size * 1024**2:
-        LOGGER.info(
+        LOG.info(
             "Part size was adjusted from %iMiB to %iMiB.",
             config.part_size,
             part_size / 1024**2,

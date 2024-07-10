@@ -24,6 +24,25 @@ from ghga_service_commons.utils.crypt import encode_key, generate_key_pair
 from pydantic import SecretStr
 
 from ghga_datasteward_kit.s3_upload import Config, LegacyConfig
+from ghga_datasteward_kit.s3_upload.config import (
+    NoEndpointURLS3Config,
+    S3ObjectStorageNodeConfig,
+)
+
+
+def storage_config(
+    *,
+    bucket_id: str = "test_bucket",
+    s3_access_key_id: str = "test_access_key",
+    s3_secret_access_key: str = "test_secret_key",
+):
+    """Create base storage config for both fixtures"""
+    s3_config = NoEndpointURLS3Config(
+        s3_access_key_id=SecretStr(s3_access_key_id),
+        s3_secret_access_key=SecretStr(s3_secret_access_key),
+    )
+    node_config = S3ObjectStorageNodeConfig(bucket_id=bucket_id, credentials=s3_config)
+    return {"test": node_config}
 
 
 @pytest.fixture
@@ -31,11 +50,9 @@ def legacy_config_fixture() -> Generator[LegacyConfig, None, None]:
     """Generate a test Config file."""
     with TemporaryDirectory() as output_dir:
         yield LegacyConfig(
-            s3_endpoint_url=SecretStr("s3://test_url"),
-            s3_access_key_id=SecretStr("test_access_key"),
-            s3_secret_access_key=SecretStr("test_secret_key"),
-            bucket_id="test_bucket",
+            object_storages=storage_config(),
             output_dir=Path(output_dir),
+            selected_storage_alias="test",
         )
 
 
@@ -46,11 +63,9 @@ def config_fixture() -> Generator[Config, None, None]:
 
     with TemporaryDirectory() as output_dir:
         yield Config(
-            s3_endpoint_url=SecretStr("s3://test_url"),
-            s3_access_key_id=SecretStr("test_access_key"),
-            s3_secret_access_key=SecretStr("test_secret_key"),
-            bucket_id="test_bucket",
+            object_storages=storage_config(),
             output_dir=Path(output_dir),
             secret_ingest_pubkey=public_key,
             secret_ingest_baseurl="https://not-a-real-url",
+            selected_storage_alias="test",
         )

@@ -22,8 +22,9 @@ from ghga_datasteward_kit import models
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
 from ghga_datasteward_kit.s3_upload.utils import (
-    LOGGER,
+    LOG,
     StorageCleaner,
+    get_bucket_id,
     get_object_storage,
     get_ranges,
     httpx_client,
@@ -59,7 +60,7 @@ class ChunkedDownloader:
             start=1,
         ):
             headers = {"Range": f"bytes={start}-{stop}"}
-            LOGGER.debug("Downloading part number %i. %s", part_no, headers)
+            LOG.debug("Downloading part number %i. %s", part_no, headers)
             try:
                 with httpx_client() as client:
                     response = client.get(download_url, timeout=60, headers=headers)
@@ -69,14 +70,14 @@ class ChunkedDownloader:
                 KeyboardInterrupt,
             ) as exc:
                 raise self.storage_cleaner.PartDownloadError(
-                    bucket_id=self.config.bucket_id, object_id=self.file_id
+                    bucket_id=get_bucket_id(self.config), object_id=self.file_id
                 ) from exc
 
     async def download(self):
         """Download file in parts and validate checksums"""
-        LOGGER.info("(4/7) Downloading file %s for validation.", self.file_id)
+        LOG.info("(4/7) Downloading file %s for validation.", self.file_id)
         download_url = await self.storage.get_object_download_url(
-            bucket_id=self.config.bucket_id, object_id=self.file_id
+            bucket_id=get_bucket_id(self.config), object_id=self.file_id
         )
         num_parts = math.ceil(self.file_size / self.part_size)
         decryptor = Decryptor(
@@ -95,6 +96,8 @@ class ChunkedDownloader:
                 + "Uploaded file was deleted due to validation failure."
             )
             raise self.storage_cleaner.ChecksumValidationError(
-                bucket_id=self.config.bucket_id, object_id=self.file_id, message=message
+                bucket_id=get_bucket_id(self.config),
+                object_id=self.file_id,
+                message=message,
             )
-        LOGGER.info("(6/7) Successfully validated checksums for %s.", self.file_id)
+        LOG.info("(6/7) Successfully validated checksums for %s.", self.file_id)

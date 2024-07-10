@@ -24,9 +24,9 @@ from pydantic_settings import BaseSettings
 
 def expand_env_vars_in_path(path: Path) -> Path:
     """Expand environment variables in a Path."""
-    with subprocess.Popen(
+    with subprocess.Popen(  # noqa: S602
         f"realpath {path}",
-        shell=True,  # noqa: S602
+        shell=True,
         stdout=subprocess.PIPE,
     ) as process:
         if process.wait() != 0 or not process.stdout:
@@ -37,12 +37,9 @@ def expand_env_vars_in_path(path: Path) -> Path:
     return Path(output)
 
 
-class LegacyConfig(BaseSettings):
-    """Required options for legacy file uploads."""
+class NoEndpointURLS3Config(BaseSettings):
+    """Custom implementation of the corresponding hexkit class to initialize with empty URLs"""
 
-    s3_endpoint_url: SecretStr = Field(
-        default=..., description="URL of the local data hub's S3 server."
-    )
     s3_access_key_id: SecretStr = Field(
         default=...,
         description=(
@@ -57,6 +54,11 @@ class LegacyConfig(BaseSettings):
         default=...,
         description=("Secret access key corresponding to the `s3_access_key_id`."),
     )
+
+
+class S3ObjectStorageNodeConfig(BaseSettings):
+    """Custom implementation of the corresponding service commons class to initialize with empty URLs"""
+
     bucket_id: str = Field(
         default=...,
         description=(
@@ -64,6 +66,18 @@ class LegacyConfig(BaseSettings):
             "where the encrypted files are uploaded to."
         ),
     )
+    credentials: NoEndpointURLS3Config
+
+
+class S3ObjectStoragesConfig(BaseSettings):
+    """Custom implementation of the corresponding service commons class to initialize with empty URLs"""
+
+    object_storages: dict[str, S3ObjectStorageNodeConfig]
+
+
+class LegacyConfig(S3ObjectStoragesConfig):
+    """Required options for legacy file uploads."""
+
     part_size: int = Field(
         default=16, description="Upload part size in MiB. Has to be between 5 and 5120."
     )
@@ -76,6 +90,18 @@ class LegacyConfig(BaseSettings):
             + " used on the S3 system, and the ID of the secret (the secret itself is"
             + " automatically communicated to GHGA Central) used to encrypt the file."
         ),
+    )
+    selected_storage_alias: str = Field(
+        default=...,
+        description=(
+            "Alias of the selected storage node/location. Has to match the backend configuration"
+            + " and must also be present in the local storage configuration."
+            + " During the later ingest phase, the alias will be validated by the File Ingest Service."
+        ),
+    )
+    wkvs_api_url: str = Field(
+        default="https://data.ghga.de/.well-known",
+        description="URL to the root of the WKVS API. Should start with https://",
     )
 
     @field_validator("output_dir")

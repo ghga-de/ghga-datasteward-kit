@@ -23,20 +23,38 @@ from ghga_service_commons.utils.temp_files import big_temp_file
 from hexkit.providers.s3.testutils import (
     config_from_localstack_container,
 )
-from pydantic import SecretStr
+from pytest_httpx import HTTPXMock
 from testcontainers.localstack import LocalStackContainer  # type: ignore
 
 from ghga_datasteward_kit.s3_upload import Config, LegacyConfig
 from ghga_datasteward_kit.s3_upload.entrypoint import async_main, legacy_async_main
-from ghga_datasteward_kit.s3_upload.utils import StorageCleaner, get_object_storage
-from tests.fixtures.config import config_fixture, legacy_config_fixture  # noqa: F401
+from ghga_datasteward_kit.s3_upload.utils import (
+    StorageCleaner,
+    get_bucket_id,
+    get_object_storage,
+)
+from ghga_datasteward_kit.utils import path_join
+from tests.fixtures.config import (  # noqa: F401
+    config_fixture,
+    legacy_config_fixture,
+    storage_config,
+)
 
 ALIAS = "test_file"
 BUCKET_ID = "test-bucket"
 
 
+@pytest.fixture
+def non_mocked_hosts() -> list[str]:
+    """Overwrite default behaviour"""
+    return ["localhost", "host.docker.internal"]
+
+
 @pytest.mark.asyncio
-async def test_legacy_process(legacy_config_fixture: LegacyConfig):  # noqa: F811
+async def test_legacy_process(
+    legacy_config_fixture: LegacyConfig,  # noqa: F811
+    httpx_mock: HTTPXMock,
+):
     """Test whole upload/download process for s3_upload script"""
     with LocalStackContainer(image="localstack/localstack:0.14.2").with_services(
         "s3"
@@ -45,14 +63,20 @@ async def test_legacy_process(legacy_config_fixture: LegacyConfig):  # noqa: F81
 
         config = legacy_config_fixture.model_copy(
             update={
-                "s3_endpoint_url": SecretStr(s3_config.s3_endpoint_url),
-                "s3_access_key_id": SecretStr(s3_config.s3_access_key_id),
-                "s3_secret_access_key": s3_config.s3_secret_access_key,
-                "bucket_id": BUCKET_ID,
+                "object_storages": storage_config(
+                    s3_access_key_id=s3_config.s3_access_key_id,
+                    s3_secret_access_key=s3_config.s3_secret_access_key.get_secret_value(),
+                    bucket_id=BUCKET_ID,
+                ),
             }
         )
+        httpx_mock.add_response(
+            url=path_join(config.wkvs_api_url, "storage_aliases"),
+            json={"test": f"{s3_config.s3_endpoint_url}"},
+            status_code=200,
+        )
         storage = get_object_storage(config=config)
-        await storage.create_bucket(bucket_id=config.bucket_id)
+        await storage.create_bucket(bucket_id=get_bucket_id(config))
         sys.set_int_max_str_digits(50 * 1024**2)
         with big_temp_file(50 * 1024**2) as file:
             await legacy_async_main(
@@ -63,7 +87,7 @@ async def test_legacy_process(legacy_config_fixture: LegacyConfig):  # noqa: F81
 
 
 @pytest.mark.asyncio
-async def test_process(config_fixture: Config, monkeypatch):  # noqa: F811
+async def test_process(config_fixture: Config, monkeypatch, httpx_mock: HTTPXMock):  # noqa: F811
     """Test whole upload/download process for s3_upload script"""
 
     async def secret_exchange_dummy(
@@ -83,14 +107,20 @@ async def test_process(config_fixture: Config, monkeypatch):  # noqa: F811
 
         config = config_fixture.model_copy(
             update={
-                "s3_endpoint_url": SecretStr(s3_config.s3_endpoint_url),
-                "s3_access_key_id": SecretStr(s3_config.s3_access_key_id),
-                "s3_secret_access_key": s3_config.s3_secret_access_key,
-                "bucket_id": BUCKET_ID,
+                "object_storages": storage_config(
+                    s3_access_key_id=s3_config.s3_access_key_id,
+                    s3_secret_access_key=s3_config.s3_secret_access_key.get_secret_value(),
+                    bucket_id=BUCKET_ID,
+                ),
             }
         )
+        httpx_mock.add_response(
+            url=path_join(config.wkvs_api_url, "storage_aliases"),
+            json={"test": f"{s3_config.s3_endpoint_url}"},
+            status_code=200,
+        )
         storage = get_object_storage(config=config)
-        await storage.create_bucket(bucket_id=config.bucket_id)
+        await storage.create_bucket(bucket_id=get_bucket_id(config))
         sys.set_int_max_str_digits(50 * 1024**2)
 
         with big_temp_file(50 * 1024**2) as file:

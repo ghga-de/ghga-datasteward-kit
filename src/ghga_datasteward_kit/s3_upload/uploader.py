@@ -25,8 +25,9 @@ import crypt4gh.lib  # type: ignore
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
 from ghga_datasteward_kit.s3_upload.utils import (
-    LOGGER,
+    LOG,
     StorageCleaner,
+    get_bucket_id,
     get_object_storage,
     httpx_client,
 )
@@ -69,7 +70,7 @@ class ChunkedUploader:
                 part_size=self.config.part_size,
                 storage_cleaner=self._storage_cleaner,
             ) as upload:
-                LOGGER.info("(1/7) Initialized file upload for %s.", upload.file_id)
+                LOG.info("(1/7) Initialized file upload for %s.", upload.file_id)
                 for part_number, part in enumerate(
                     self.encryptor.process_file(file=file), start=1
                 ):
@@ -77,7 +78,7 @@ class ChunkedUploader:
 
                     delta = time() - start
                     avg_speed = part_number * (self.config.part_size / 1024**2) / delta
-                    LOGGER.info(
+                    LOG.info(
                         "(2/7) Processing upload for file part %i/%i (%.2f MiB/s)",
                         part_number,
                         num_parts,
@@ -89,7 +90,7 @@ class ChunkedUploader:
                         + f"Is: {self.encryptor.encrypted_file_size}\n"
                         + f"Should be: {encrypted_file_size}"
                     )
-                LOGGER.info("(3/7) Finished upload for %s.", upload.file_id)
+                LOG.info("(3/7) Finished upload for %s.", upload.file_id)
 
 
 class MultipartUpload:
@@ -114,7 +115,7 @@ class MultipartUpload:
     async def __aenter__(self):
         """Start multipart upload"""
         self.upload_id = await self.storage.init_multipart_upload(
-            bucket_id=self.config.bucket_id, object_id=self.file_id
+            bucket_id=get_bucket_id(self.config), object_id=self.file_id
         )
         return self
 
@@ -123,14 +124,14 @@ class MultipartUpload:
         try:
             await self.storage.complete_multipart_upload(
                 upload_id=self.upload_id,
-                bucket_id=self.config.bucket_id,
+                bucket_id=get_bucket_id(self.config),
                 object_id=self.file_id,
                 anticipated_part_quantity=math.ceil(self.file_size / self.part_size),
                 anticipated_part_size=self.part_size,
             )
         except (Exception, KeyboardInterrupt) as exc:
             raise self.storage_cleaner.MultipartUploadCompletionError(
-                bucket_id=self.config.bucket_id,
+                bucket_id=get_bucket_id(self.config),
                 object_id=self.file_id,
                 upload_id=self.upload_id,
             ) from exc
@@ -140,7 +141,7 @@ class MultipartUpload:
         try:
             upload_url = await self.storage.get_part_upload_url(
                 upload_id=self.upload_id,
-                bucket_id=self.config.bucket_id,
+                bucket_id=get_bucket_id(self.config),
                 object_id=self.file_id,
                 part_number=part_number,
             )
@@ -151,7 +152,7 @@ class MultipartUpload:
             KeyboardInterrupt,
         ) as exc:
             raise self.storage_cleaner.PartUploadError(
-                bucket_id=self.config.bucket_id,
+                bucket_id=get_bucket_id(self.config),
                 object_id=self.file_id,
                 upload_id=self.upload_id,
             ) from exc

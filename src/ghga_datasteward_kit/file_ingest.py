@@ -69,6 +69,14 @@ class IngestConfig(SubmissionStoreConfig):
         description="Names of the accession map fields for looking up the"
         + " alias->accession mapping.",
     )
+    selected_storage_alias: str = Field(
+        default=...,
+        description=(
+            "Alias of the selected storage node/location. Has to match the backend configuration"
+            + " and must also be present in the local storage configuration."
+            + " During the later ingest phase, the alias will be validated by the File Ingest Service."
+        ),
+    )
 
 
 def alias_to_accession(
@@ -128,10 +136,14 @@ def file_ingest(
     Then call the ingest endpoint
     """
     try:
-        output_metadata = models.OutputMetadata.load(input_path=in_path)
+        output_metadata = models.OutputMetadata.load(
+            input_path=in_path, selected_alias=config.selected_storage_alias
+        )
         endpoint = config.file_ingest_federated_endpoint
     except (KeyError, ValidationError):
-        output_metadata = models.LegacyOutputMetadata.load(input_path=in_path)
+        output_metadata = models.LegacyOutputMetadata.load(
+            input_path=in_path, selected_alias=config.selected_storage_alias
+        )
         endpoint = config.file_ingest_legacy_endpoint
 
     endpoint_url = utils.path_join(config.file_ingest_baseurl, endpoint)
@@ -142,14 +154,18 @@ def file_ingest(
         output_metadata.alias, config.map_files_fields, submission_store
     )
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
-    encrypted = upload_metadata.encrypt_metadata(pubkey=config.file_ingest_pubkey)
+
+    if isinstance(upload_metadata, models.LegacyMetadata):
+        payload = upload_metadata.encrypt_metadata(public_key=config.file_ingest_pubkey)
+    else:
+        payload = upload_metadata
 
     headers = {"Authorization": f"Bearer {token}"}
 
     with httpx.Client() as client:
         response = client.post(
             f"{endpoint_url}",
-            json=encrypted.model_dump(),
+            json=payload.model_dump(),
             headers=headers,
             timeout=60,
         )

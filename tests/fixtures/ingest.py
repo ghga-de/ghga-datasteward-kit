@@ -70,18 +70,21 @@ def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
             keypair = generate_key_pair()
 
             file_path = Path(input_dir) / "test.json"
+            file_id = "happy_little_object"
 
             metadata = LegacyOutputMetadata(
                 alias="test_alias",
-                file_uuid="happy_little_object",
+                file_id=file_id,
+                object_id=file_id,
                 original_path=file_path,
                 part_size=16 * 1024**2,
                 unencrypted_size=50 * 1024**2,
                 encrypted_size=50 * 1024**2 + 128,
-                file_secret=os.urandom(32),
+                file_secret=base64.b64encode(os.urandom(32)).decode("utf-8"),
                 unencrypted_checksum="def",
                 encrypted_md5_checksums=["a", "b", "c"],
                 encrypted_sha256_checksums=["a", "b", "c"],
+                storage_alias="test",
             )
 
             metadata.serialize(file_path)
@@ -92,6 +95,7 @@ def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
                 input_dir=Path(input_dir),
                 map_files_fields=["study_files"],
                 submission_store_dir=Path(submission_store_dir),
+                selected_storage_alias="test",
             )
 
             submission_store = SubmissionStore(config=config)
@@ -115,10 +119,12 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
             keypair = generate_key_pair()
 
             file_path = Path(input_dir) / "test.json"
+            file_id = "happy_little_object"
 
             metadata = OutputMetadata(
                 alias="test_alias",
-                file_uuid="happy_little_object",
+                file_id=file_id,
+                object_id=file_id,
                 original_path=file_path,
                 part_size=16 * 1024**2,
                 unencrypted_size=50 * 1024**2,
@@ -127,6 +133,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
                 unencrypted_checksum="def",
                 encrypted_md5_checksums=["a", "b", "c"],
                 encrypted_sha256_checksums=["a", "b", "c"],
+                storage_alias="test",
             )
 
             metadata.serialize(file_path)
@@ -137,6 +144,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
                 input_dir=Path(input_dir),
                 map_files_fields=["study_files"],
                 submission_store_dir=Path(submission_store_dir),
+                selected_storage_alias="test",
             )
 
             submission_store = SubmissionStore(config=config)

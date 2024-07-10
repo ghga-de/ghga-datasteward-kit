@@ -29,11 +29,11 @@ from ghga_datasteward_kit.s3_upload.config import Config, LegacyConfig
 from ghga_datasteward_kit.s3_upload.downloader import ChunkedDownloader
 from ghga_datasteward_kit.s3_upload.uploader import ChunkedUploader
 from ghga_datasteward_kit.s3_upload.utils import (
-    LOGGER,
-    HttpxClientState,
+    LOG,
     StorageCleaner,
     check_adjust_part_size,
     check_output_path,
+    get_bucket_id,
     handle_superficial_error,
     httpx_client,
 )
@@ -62,9 +62,6 @@ async def validate_and_transfer_content(
 
     file_size = input_path.stat().st_size
     check_adjust_part_size(config=config, file_size=file_size)
-
-    # set retry policy
-    HttpxClientState.configure(5)
 
     uploader = ChunkedUploader(
         input_path=input_path,
@@ -114,7 +111,7 @@ async def exchange_secret_for_id(
         headers = {"Authorization": f"Bearer {token}"}
         response = client.post(
             url=endpoint_url,
-            json=encrypted_secret.dict(),
+            json=encrypted_secret.model_dump(),
             headers=headers,
             timeout=60,
         )
@@ -125,7 +122,7 @@ async def exchange_secret_for_id(
                 + f" {response.status_code}."
             )
             raise storage_cleaner.SecretExchangeError(
-                bucket_id=config.bucket_id, object_id=file_id, message=message
+                bucket_id=get_bucket_id(config), object_id=file_id, message=message
             )
         return response.json()["secret_id"]
 
@@ -159,7 +156,8 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
 
         metadata = models.OutputMetadata(
             alias=uploader.alias,
-            file_uuid=uploader.file_id,
+            file_id=uploader.file_id,
+            object_id=uploader.file_id,
             original_path=input_path,
             part_size=config.part_size,
             secret_id=secret_id,
@@ -168,9 +166,10 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
             encrypted_sha256_checksums=encrypted_sha256_checksums,
             unencrypted_size=file_size,
             encrypted_size=uploader.encryptor.encrypted_file_size,
+            storage_alias=config.selected_storage_alias,
         )
         output_path = config.output_dir / f"{uploader.alias}.json"
-        LOGGER.info("(7/7) Writing metadata to %s.", output_path)
+        LOG.info("(7/7) Writing metadata to %s.", output_path)
         try:
             metadata.serialize(output_path)
         except (
@@ -178,7 +177,7 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
             KeyboardInterrupt,
         ) as exc:
             raise storage_cleaner.WritingOutputError(
-                bucket_id=config.bucket_id, object_id=uploader.file_id
+                bucket_id=get_bucket_id(config), object_id=uploader.file_id
             ) from exc
 
 
@@ -201,20 +200,24 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
             encrypted_sha256_checksums,
         ) = uploader.encryptor.checksums.get()
 
+        file_secret = base64.b64encode(uploader.encryptor.file_secret).decode("utf-8")
+
         metadata = models.LegacyOutputMetadata(
             alias=uploader.alias,
-            file_uuid=uploader.file_id,
+            file_id=uploader.file_id,
+            object_id=uploader.file_id,
             original_path=input_path,
             part_size=config.part_size,
-            file_secret=uploader.encryptor.file_secret,
+            file_secret=file_secret,
             unencrypted_checksum=unencrypted_checksum,
             encrypted_md5_checksums=encrypted_md5_checksums,
             encrypted_sha256_checksums=encrypted_sha256_checksums,
             unencrypted_size=file_size,
             encrypted_size=uploader.encryptor.encrypted_file_size,
+            storage_alias=config.selected_storage_alias,
         )
         output_path = config.output_dir / f"{uploader.alias}.json"
-        LOGGER.info("(7/7) Writing metadata to %s.", output_path)
+        LOG.info("(7/7) Writing metadata to %s.", output_path)
         try:
             metadata.serialize(output_path)
         except (
@@ -222,7 +225,7 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
             KeyboardInterrupt,
         ) as exc:
             raise storage_cleaner.WritingOutputError(
-                bucket_id=config.bucket_id, object_id=uploader.file_id
+                bucket_id=get_bucket_id(config), object_id=uploader.file_id
             ) from exc
 
 

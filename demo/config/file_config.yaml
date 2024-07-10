@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-s3_endpoint_url: http://localstack:4566
 s3_access_key_id: test
 s3_secret_access_key: test
 bucket_id: staging
