@@ -104,7 +104,7 @@ def get_object_storage(config: LegacyConfig):
     return S3ObjectStorage(config=s3_config)
 
 
-def retrieve_endpoint_urls(config: LegacyConfig, path: str = "storage_aliases"):
+def retrieve_endpoint_urls(config: LegacyConfig, path: str = "values/storage_aliases"):
     """Get S3 endpoint URLS from WKVS"""
     url = path_join(config.wkvs_api_url, path)
     with httpx_client() as client:

@@ -101,7 +101,7 @@ class LegacyConfig(S3ObjectStoragesConfig):
     )
     wkvs_api_url: str = Field(
         default="https://data.ghga.de/.well-known",
-        description="URL to the root of the WKVS API. Should start with https://",
+        description="URL to the root of the WKVS API. Should start with https://.",
     )
 
     @field_validator("output_dir")
