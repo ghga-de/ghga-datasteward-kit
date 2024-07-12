@@ -104,23 +104,26 @@ def get_object_storage(config: LegacyConfig):
     return S3ObjectStorage(config=s3_config)
 
 
-def retrieve_endpoint_urls(config: LegacyConfig, path: str = "values/storage_aliases"):
+def retrieve_endpoint_urls(config: LegacyConfig, value_name: str = "storage_aliases"):
     """Get S3 endpoint URLS from WKVS"""
-    url = path_join(config.wkvs_api_url, path)
+    url = path_join(config.wkvs_api_url, "values", value_name)
     with httpx_client() as client:
         try:
             response = client.get(url)
         except httpx.RequestError:
-            LOG.error(f"Could not retrieve data from '{url}' due to connection issues.")
+            LOG.error(f"Could not retrieve data from {url} due to connection issues.")
             raise
 
     status_code = response.status_code
     if status_code != 200:
+        raise ValueError(f"Received unexpected response code {status_code} from {url}.")
+    try:
+        value = response.json()[value_name]
+    except KeyError as err:
         raise ValueError(
-            f"Received unexpected response code '{status_code}' from '{url}'."
-        )
-
-    return response.json()
+            f"Response from {url} did not include expected field '{value_name}'"
+        ) from err
+    return value
 
 
 def get_segments(part: bytes, segment_size: int):
