@@ -104,14 +104,15 @@ def get_object_storage(config: LegacyConfig):
     return S3ObjectStorage(config=s3_config)
 
 
-def retrieve_endpoint_urls(config: LegacyConfig, path: str = "storage_aliases"):
+def retrieve_endpoint_urls(config: LegacyConfig):
     """Get S3 endpoint URLS from WKVS"""
-    url = path_join(config.wkvs_api_url, path)
+    url = path_join(config.wkvs_api_url, config.wkvs_storage_alias_path)
     with httpx_client() as client:
         try:
             response = client.get(url)
         except httpx.RequestError:
-            LOG.error(f"Could not retrieve data from '{url}' due to connection issues.")
+            LOG.error(f"Could not retrieve data from '{
+                      url}' due to connection issues.")
             raise
 
     status_code = response.status_code
@@ -198,7 +199,8 @@ def check_adjust_part_size(config: LegacyConfig, file_size: int):
 def check_output_path(output_path: Path):
     """Check if we accidentally try to overwrite an already existing metadata file"""
     if output_path.exists():
-        msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
+        msg = f"Output file {output_path.resolve(
+        )} already exists and cannot be overwritten."
         handle_superficial_error(msg=msg)
 
 
