@@ -103,10 +103,6 @@ class LegacyConfig(S3ObjectStoragesConfig):
         default="https://data.ghga.de/.well-known",
         description="URL to the root of the WKVS API. Should start with https://.",
     )
-    wkvs_storage_alias_path: str = Field(
-        default="values/storage_aliases",
-        description="Path to the WKVS endpoint provided storage alias mapping.",
-    )
 
     @field_validator("output_dir")
     def expand_env_vars_output_dir(cls, output_dir: Path):  # noqa: N805

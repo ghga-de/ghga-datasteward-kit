@@ -71,7 +71,7 @@ async def test_legacy_process(
             }
         )
         httpx_mock.add_response(
-            url=path_join(config.wkvs_api_url, config.wkvs_storage_alias_path),
+            url=path_join(config.wkvs_api_url, "values/storage_aliases"),
             json={"test": f"{s3_config.s3_endpoint_url}"},
             status_code=200,
         )
