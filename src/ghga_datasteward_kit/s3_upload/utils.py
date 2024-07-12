@@ -118,12 +118,11 @@ def retrieve_endpoint_urls(config: LegacyConfig, value_name: str = "storage_alia
     if status_code != 200:
         raise ValueError(f"Received unexpected response code {status_code} from {url}.")
     try:
-        value = response.json()[value_name]
+        return response.json()[value_name]
     except KeyError as err:
         raise ValueError(
             f"Response from {url} did not include expected field '{value_name}'"
         ) from err
-    return value
 
 
 def get_segments(part: bytes, segment_size: int):
