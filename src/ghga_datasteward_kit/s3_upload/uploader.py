@@ -36,7 +36,7 @@ from ghga_datasteward_kit.s3_upload.utils import (
 class ChunkedUploader:
     """Handler class dealing with upload functionality"""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         input_path: Path,
         alias: str,
@@ -96,7 +96,7 @@ class ChunkedUploader:
 class MultipartUpload:
     """Context manager to handle init + complete/abort for S3 multipart upload"""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         config: LegacyConfig,
         file_id: str,
