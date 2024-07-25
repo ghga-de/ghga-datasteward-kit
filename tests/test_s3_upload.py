@@ -20,11 +20,8 @@ from pathlib import Path
 
 import pytest
 from ghga_service_commons.utils.temp_files import big_temp_file
-from hexkit.providers.s3.testutils import (
-    config_from_localstack_container,
-)
+from hexkit.providers.s3.testutils import S3ContainerFixture
 from pytest_httpx import HTTPXMock
-from testcontainers.localstack import LocalStackContainer  # type: ignore
 
 from ghga_datasteward_kit.s3_upload import Config, LegacyConfig
 from ghga_datasteward_kit.s3_upload.entrypoint import async_main, legacy_async_main
@@ -56,10 +53,8 @@ async def test_legacy_process(
     httpx_mock: HTTPXMock,
 ):
     """Test whole upload/download process for s3_upload script"""
-    with LocalStackContainer(image="localstack/localstack:0.14.2").with_services(
-        "s3"
-    ) as localstack:
-        s3_config = config_from_localstack_container(localstack)
+    with S3ContainerFixture() as container:
+        s3_config = container.s3_config
 
         config = legacy_config_fixture.model_copy(
             update={
@@ -100,10 +95,8 @@ async def test_process(config_fixture: Config, monkeypatch, httpx_mock: HTTPXMoc
     ):
         return "test-secret-id"
 
-    with LocalStackContainer(image="localstack/localstack:0.14.2").with_services(
-        "s3"
-    ) as localstack:
-        s3_config = config_from_localstack_container(localstack)
+    with S3ContainerFixture() as container:
+        s3_config = container.s3_config
 
         config = config_fixture.model_copy(
             update={
