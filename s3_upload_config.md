@@ -17,6 +17,8 @@
 
 - **`secret_ingest_baseurl`** *(string)*: Base URL under which the /ingest_secret endpoint is available. This is an endpoint exposed by GHGA Central. This value is provided by GHGA Central on demand.
 
+- **`selected_storage_alias`** *(string)*: Alias of the selected storage node/location. Has to match the backend configuration and must also be present in the local storage configuration. During the later ingest phase, the alias will be validated by the File Ingest Service.
+
 ## Definitions
 
 - <a id="$defs/S3Config"></a>**`S3Config`** *(object)*: S3 server specific config params.
