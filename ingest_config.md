@@ -22,3 +22,5 @@
 - **`map_files_fields`** *(array)*: Names of the accession map fields for looking up the alias->accession mapping. Default: `["study_files"]`.
 
   - **Items** *(string)*
+
+- **`selected_storage_alias`** *(string)*: Alias of the selected storage node/location. Has to match the backend configuration and must also be present in the local storage configuration. During the later ingest phase, the alias will be validated by the File Ingest Service.
