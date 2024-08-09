@@ -503,9 +503,9 @@ hbreader==0.9.1 \
     #   jsonasobj2
     #   linkml
     #   linkml-runtime
-hexkit==3.4.0 \
-    --hash=sha256:3f87d76d746a9e506d458eb729374a8b2facc04f4b40307a2db3b970a8ee4713 \
-    --hash=sha256:a02f086de15858b8c72852d022c63ffcec555c24cd30b2f6628f0d41fd2fd88a
+hexkit==3.5.0 \
+    --hash=sha256:30a82d170630a615836d6a42116f10a2052a9ae752137419f6abe1286a113a32 \
+    --hash=sha256:b27599809b94f24e87153667afd9a72f46c46d267c06cafc595d40cdc6c53f89
     # via
     #   -c lock/requirements-dev.txt
     #   ghga-datasteward-kit (pyproject.toml)
@@ -771,9 +771,9 @@ mdurl==0.1.2 \
     # via
     #   -c lock/requirements-dev.txt
     #   markdown-it-py
-metldata==2.0.0 \
-    --hash=sha256:a89c4408681c8f798a4d252187569cc98abbe7e4104bf64092bfca4f5978217b \
-    --hash=sha256:b5bf87619ee2b7c9665c1852ad9f0190db5ac4daada97017c7b19ebad4501aa0
+metldata==2.1.1 \
+    --hash=sha256:32e0f509186aee26fee0c5b6ee6c650e4affcae6224888457a8af4a2adbf495a \
+    --hash=sha256:e1dd6be9b589dc2289ae3f9d603738c42092e243ad108f1007f17441ff89e990
     # via
     #   -c lock/requirements-dev.txt
     #   ghga-datasteward-kit (pyproject.toml)

@@ -63,7 +63,7 @@ class ChunkedDownloader:
             LOG.debug("Downloading part number %i. %s", part_no, headers)
             try:
                 with httpx_client() as client:
-                    response = client.get(download_url, timeout=60, headers=headers)
+                    response = client.get(download_url, headers=headers)
                     yield response.content
             except (
                 Exception,

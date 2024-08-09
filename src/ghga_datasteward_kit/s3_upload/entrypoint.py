@@ -110,10 +110,7 @@ async def exchange_secret_for_id(
     with httpx_client() as client:
         headers = {"Authorization": f"Bearer {token}"}
         response = client.post(
-            url=endpoint_url,
-            json=encrypted_secret.model_dump(),
-            headers=headers,
-            timeout=60,
+            url=endpoint_url, json=encrypted_secret.model_dump(), headers=headers
         )
 
         if response.status_code != 200:
