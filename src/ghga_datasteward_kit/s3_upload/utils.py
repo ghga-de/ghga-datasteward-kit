@@ -31,6 +31,7 @@ from ghga_datasteward_kit.utils import path_join
 LOG = logging.getLogger("s3_upload")
 NUM_RETRIES = 5
 PART_SIZE = 16 * 1024**2
+TIMEOUT = 60
 
 
 @contextmanager
@@ -38,7 +39,7 @@ def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
     transport = httpx.HTTPTransport(retries=NUM_RETRIES)
 
-    with httpx.Client(transport=transport) as client:
+    with httpx.Client(transport=transport, timeout=TIMEOUT) as client:
         yield client
 
 
