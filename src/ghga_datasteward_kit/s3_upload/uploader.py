@@ -182,7 +182,7 @@ class MultipartUpload:
                             timeout += 60
                             if timeout > MAX_TIMEOUT_DEBUG:
                                 raise error
-                LOG.info(f"Upload succesful for a timeout of {
+                LOG.info(f"Upload successful for a timeout of {
                          timeout} seconds")
             else:
                 with httpx_client() as client:
