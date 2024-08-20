@@ -110,6 +110,9 @@ class LegacyConfig(S3ObjectStoragesConfig):
         default=5,
         description="Number of times a request should be retried on non critical errors.",
     )
+    debug: bool = Field(
+        default=False, description="Enable debug functionality for upload."
+    )
 
     @field_validator("output_dir")
     def expand_env_vars_output_dir(cls, output_dir: Path):  # noqa: N805
