@@ -173,13 +173,17 @@ class MultipartUpload:
                     with httpx_client() as client:
                         try:
                             response = client.put(url=upload_url, content=part)
+                            break
                         except TimeoutException as error:
                             LOG.info(f"Encountered timeout for {
                                      timeout} seconds. Details:\n{str(error)}")
+
                             # increase by a minute and reraise if we need to wait more than one hour
                             timeout += 60
                             if timeout > MAX_TIMEOUT_DEBUG:
                                 raise error
+                LOG.info(f"Upload succesful for a timeout of {
+                         timeout} seconds")
             else:
                 with httpx_client() as client:
                     response = client.put(url=upload_url, content=part)
