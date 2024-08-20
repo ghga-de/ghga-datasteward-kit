@@ -30,6 +30,7 @@ from ghga_datasteward_kit.s3_upload.downloader import ChunkedDownloader
 from ghga_datasteward_kit.s3_upload.uploader import ChunkedUploader
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
+    HttpxClientConfig,
     StorageCleaner,
     check_adjust_part_size,
     check_output_path,
@@ -129,6 +130,10 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
     Run encryption, upload and validation.
     Prints metadata to <alias>.json in the specified output directory
     """
+    HttpxClientConfig.configure(
+        num_retries=config.client_num_retries, timeout=config.client_timeout
+    )
+
     async with StorageCleaner(config=config) as storage_cleaner:
         uploader, file_size = await validate_and_transfer_content(
             input_path=input_path,
@@ -183,6 +188,10 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
     Run encryption, upload and validation.
     Prints metadata to <alias>.json in the specified output directory
     """
+    HttpxClientConfig.configure(
+        num_retries=config.client_num_retries, timeout=config.client_timeout
+    )
+
     async with StorageCleaner(config=config) as storage_cleaner:
         uploader, file_size = await validate_and_transfer_content(
             input_path=input_path,

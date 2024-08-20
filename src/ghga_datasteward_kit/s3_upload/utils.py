@@ -29,17 +29,27 @@ from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.utils import path_join
 
 LOG = logging.getLogger("s3_upload")
-NUM_RETRIES = 5
-PART_SIZE = 16 * 1024**2
-TIMEOUT = 60
+
+
+class HttpxClientConfig:
+    """Helper for user configurable httpx request parameters."""
+
+    num_retries: int = 5
+    timeout: int = 60
+
+    @classmethod
+    def configure(cls, num_retries: int, timeout: int):
+        """Set timeout in seconds"""
+        cls.num_retries = num_retries
+        cls.timeout = timeout
 
 
 @contextmanager
 def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
-    transport = httpx.HTTPTransport(retries=NUM_RETRIES)
+    transport = httpx.HTTPTransport(retries=HttpxClientConfig.num_retries)
 
-    with httpx.Client(transport=transport, timeout=TIMEOUT) as client:
+    with httpx.Client(transport=transport, timeout=HttpxClientConfig.timeout) as client:
         yield client
 
 
@@ -112,17 +122,20 @@ def retrieve_endpoint_urls(config: LegacyConfig, value_name: str = "storage_alia
         try:
             response = client.get(url)
         except httpx.RequestError:
-            LOG.error(f"Could not retrieve data from {url} due to connection issues.")
+            LOG.error(f"Could not retrieve data from {
+                      url} due to connection issues.")
             raise
 
     status_code = response.status_code
     if status_code != 200:
-        raise ValueError(f"Received unexpected response code {status_code} from {url}.")
+        raise ValueError(f"Received unexpected response code {
+                         status_code} from {url}.")
     try:
         return response.json()[value_name]
     except KeyError as err:
         raise ValueError(
-            f"Response from {url} did not include expected field '{value_name}'"
+            f"Response from {
+                url} did not include expected field '{value_name}'"
         ) from err
 
 
@@ -189,7 +202,7 @@ def check_adjust_part_size(config: LegacyConfig, file_size: int):
 
     if part_size != config.part_size * 1024**2:
         LOG.info(
-            "Part size was adjusted from %iMiB to %iMiB.",
+            "Part size was adjusted from %iMiB to %iMiB.\nThe configured part size would either have yielded more than the supported 10.000 parts or was not within the expected bounds (5MiB <= part_size <= 5GiB).",
             config.part_size,
             part_size / 1024**2,
         )
@@ -201,7 +214,8 @@ def check_adjust_part_size(config: LegacyConfig, file_size: int):
 def check_output_path(output_path: Path):
     """Check if we accidentally try to overwrite an already existing metadata file"""
     if output_path.exists():
-        msg = f"Output file {output_path.resolve()} already exists and cannot be overwritten."
+        msg = f"Output file {output_path.resolve(
+        )} already exists and cannot be overwritten."
         handle_superficial_error(msg=msg)
 
 
@@ -221,30 +235,44 @@ class StorageCleaner:
     class MultipartUploadCompletionError(RuntimeError):
         """Raised when upload completion failed and the ongoing upload needs to be aborted."""
 
-        def __init__(self, *, bucket_id: str, object_id: str, upload_id: str) -> None:
+        def __init__(
+            self, *, cause: str, bucket_id: str, object_id: str, upload_id: str
+        ) -> None:
             self.bucket_id = bucket_id
             self.object_id = object_id
             self.upload_id = upload_id
-            message = f"Failed completing file upload for ''{object_id}''."
+            message = f"Failed completing file upload for ''{
+                object_id}'' due to:\n {cause}."
             super().__init__(message)
 
     class PartDownloadError(RuntimeError):
         """Raised when downloading a file part failed and the uploaded file needs removal."""
 
-        def __init__(self, *, bucket_id: str, object_id: str):
+        def __init__(self, *, bucket_id: str, object_id: str, part_number: int):
             self.bucket_id = bucket_id
             self.object_id = object_id
-            message = f"Failed downloading file part for ''{object_id}''."
+            message = f"Failed downloading file part {
+                part_number} for ''{object_id}''."
             super().__init__(message)
 
     class PartUploadError(RuntimeError):
         """Raised when uploading a file part failed and the ongoing upload needs to be aborted."""
 
-        def __init__(self, *, bucket_id: str, object_id: str, upload_id: str) -> None:
+        def __init__(
+            self,
+            *,
+            cause: str,
+            bucket_id: str,
+            object_id: str,
+            part_number: int,
+            upload_id: str,
+        ) -> None:
             self.bucket_id = bucket_id
             self.object_id = object_id
+            self.part_number = part_number
             self.upload_id = upload_id
-            message = f"Failed uploading file part for ''{object_id}''."
+            message = f"Failed uploading file part {
+                part_number} for ''{object_id}'' due to:\n {cause}."
             super().__init__(message)
 
     class SecretExchangeError(RuntimeError):

@@ -131,6 +131,7 @@ class MultipartUpload:
             )
         except (Exception, KeyboardInterrupt) as exc:
             raise self.storage_cleaner.MultipartUploadCompletionError(
+                cause=str(exc),
                 bucket_id=get_bucket_id(self.config),
                 object_id=self.file_id,
                 upload_id=self.upload_id,
@@ -146,13 +147,17 @@ class MultipartUpload:
                 part_number=part_number,
             )
             with httpx_client() as client:
-                client.put(url=upload_url, content=part)
-        except (
-            Exception,
-            KeyboardInterrupt,
-        ) as exc:
+                response = client.put(url=upload_url, content=part)
+
+                status_code = response.status_code
+                if status_code != 200:
+                    raise ValueError(f"Received unexpected status code {
+                                     status_code} when trying to upload file part {part_number}.")
+        except (Exception, KeyboardInterrupt, ValueError) as exc:
             raise self.storage_cleaner.PartUploadError(
+                cause=str(exc),
                 bucket_id=get_bucket_id(self.config),
                 object_id=self.file_id,
+                part_number=part_number,
                 upload_id=self.upload_id,
             ) from exc
