@@ -21,28 +21,35 @@ from time import time
 from uuid import uuid4
 
 import crypt4gh.lib  # type: ignore
+from httpx import TimeoutException
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
+    HttpxClientConfig,
     StorageCleaner,
     get_bucket_id,
     get_object_storage,
     httpx_client,
 )
 
+MAX_TIMEOUT_DEBUG = (
+    3600  # maximum timeout for upload request used for debugging purposes
+)
+
 
 class ChunkedUploader:
     """Handler class dealing with upload functionality"""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         input_path: Path,
         alias: str,
         config: LegacyConfig,
         unencrypted_file_size: int,
         storage_cleaner: StorageCleaner,
+        debug_mode: bool,
     ) -> None:
         self.alias = alias
         self.config = config
@@ -52,6 +59,7 @@ class ChunkedUploader:
         self.unencrypted_file_size = unencrypted_file_size
         self.encrypted_file_size = 0
         self._storage_cleaner = storage_cleaner
+        self.debug_mode = debug_mode
 
     async def encrypt_and_upload(self):
         """Delegate encryption and perform multipart upload"""
@@ -69,6 +77,7 @@ class ChunkedUploader:
                 encrypted_file_size=encrypted_file_size,
                 part_size=self.config.part_size,
                 storage_cleaner=self._storage_cleaner,
+                debug_mode=self.debug_mode,
             ) as upload:
                 LOG.info("(1/7) Initialized file upload for %s.", upload.file_id)
                 for part_number, part in enumerate(
@@ -96,13 +105,14 @@ class ChunkedUploader:
 class MultipartUpload:
     """Context manager to handle init + complete/abort for S3 multipart upload"""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         config: LegacyConfig,
         file_id: str,
         encrypted_file_size: int,
         part_size: int,
         storage_cleaner: StorageCleaner,
+        debug_mode: bool,
     ) -> None:
         self.config = config
         self.storage = get_object_storage(config=self.config)
@@ -111,6 +121,7 @@ class MultipartUpload:
         self.part_size = part_size
         self.upload_id = ""
         self.storage_cleaner = storage_cleaner
+        self.debug_mode = debug_mode
 
     async def __aenter__(self):
         """Start multipart upload"""
@@ -146,13 +157,38 @@ class MultipartUpload:
                 object_id=self.file_id,
                 part_number=part_number,
             )
-            with httpx_client() as client:
-                response = client.put(url=upload_url, content=part)
 
-                status_code = response.status_code
-                if status_code != 200:
-                    raise ValueError(f"Received unexpected status code {
-                                     status_code} when trying to upload file part {part_number}.")
+            if self.debug_mode:
+                num_retries = HttpxClientConfig.num_retries
+                timeout = HttpxClientConfig.timeout
+
+                while True:
+                    LOG.info(
+                        f"Attempting upload of part {part_number} ({len(part)} bytes) with a timeout of {
+                            timeout} seconds."
+                    )
+                    HttpxClientConfig.configure(
+                        num_retries=num_retries, timeout=timeout
+                    )
+                    with httpx_client() as client:
+                        try:
+                            response = client.put(url=upload_url, content=part)
+                        except TimeoutException as error:
+                            LOG.info(f"Encountered timeout for {
+                                     timeout} seconds. Details:\n{str(error)}")
+                            # increase by a minute and reraise if we need to wait more than one hour
+                            timeout += 60
+                            if timeout > MAX_TIMEOUT_DEBUG:
+                                raise error
+            else:
+                with httpx_client() as client:
+                    response = client.put(url=upload_url, content=part)
+
+            status_code = response.status_code
+            if status_code != 200:
+                raise ValueError(f"Received unexpected status code {
+                    status_code} when trying to upload file part {part_number}.")
+
         except (Exception, KeyboardInterrupt, ValueError) as exc:
             raise self.storage_cleaner.PartUploadError(
                 cause=str(exc),
