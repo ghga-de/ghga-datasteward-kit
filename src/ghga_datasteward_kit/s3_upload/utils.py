@@ -202,7 +202,7 @@ def check_adjust_part_size(config: LegacyConfig, file_size: int):
 
     if part_size != config.part_size * 1024**2:
         LOG.info(
-            "Part size was adjusted from %iMiB to %iMiB.\nThe configured part size would either have yielded more than the supported 10.000 parts or was not withing ",
+            "Part size was adjusted from %iMiB to %iMiB.\nThe configured part size would either have yielded more than the supported 10.000 parts or was not within the expected bounds (5MiB <= part_size <= 5GiB).",
             config.part_size,
             part_size / 1024**2,
         )
