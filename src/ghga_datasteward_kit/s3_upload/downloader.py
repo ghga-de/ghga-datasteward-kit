@@ -55,12 +55,12 @@ class ChunkedDownloader:
 
     def _download_parts(self, download_url):
         """Download file parts"""
-        for part_no, (start, stop) in enumerate(
+        for part_number, (start, stop) in enumerate(
             get_ranges(file_size=self.file_size, part_size=self.config.part_size),
             start=1,
         ):
             headers = {"Range": f"bytes={start}-{stop}"}
-            LOG.debug("Downloading part number %i. %s", part_no, headers)
+            LOG.debug("Downloading part number %i. %s", part_number, headers)
             try:
                 with httpx_client() as client:
                     response = client.get(download_url, headers=headers)
@@ -70,7 +70,9 @@ class ChunkedDownloader:
                 KeyboardInterrupt,
             ) as exc:
                 raise self.storage_cleaner.PartDownloadError(
-                    bucket_id=get_bucket_id(self.config), object_id=self.file_id
+                    bucket_id=get_bucket_id(self.config),
+                    object_id=self.file_id,
+                    part_number=part_number,
                 ) from exc
 
     async def download(self):

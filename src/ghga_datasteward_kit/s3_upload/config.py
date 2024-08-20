@@ -18,7 +18,7 @@
 import subprocess  # nosec
 from pathlib import Path
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, NonNegativeInt, SecretStr, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -102,6 +102,13 @@ class LegacyConfig(S3ObjectStoragesConfig):
     wkvs_api_url: str = Field(
         default="https://data.ghga.de/.well-known",
         description="URL to the root of the WKVS API. Should start with https://.",
+    )
+    client_timeout: NonNegativeInt = Field(
+        default=60, description="Timeout for client requests in seconds"
+    )
+    client_num_retries: NonNegativeInt = Field(
+        default=5,
+        description="Number of times a request should be retried on non critical errors.",
     )
 
     @field_validator("output_dir")
