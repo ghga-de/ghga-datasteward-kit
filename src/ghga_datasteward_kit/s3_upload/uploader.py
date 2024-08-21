@@ -162,7 +162,7 @@ class MultipartUpload:
                 num_retries = HttpxClientConfig.num_retries
                 timeout = HttpxClientConfig.timeout
 
-                while True:
+                while True and timeout is not None:
                     LOG.info(
                         f"Attempting upload of part {part_number} ({len(part)} bytes) with a timeout of {
                             timeout} seconds."
