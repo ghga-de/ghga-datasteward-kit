@@ -34,11 +34,11 @@ LOG = logging.getLogger("s3_upload")
 class HttpxClientConfig:
     """Helper for user configurable httpx request parameters."""
 
-    num_retries: int = 5
-    timeout: int = 60
+    num_retries: int
+    timeout: int | None
 
     @classmethod
-    def configure(cls, num_retries: int, timeout: int):
+    def configure(cls, num_retries: int, timeout: int | None):
         """Set timeout in seconds"""
         cls.num_retries = num_retries
         cls.timeout = timeout

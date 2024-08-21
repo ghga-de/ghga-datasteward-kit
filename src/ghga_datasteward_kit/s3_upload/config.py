@@ -103,7 +103,7 @@ class LegacyConfig(S3ObjectStoragesConfig):
         default="https://data.ghga.de/.well-known",
         description="URL to the root of the WKVS API. Should start with https://.",
     )
-    client_timeout: NonNegativeInt = Field(
+    client_timeout: NonNegativeInt | None = Field(
         default=60, description="Timeout for client requests in seconds"
     )
     client_num_retries: NonNegativeInt = Field(
