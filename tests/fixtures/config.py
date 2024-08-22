@@ -51,6 +51,8 @@ def legacy_config_fixture() -> Generator[LegacyConfig, None, None]:
     """Generate a test Config file."""
     with TemporaryDirectory() as output_dir:
         config = LegacyConfig(
+            client_timeout=5,
+            client_exponential_backoff_max=10,
             object_storages=storage_config(),
             output_dir=Path(output_dir),
             selected_storage_alias="test",
@@ -66,6 +68,8 @@ def config_fixture() -> Generator[Config, None, None]:
 
     with TemporaryDirectory() as output_dir:
         config = Config(
+            client_timeout=5,
+            client_exponential_backoff_max=10,
             object_storages=storage_config(),
             output_dir=Path(output_dir),
             secret_ingest_pubkey=public_key,

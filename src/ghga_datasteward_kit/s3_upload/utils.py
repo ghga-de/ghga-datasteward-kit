@@ -24,6 +24,13 @@ from pathlib import Path
 
 import httpx
 from hexkit.providers.s3 import S3Config, S3ObjectStorage
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    retry_if_result,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.utils import path_join
@@ -34,17 +41,11 @@ LOG = logging.getLogger("s3_upload")
 class RequestConfigurator:
     """Helper for user configurable httpx request parameters."""
 
-    exponential_backoff_max: int
-    num_retries: int
-    retry_codes: list[int]
     timeout: int | None
 
     @classmethod
     def configure(cls, config: LegacyConfig):
         """Set timeout in seconds"""
-        cls.exponential_backoff_max = config.client_exponential_backoff_max
-        cls.num_retries = config.client_num_retries
-        cls.retry_codes = config.client_retry_status_codes
         cls.timeout = config.client_timeout
 
 
@@ -53,6 +54,27 @@ async def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
     async with httpx.AsyncClient(timeout=RequestConfigurator.timeout) as client:
         yield client
+
+
+def configure_retries(config: LegacyConfig):
+    """Initialize retry handler from config"""
+    return AsyncRetrying(
+        retry=(
+            retry_if_exception_type(
+                (
+                    httpx.ConnectError,
+                    httpx.ConnectTimeout,
+                    httpx.TimeoutException,
+                )
+            )
+            | retry_if_result(
+                lambda response: response.status_code
+                in config.client_retry_status_codes
+            )
+        ),
+        stop=stop_after_attempt(config.client_num_retries),
+        wait=wait_exponential_jitter(max=config.client_exponential_backoff_max),
+    )
 
 
 def read_file_parts(

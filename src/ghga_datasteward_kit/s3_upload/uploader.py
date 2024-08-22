@@ -15,27 +15,21 @@
 #
 """Functionality to upload encrypted file chunks using multipart upload."""
 
+import asyncio
 import math
 from pathlib import Path
 from time import time
 from uuid import uuid4
 
 import crypt4gh.lib  # type: ignore
-import httpx
-from tenacity import (
-    AsyncRetrying,
-    retry_if_exception_type,
-    retry_if_result,
-    stop_after_attempt,
-    wait_exponential_jitter,
-)
+from httpx import Response
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
-    RequestConfigurator,
     StorageCleaner,
+    configure_retries,
     get_bucket_id,
     get_object_storage,
     httpx_client,
@@ -129,22 +123,7 @@ class MultipartUpload:
         self.upload_id = ""
         self.storage_cleaner = storage_cleaner
         self.debug_mode = debug_mode
-        self.retry_handler = AsyncRetrying(
-            retry=(
-                retry_if_exception_type(
-                    (
-                        httpx.ConnectError,
-                        httpx.ConnectTimeout,
-                        httpx.TimeoutException,
-                    )
-                )
-                | retry_if_result(lambda code: code in RequestConfigurator.retry_codes)
-            ),
-            stop=stop_after_attempt(RequestConfigurator.num_retries),
-            wait=wait_exponential_jitter(
-                max=RequestConfigurator.exponential_backoff_max
-            ),
-        )
+        self.retry_handler = configure_retries(config)
 
     async def __aenter__(self):
         """Start multipart upload"""
@@ -180,15 +159,18 @@ class MultipartUpload:
                 object_id=self.file_id,
                 part_number=part_number,
             )
-            status_code: int = await self.retry_handler(
+            # wait slightly before using the upload URL
+            await asyncio.sleep(0.1)
+            response: Response = await self.retry_handler(
                 fn=self._run_request, url=upload_url, part=part
             )
 
+            status_code = response.status_code
             if status_code != 200:
                 raise ValueError(f"Received unexpected status code {
                     status_code} when trying to upload file part {part_number}.")
 
-        except (Exception, KeyboardInterrupt, ValueError) as exc:
+        except (Exception, KeyboardInterrupt) as exc:
             raise self.storage_cleaner.PartUploadError(
                 cause=str(exc),
                 bucket_id=get_bucket_id(self.config),
@@ -197,7 +179,8 @@ class MultipartUpload:
                 upload_id=self.upload_id,
             ) from exc
 
-    async def _run_request(self, *, url: str, part: bytes):
+    async def _run_request(self, *, url: str, part: bytes) -> Response:
+        """Request to be wrapped by retry handler."""
         async with httpx_client() as client:
             response = await client.put(url=url, content=part)
-        return response.status_code
+        return response
