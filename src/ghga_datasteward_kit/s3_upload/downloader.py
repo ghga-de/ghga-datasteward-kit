@@ -53,7 +53,7 @@ class ChunkedDownloader:
         self.target_checksums = target_checksums
         self.storage_cleaner = storage_cleaner
 
-    def _download_parts(self, download_url):
+    async def _download_parts(self, download_url):
         """Download file parts"""
         for part_number, (start, stop) in enumerate(
             get_ranges(file_size=self.file_size, part_size=self.config.part_size),
@@ -62,8 +62,8 @@ class ChunkedDownloader:
             headers = {"Range": f"bytes={start}-{stop}"}
             LOG.debug("Downloading part number %i. %s", part_number, headers)
             try:
-                with httpx_client() as client:
-                    response = client.get(download_url, headers=headers)
+                async with httpx_client() as client:
+                    response = await client.get(download_url, headers=headers)
                     yield response.content
             except (
                 Exception,
@@ -86,7 +86,7 @@ class ChunkedDownloader:
             file_secret=self.file_secret, num_parts=num_parts, part_size=self.part_size
         )
         download_func = partial(self._download_parts, download_url=download_url)
-        decryptor.process_parts(download_func)
+        await decryptor.process_parts(download_func)
         await self.validate_checksums(checkums=decryptor.checksums)
 
     async def validate_checksums(self, checkums: models.Checksums):

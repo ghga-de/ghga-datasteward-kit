@@ -30,7 +30,7 @@ from ghga_datasteward_kit.s3_upload.downloader import ChunkedDownloader
 from ghga_datasteward_kit.s3_upload.uploader import ChunkedUploader
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
-    HttpxClientConfig,
+    RequestConfigurator,
     StorageCleaner,
     check_adjust_part_size,
     check_output_path,
@@ -109,9 +109,9 @@ async def exchange_secret_for_id(
     payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
     encrypted_secret = models.EncryptedPayload(payload=payload)
 
-    with httpx_client() as client:
+    async with httpx_client() as client:
         headers = {"Authorization": f"Bearer {token}"}
-        response = client.post(
+        response = await client.post(
             url=endpoint_url, json=encrypted_secret.model_dump(), headers=headers
         )
 
@@ -131,9 +131,7 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
     Run encryption, upload and validation.
     Prints metadata to <alias>.json in the specified output directory
     """
-    HttpxClientConfig.configure(
-        num_retries=config.client_num_retries, timeout=config.client_timeout
-    )
+    RequestConfigurator.configure(config=config)
 
     async with StorageCleaner(config=config) as storage_cleaner:
         uploader, file_size = await validate_and_transfer_content(
@@ -189,9 +187,7 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
     Run encryption, upload and validation.
     Prints metadata to <alias>.json in the specified output directory
     """
-    HttpxClientConfig.configure(
-        num_retries=config.client_num_retries, timeout=config.client_timeout
-    )
+    RequestConfigurator.configure(config=config)
 
     async with StorageCleaner(config=config) as storage_cleaner:
         uploader, file_size = await validate_and_transfer_content(

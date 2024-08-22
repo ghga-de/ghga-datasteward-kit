@@ -18,7 +18,7 @@
 import logging
 import sys
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from io import BufferedReader
 from pathlib import Path
 
@@ -31,25 +31,27 @@ from ghga_datasteward_kit.utils import path_join
 LOG = logging.getLogger("s3_upload")
 
 
-class HttpxClientConfig:
+class RequestConfigurator:
     """Helper for user configurable httpx request parameters."""
 
+    exponential_backoff_max: int
     num_retries: int
+    retry_codes: list[int]
     timeout: int | None
 
     @classmethod
-    def configure(cls, num_retries: int, timeout: int | None):
+    def configure(cls, config: LegacyConfig):
         """Set timeout in seconds"""
-        cls.num_retries = num_retries
-        cls.timeout = timeout
+        cls.exponential_backoff_max = config.client_exponential_backoff_max
+        cls.num_retries = config.client_num_retries
+        cls.retry_codes = config.client_retry_status_codes
+        cls.timeout = config.client_timeout
 
 
-@contextmanager
-def httpx_client():
+@asynccontextmanager
+async def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
-    transport = httpx.HTTPTransport(retries=HttpxClientConfig.num_retries)
-
-    with httpx.Client(transport=transport, timeout=HttpxClientConfig.timeout) as client:
+    async with httpx.AsyncClient(timeout=RequestConfigurator.timeout) as client:
         yield client
 
 
@@ -118,13 +120,13 @@ def get_object_storage(config: LegacyConfig):
 def retrieve_endpoint_urls(config: LegacyConfig, value_name: str = "storage_aliases"):
     """Get S3 endpoint URLS from WKVS"""
     url = path_join(config.wkvs_api_url, "values", value_name)
-    with httpx_client() as client:
-        try:
-            response = client.get(url)
-        except httpx.RequestError:
-            LOG.error(f"Could not retrieve data from {
-                      url} due to connection issues.")
-            raise
+
+    try:
+        response = httpx.get(url)
+    except httpx.RequestError:
+        LOG.error(f"Could not retrieve data from {
+            url} due to connection issues.")
+        raise
 
     status_code = response.status_code
     if status_code != 200:

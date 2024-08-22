@@ -15,9 +15,10 @@
 #
 """Functionality to decrypt Crypt4GH encrypted files on-the-fly for validation purposes."""
 
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 from functools import partial
 from time import time
+from typing import Any
 
 import crypt4gh.lib  # type: ignore
 
@@ -52,13 +53,14 @@ class Decryptor:
             ciphersegment=segment, session_keys=[self.file_secret]
         )
 
-    def process_parts(self, download_files: partial[Generator[bytes, None, None]]):
+    async def process_parts(self, download_files: partial[AsyncGenerator[bytes, Any]]):
         """Encrypt and upload file parts."""
         unprocessed_bytes = b""
         download_buffer = b""
         start = time()
 
-        for part_number, file_part in enumerate(download_files()):
+        part_number = 0
+        async for file_part in download_files():
             # process unencrypted
             self.checksums.update_encrypted(file_part)
             unprocessed_bytes += file_part
@@ -81,6 +83,7 @@ class Decryptor:
                 self.num_parts,
                 avg_speed,
             )
+            part_number += 1
 
         # process dangling bytes
         if unprocessed_bytes:
