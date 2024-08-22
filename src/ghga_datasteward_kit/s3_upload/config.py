@@ -105,7 +105,7 @@ class LegacyConfig(S3ObjectStoragesConfig):
     )
     client_exponential_backoff_max: NonNegativeInt = Field(
         default=60,
-        description="Maximal amount of seconds to wait for when using exponential backoff retry strategies.",
+        description="Maximum number of seconds to wait for when using exponential backoff retry strategies.",
     )
     client_retry_status_codes: list[int] = Field(default=[408, 500, 502, 503, 504])
     client_timeout: NonNegativeInt | None = Field(
