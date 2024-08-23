@@ -18,12 +18,19 @@
 import logging
 import sys
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from io import BufferedReader
 from pathlib import Path
 
 import httpx
 from hexkit.providers.s3 import S3Config, S3ObjectStorage
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    retry_if_result,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.utils import path_join
@@ -31,26 +38,43 @@ from ghga_datasteward_kit.utils import path_join
 LOG = logging.getLogger("s3_upload")
 
 
-class HttpxClientConfig:
+class RequestConfigurator:
     """Helper for user configurable httpx request parameters."""
 
-    num_retries: int
     timeout: int | None
 
     @classmethod
-    def configure(cls, num_retries: int, timeout: int | None):
+    def configure(cls, config: LegacyConfig):
         """Set timeout in seconds"""
-        cls.num_retries = num_retries
-        cls.timeout = timeout
+        cls.timeout = config.client_timeout
 
 
-@contextmanager
-def httpx_client():
+@asynccontextmanager
+async def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
-    transport = httpx.HTTPTransport(retries=HttpxClientConfig.num_retries)
-
-    with httpx.Client(transport=transport, timeout=HttpxClientConfig.timeout) as client:
+    async with httpx.AsyncClient(timeout=RequestConfigurator.timeout) as client:
         yield client
+
+
+def configure_retries(config: LegacyConfig):
+    """Initialize retry handler from config"""
+    return AsyncRetrying(
+        retry=(
+            retry_if_exception_type(
+                (
+                    httpx.ConnectError,
+                    httpx.ConnectTimeout,
+                    httpx.TimeoutException,
+                )
+            )
+            | retry_if_result(
+                lambda response: response.status_code
+                in config.client_retry_status_codes
+            )
+        ),
+        stop=stop_after_attempt(config.client_num_retries),
+        wait=wait_exponential_jitter(max=config.client_exponential_backoff_max),
+    )
 
 
 def read_file_parts(
@@ -118,13 +142,13 @@ def get_object_storage(config: LegacyConfig):
 def retrieve_endpoint_urls(config: LegacyConfig, value_name: str = "storage_aliases"):
     """Get S3 endpoint URLS from WKVS"""
     url = path_join(config.wkvs_api_url, "values", value_name)
-    with httpx_client() as client:
-        try:
-            response = client.get(url)
-        except httpx.RequestError:
-            LOG.error(f"Could not retrieve data from {
-                      url} due to connection issues.")
-            raise
+
+    try:
+        response = httpx.get(url)
+    except httpx.RequestError:
+        LOG.error(f"Could not retrieve data from {
+            url} due to connection issues.")
+        raise
 
     status_code = response.status_code
     if status_code != 200:

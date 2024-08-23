@@ -28,6 +28,7 @@ from ghga_datasteward_kit.s3_upload.config import (
     NoEndpointURLS3Config,
     S3ObjectStorageNodeConfig,
 )
+from ghga_datasteward_kit.s3_upload.utils import RequestConfigurator
 
 
 def storage_config(
@@ -49,11 +50,15 @@ def storage_config(
 def legacy_config_fixture() -> Generator[LegacyConfig, None, None]:
     """Generate a test Config file."""
     with TemporaryDirectory() as output_dir:
-        yield LegacyConfig(
+        config = LegacyConfig(
+            client_timeout=5,
+            client_exponential_backoff_max=10,
             object_storages=storage_config(),
             output_dir=Path(output_dir),
             selected_storage_alias="test",
         )
+        RequestConfigurator.configure(config)
+        yield config
 
 
 @pytest.fixture
@@ -62,10 +67,14 @@ def config_fixture() -> Generator[Config, None, None]:
     public_key = encode_key(generate_key_pair().public)
 
     with TemporaryDirectory() as output_dir:
-        yield Config(
+        config = Config(
+            client_timeout=5,
+            client_exponential_backoff_max=10,
             object_storages=storage_config(),
             output_dir=Path(output_dir),
             secret_ingest_pubkey=public_key,
             secret_ingest_baseurl="https://not-a-real-url",
             selected_storage_alias="test",
         )
+        RequestConfigurator.configure(config)
+        yield config

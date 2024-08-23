@@ -18,12 +18,15 @@
 import math
 from functools import partial
 
+from httpx import Response
+
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
     StorageCleaner,
+    configure_retries,
     get_bucket_id,
     get_object_storage,
     get_ranges,
@@ -52,8 +55,9 @@ class ChunkedDownloader:
         self.part_size = part_size
         self.target_checksums = target_checksums
         self.storage_cleaner = storage_cleaner
+        self.retry_handler = configure_retries(config)
 
-    def _download_parts(self, download_url):
+    async def _download_parts(self, download_url):
         """Download file parts"""
         for part_number, (start, stop) in enumerate(
             get_ranges(file_size=self.file_size, part_size=self.config.part_size),
@@ -62,9 +66,10 @@ class ChunkedDownloader:
             headers = {"Range": f"bytes={start}-{stop}"}
             LOG.debug("Downloading part number %i. %s", part_number, headers)
             try:
-                with httpx_client() as client:
-                    response = client.get(download_url, headers=headers)
-                    yield response.content
+                response: Response = await self.retry_handler(
+                    fn=self._run_request, url=download_url, headers=headers
+                )
+                yield response.content
             except (
                 Exception,
                 KeyboardInterrupt,
@@ -74,6 +79,12 @@ class ChunkedDownloader:
                     object_id=self.file_id,
                     part_number=part_number,
                 ) from exc
+
+    async def _run_request(self, *, url: str, headers: dict[str, str]) -> Response:
+        """Request to be wrapped by retry handler."""
+        async with httpx_client() as client:
+            response = await client.get(url, headers=headers)
+            return response
 
     async def download(self):
         """Download file in parts and validate checksums"""
@@ -86,7 +97,7 @@ class ChunkedDownloader:
             file_secret=self.file_secret, num_parts=num_parts, part_size=self.part_size
         )
         download_func = partial(self._download_parts, download_url=download_url)
-        decryptor.process_parts(download_func)
+        await decryptor.process_parts(download_func)
         await self.validate_checksums(checkums=decryptor.checksums)
 
     async def validate_checksums(self, checkums: models.Checksums):

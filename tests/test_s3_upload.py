@@ -26,7 +26,6 @@ from pytest_httpx import HTTPXMock
 from ghga_datasteward_kit.s3_upload import Config, LegacyConfig
 from ghga_datasteward_kit.s3_upload.entrypoint import async_main, legacy_async_main
 from ghga_datasteward_kit.s3_upload.utils import (
-    HttpxClientConfig,
     StorageCleaner,
     get_bucket_id,
     get_object_storage,
@@ -54,8 +53,6 @@ async def test_legacy_process(
     httpx_mock: HTTPXMock,
 ):
     """Test whole upload/download process for s3_upload script"""
-    HttpxClientConfig.configure(num_retries=5, timeout=60)
-
     with S3ContainerFixture() as container:
         s3_config = container.s3_config
 
@@ -87,7 +84,6 @@ async def test_legacy_process(
 @pytest.mark.asyncio
 async def test_process(config_fixture: Config, monkeypatch, httpx_mock: HTTPXMock):  # noqa: F811
     """Test whole upload/download process for s3_upload script"""
-    HttpxClientConfig.configure(num_retries=5, timeout=60)
 
     async def secret_exchange_dummy(
         *,

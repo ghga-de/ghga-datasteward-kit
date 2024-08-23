@@ -15,27 +15,28 @@
 #
 """Functionality to upload encrypted file chunks using multipart upload."""
 
+import asyncio
 import math
 from pathlib import Path
 from time import time
 from uuid import uuid4
 
 import crypt4gh.lib  # type: ignore
-from httpx import TimeoutException
+from httpx import Response
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
-    HttpxClientConfig,
     StorageCleaner,
+    configure_retries,
     get_bucket_id,
     get_object_storage,
     httpx_client,
 )
 
 MAX_TIMEOUT_DEBUG = (
-    3600  # maximum timeout for upload request used for debugging purposes
+    600  # maximum timeout for upload request used for debugging purposes
 )
 
 
@@ -122,6 +123,7 @@ class MultipartUpload:
         self.upload_id = ""
         self.storage_cleaner = storage_cleaner
         self.debug_mode = debug_mode
+        self.retry_handler = configure_retries(config)
 
     async def __aenter__(self):
         """Start multipart upload"""
@@ -148,7 +150,7 @@ class MultipartUpload:
                 upload_id=self.upload_id,
             ) from exc
 
-    async def send_part(self, part: bytes, part_number: int):
+    async def send_part(self, *, part: bytes, part_number: int):
         """Handle upload of one file part"""
         try:
             upload_url = await self.storage.get_part_upload_url(
@@ -157,43 +159,18 @@ class MultipartUpload:
                 object_id=self.file_id,
                 part_number=part_number,
             )
-
-            if self.debug_mode:
-                num_retries = HttpxClientConfig.num_retries
-                timeout = HttpxClientConfig.timeout
-
-                while True and timeout is not None:
-                    LOG.info(
-                        f"Attempting upload of part {part_number} ({len(part)} bytes) with a timeout of {
-                            timeout} seconds."
-                    )
-                    HttpxClientConfig.configure(
-                        num_retries=num_retries, timeout=timeout
-                    )
-                    with httpx_client() as client:
-                        try:
-                            response = client.put(url=upload_url, content=part)
-                            break
-                        except TimeoutException as error:
-                            LOG.info(f"Encountered timeout for {
-                                     timeout} seconds. Details:\n{str(error)}")
-
-                            # increase by a minute and reraise if we need to wait more than one hour
-                            timeout += 60
-                            if timeout > MAX_TIMEOUT_DEBUG:
-                                raise error
-                LOG.info(f"Upload successful for a timeout of {
-                         timeout} seconds")
-            else:
-                with httpx_client() as client:
-                    response = client.put(url=upload_url, content=part)
+            # wait slightly before using the upload URL
+            await asyncio.sleep(0.1)
+            response: Response = await self.retry_handler(
+                fn=self._run_request, url=upload_url, part=part
+            )
 
             status_code = response.status_code
             if status_code != 200:
                 raise ValueError(f"Received unexpected status code {
                     status_code} when trying to upload file part {part_number}.")
 
-        except (Exception, KeyboardInterrupt, ValueError) as exc:
+        except (Exception, KeyboardInterrupt) as exc:
             raise self.storage_cleaner.PartUploadError(
                 cause=str(exc),
                 bucket_id=get_bucket_id(self.config),
@@ -201,3 +178,9 @@ class MultipartUpload:
                 part_number=part_number,
                 upload_id=self.upload_id,
             ) from exc
+
+    async def _run_request(self, *, url: str, part: bytes) -> Response:
+        """Request to be wrapped by retry handler."""
+        async with httpx_client() as client:
+            response = await client.put(url=url, content=part)
+        return response
