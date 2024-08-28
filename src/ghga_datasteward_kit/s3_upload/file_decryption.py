@@ -46,8 +46,6 @@ class Decryptor:
             self.upload_checksum = upload_checksum
             super().__init__(message)
 
-            super().__init__(message)
-
     class PartChecksumValidationError(RuntimeError):
         """Raised when checksum validation failed and the uploaded file needs removal."""
 
