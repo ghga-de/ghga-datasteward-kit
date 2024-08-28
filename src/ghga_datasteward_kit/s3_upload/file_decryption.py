@@ -15,6 +15,7 @@
 #
 """Functionality to decrypt Crypt4GH encrypted files on-the-fly for validation purposes."""
 
+import gc
 import hashlib
 from collections.abc import AsyncGenerator
 from functools import partial
@@ -25,6 +26,8 @@ import crypt4gh.lib  # type: ignore
 
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.s3_upload.utils import LOG, get_segments
+
+COLLECTION_LIMIT_MIB = 256 * 1024**2
 
 
 class Decryptor:
@@ -126,14 +129,16 @@ class Decryptor:
         start = time()
 
         part_number = 1
+        collection_tracker_mib = 0
         async for file_part in download_files():
-            # process unencrypted
+            # process encrypted
             self._validate_current_checksum(
                 file_part=file_part, part_number=part_number
             )
             unprocessed_bytes += file_part
+            collection_tracker_mib += len(file_part)
 
-            # encrypt in chunks
+            # decrypt in chunks
             decrypted_bytes, unprocessed_bytes = self._decrypt(unprocessed_bytes)
             download_buffer += decrypted_bytes
 
@@ -150,6 +155,9 @@ class Decryptor:
                 avg_speed,
             )
             part_number += 1
+            if collection_tracker_mib >= COLLECTION_LIMIT_MIB:
+                collection_tracker_mib = 0
+                gc.collect()
 
         # process dangling bytes
         if unprocessed_bytes:
