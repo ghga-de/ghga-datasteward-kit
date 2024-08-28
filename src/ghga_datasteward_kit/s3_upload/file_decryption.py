@@ -147,7 +147,7 @@ class Decryptor:
             avg_speed = (part_number * (self.part_size / 1024**2)) / delta
 
             LOG.info(
-                "\n(5/7) Downloading part %i/%i (%.2f MiB/s)",
+                "(5/7) Downloading part %i/%i (%.2f MiB/s)",
                 part_number,
                 self.num_parts,
                 avg_speed,
