@@ -18,7 +18,7 @@
 import logging
 import sys
 from collections.abc import Iterator
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager
 from io import BufferedReader
 from pathlib import Path
 
