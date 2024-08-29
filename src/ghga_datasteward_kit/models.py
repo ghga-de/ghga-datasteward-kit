@@ -116,7 +116,7 @@ class OutputMetadata(Metadata):
         output["Symmetric file encryption secret ID"] = self.secret_id
 
         if not output_path.parent.exists():
-            output_path.mkdir(parents=True)
+            output_path.parent.mkdir(parents=True)
 
         # owner read-only
         with output_path.open("w") as file:

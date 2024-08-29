@@ -22,6 +22,7 @@ from time import time
 from uuid import uuid4
 
 import crypt4gh.lib  # type: ignore
+import httpx
 from httpx import Response
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
@@ -72,19 +73,24 @@ class ChunkedUploader:
         start = time()
 
         with open(self.input_path, "rb") as file:
-            async with MultipartUpload(
-                config=self.config,
-                file_id=self.file_id,
-                encrypted_file_size=encrypted_file_size,
-                part_size=self.config.part_size,
-                storage_cleaner=self._storage_cleaner,
-                debug_mode=self.debug_mode,
-            ) as upload:
+            async with (
+                MultipartUpload(
+                    config=self.config,
+                    file_id=self.file_id,
+                    encrypted_file_size=encrypted_file_size,
+                    part_size=self.config.part_size,
+                    storage_cleaner=self._storage_cleaner,
+                    debug_mode=self.debug_mode,
+                ) as upload,
+                httpx_client() as client,
+            ):
                 LOG.info("(1/7) Initialized file upload for %s.", upload.file_id)
                 for part_number, part in enumerate(
                     self.encryptor.process_file(file=file), start=1
                 ):
-                    await upload.send_part(part_number=part_number, part=part)
+                    await upload.send_part(
+                        client=client, part_number=part_number, part=part
+                    )
 
                     delta = time() - start
                     avg_speed = part_number * (self.config.part_size / 1024**2) / delta
@@ -150,7 +156,9 @@ class MultipartUpload:
                 upload_id=self.upload_id,
             ) from exc
 
-    async def send_part(self, *, part: bytes, part_number: int):
+    async def send_part(
+        self, *, client: httpx.AsyncClient, part: bytes, part_number: int
+    ):
         """Handle upload of one file part"""
         try:
             upload_url = await self.storage.get_part_upload_url(
@@ -162,7 +170,7 @@ class MultipartUpload:
             # wait slightly before using the upload URL
             await asyncio.sleep(0.1)
             response: Response = await self.retry_handler(
-                fn=self._run_request, url=upload_url, part=part
+                fn=self._run_request, client=client, url=upload_url, part=part
             )
 
             status_code = response.status_code
@@ -179,8 +187,9 @@ class MultipartUpload:
                 upload_id=self.upload_id,
             ) from exc
 
-    async def _run_request(self, *, url: str, part: bytes) -> Response:
+    async def _run_request(
+        self, *, client: httpx.AsyncClient, url: str, part: bytes
+    ) -> Response:
         """Request to be wrapped by retry handler."""
-        async with httpx_client() as client:
-            response = await client.put(url=url, content=part)
+        response = await client.put(url=url, content=part)
         return response

@@ -16,8 +16,11 @@
 """Functionality related to downloading uploaded files for validation purposes."""
 
 import math
+from collections.abc import Coroutine
 from functools import partial
+from typing import Any
 
+import httpx
 from httpx import Response
 
 from ghga_datasteward_kit import models
@@ -57,60 +60,67 @@ class ChunkedDownloader:
         self.storage_cleaner = storage_cleaner
         self.retry_handler = configure_retries(config)
 
-    async def _download_parts(self, download_url):
+    async def _download_parts(self, fetch_url: partial[Coroutine[Any, Any, str]]):
         """Download file parts"""
-        for part_number, (start, stop) in enumerate(
-            get_ranges(file_size=self.file_size, part_size=self.config.part_size),
-            start=1,
-        ):
-            headers = {"Range": f"bytes={start}-{stop}"}
-            LOG.debug("Downloading part number %i. %s", part_number, headers)
-            try:
-                response: Response = await self.retry_handler(
-                    fn=self._run_request, url=download_url, headers=headers
-                )
-                yield response.content
-            except (
-                Exception,
-                KeyboardInterrupt,
-            ) as exc:
-                raise self.storage_cleaner.PartDownloadError(
-                    bucket_id=get_bucket_id(self.config),
-                    object_id=self.file_id,
-                    part_number=part_number,
-                ) from exc
-
-    async def _run_request(self, *, url: str, headers: dict[str, str]) -> Response:
-        """Request to be wrapped by retry handler."""
         async with httpx_client() as client:
-            response = await client.get(url, headers=headers)
-            return response
+            for part_number, (start, stop) in enumerate(
+                get_ranges(file_size=self.file_size, part_size=self.config.part_size),
+                start=1,
+            ):
+                headers = {"Range": f"bytes={start}-{stop}"}
+                LOG.debug("Downloading part number %i. %s", part_number, headers)
+                try:
+                    response: Response = await self.retry_handler(
+                        fn=self._run_request,
+                        client=client,
+                        url=await fetch_url(),
+                        headers=headers,
+                    )
+                    yield response.content
+                except (
+                    Exception,
+                    KeyboardInterrupt,
+                ) as exc:
+                    raise self.storage_cleaner.PartDownloadError(
+                        bucket_id=get_bucket_id(self.config),
+                        object_id=self.file_id,
+                        part_number=part_number,
+                    ) from exc
+
+    async def _run_request(
+        self, *, client: httpx.AsyncClient, url: str, headers: dict[str, str]
+    ) -> Response:
+        """Request to be wrapped by retry handler."""
+        response = await client.get(url, headers=headers)
+        return response
 
     async def download(self):
         """Download file in parts and validate checksums"""
         LOG.info("(4/7) Downloading file %s for validation.", self.file_id)
-        download_url = await self.storage.get_object_download_url(
-            bucket_id=get_bucket_id(self.config), object_id=self.file_id
+        url_function = partial(
+            self.storage.get_object_download_url,
+            bucket_id=get_bucket_id(self.config),
+            object_id=self.file_id,
         )
         num_parts = math.ceil(self.file_size / self.part_size)
         decryptor = Decryptor(
-            file_secret=self.file_secret, num_parts=num_parts, part_size=self.part_size
+            file_secret=self.file_secret,
+            num_parts=num_parts,
+            part_size=self.part_size,
+            target_checksums=self.target_checksums,
         )
-        download_func = partial(self._download_parts, download_url=download_url)
-        await decryptor.process_parts(download_func)
-        await self.validate_checksums(checkums=decryptor.checksums)
+        download_func = partial(self._download_parts, fetch_url=url_function)
 
-    async def validate_checksums(self, checkums: models.Checksums):
-        """Confirm checksums for upload and download match"""
-        if self.target_checksums.get() != checkums.get():
-            message = (
-                "Checksum mismatch:\n"
-                + f"Upload:\n{checkums}\nDownload:\n{self.target_checksums}\n"
-                + "Uploaded file was deleted due to validation failure."
-            )
+        try:
+            await decryptor.process_parts(download_func)
+        except (
+            decryptor.FileChecksumValidationError,
+            decryptor.PartChecksumValidationError,
+        ) as error:
             raise self.storage_cleaner.ChecksumValidationError(
                 bucket_id=get_bucket_id(self.config),
                 object_id=self.file_id,
-                message=message,
-            )
+                message=str(error),
+            ) from error
+
         LOG.info("(6/7) Successfully validated checksums for %s.", self.file_id)
