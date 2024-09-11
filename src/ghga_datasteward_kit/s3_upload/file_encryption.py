@@ -60,7 +60,9 @@ class Encryptor:
         unprocessed_bytes = b""
         upload_buffer = b""
 
-        for file_part in read_file_parts(file=file, part_size=self.part_size):
+        for part_number, file_part in enumerate(
+            read_file_parts(file=file, part_size=self.part_size), start=1
+        ):
             # process unencrypted
             self.checksums.update_unencrypted(file_part)
             unprocessed_bytes += file_part
@@ -74,7 +76,7 @@ class Encryptor:
                 current_part = upload_buffer[: self.part_size]
                 self.checksums.update_encrypted(current_part)
                 self.encrypted_file_size += self.part_size
-                yield current_part
+                yield part_number, current_part
                 upload_buffer = upload_buffer[self.part_size :]
 
         # process dangling bytes
@@ -85,10 +87,12 @@ class Encryptor:
             current_part = upload_buffer[: self.part_size]
             self.checksums.update_encrypted(current_part)
             self.encrypted_file_size += self.part_size
-            yield current_part
+            part_number += 1
+            yield part_number, current_part
             upload_buffer = upload_buffer[self.part_size :]
 
         if upload_buffer:
             self.checksums.update_encrypted(upload_buffer)
             self.encrypted_file_size += len(upload_buffer)
-            yield upload_buffer
+            part_number += 1
+            yield part_number, upload_buffer
