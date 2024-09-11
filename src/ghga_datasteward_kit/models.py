@@ -197,7 +197,7 @@ class LegacyOutputMetadata(LegacyMetadata):
         output["Symmetric file encryption secret"] = self.file_secret
 
         if not output_path.parent.exists():
-            output_path.mkdir(parents=True)
+            output_path.parent.mkdir(parents=True)
 
         # owner read-only
         with output_path.open("w") as file:

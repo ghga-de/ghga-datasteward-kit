@@ -17,8 +17,10 @@
 
 import asyncio
 import math
+from collections.abc import Coroutine
 from pathlib import Path
 from time import time
+from typing import Any
 from uuid import uuid4
 
 import crypt4gh.lib  # type: ignore
@@ -39,6 +41,19 @@ from ghga_datasteward_kit.s3_upload.utils import (
 MAX_TIMEOUT_DEBUG = (
     600  # maximum timeout for upload request used for debugging purposes
 )
+
+
+class UploadTaskHandler:
+    """Wraps task scheduling details."""
+
+    def __init__(self):
+        self._tasks: set[asyncio.Task] = set()
+
+    async def schedule(self, fn: Coroutine[Any, Any, None]):
+        """Create a task and register its callback."""
+        task = asyncio.create_task(fn)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
 
 class ChunkedUploader:
@@ -167,8 +182,6 @@ class MultipartUpload:
                 object_id=self.file_id,
                 part_number=part_number,
             )
-            # wait slightly before using the upload URL
-            await asyncio.sleep(0.1)
             response: Response = await self.retry_handler(
                 fn=self._run_request, client=client, url=upload_url, part=part
             )

@@ -18,7 +18,6 @@
 import gc
 import hashlib
 from collections.abc import AsyncGenerator
-from functools import partial
 from time import time
 from typing import Any
 
@@ -118,7 +117,7 @@ class Decryptor:
                 upload_part_checksum=upload_part_sha256,
             )
 
-    async def process_parts(self, download_files: partial[AsyncGenerator[bytes, Any]]):
+    async def process_parts(self, download_files: AsyncGenerator[bytes, Any]):
         """Encrypt and upload file parts."""
         unprocessed_bytes = b""
         download_buffer = b""
@@ -128,7 +127,8 @@ class Decryptor:
 
         part_number = 1
         collection_tracker_mib = 0
-        async for file_part in download_files():
+
+        async for file_part in download_files:
             # process encrypted
             self._validate_current_checksum(
                 file_part=file_part, part_number=part_number

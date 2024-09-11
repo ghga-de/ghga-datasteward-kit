@@ -16,6 +16,7 @@
 """Functionality related to downloading uploaded files for validation purposes."""
 
 import math
+from asyncio import PriorityQueue, Semaphore, Task, create_task
 from collections.abc import Coroutine
 from functools import partial
 from typing import Any
@@ -35,6 +36,19 @@ from ghga_datasteward_kit.s3_upload.utils import (
     get_ranges,
     httpx_client,
 )
+
+
+class DownloadTaskHandler:
+    """Wraps task scheduling details."""
+
+    def __init__(self):
+        self._tasks: set[Task] = set()
+
+    async def schedule(self, fn: Coroutine[Any, Any, None]):
+        """Create a task and register its callback."""
+        task = create_task(fn)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
 
 class ChunkedDownloader:
@@ -59,40 +73,69 @@ class ChunkedDownloader:
         self.target_checksums = target_checksums
         self.storage_cleaner = storage_cleaner
         self.retry_handler = configure_retries(config)
+        self._queue: PriorityQueue[tuple[int, bytes] | tuple[int, BaseException]] = (
+            PriorityQueue(config.client_max_parallel_transfers)
+        )
+        self._semaphore = Semaphore(config.client_max_parallel_transfers)
 
-    async def _download_parts(self, fetch_url: partial[Coroutine[Any, Any, str]]):
-        """Download file parts"""
-        async with httpx_client() as client:
-            for part_number, (start, stop) in enumerate(
-                get_ranges(file_size=self.file_size, part_size=self.config.part_size),
-                start=1,
-            ):
-                headers = {"Range": f"bytes={start}-{stop}"}
-                LOG.debug("Downloading part number %i. %s", part_number, headers)
-                try:
-                    response: Response = await self.retry_handler(
-                        fn=self._run_request,
-                        client=client,
-                        url=await fetch_url(),
-                        headers=headers,
-                    )
-                    yield response.content
-                except (
-                    Exception,
-                    KeyboardInterrupt,
-                ) as exc:
+    async def _download_part(
+        self,
+        *,
+        client: httpx.AsyncClient,
+        headers: httpx.Headers,
+        url: str,
+        part_number: int,
+    ):
+        """Download single file part to queue. This should be scheduled as a asyncio.Task."""
+        async with self._semaphore:
+            try:
+                response: Response = await self.retry_handler(
+                    fn=client.get,
+                    url=url,
+                    headers=headers,
+                )
+                await self._queue.put((part_number, response.content))
+            except BaseException as exception:
+                await self._queue.put((part_number, exception))
+
+    async def _drain_from_queue(self):
+        """Fetch downloaded parts from queue and keep local queue to yield parts in order."""
+        next_part_to_yield = 1
+        parts_downloaded = 0
+        num_parts = math.ceil(self.file_size / self.part_size)
+        # priority queue ensures we get the the part with the lowest part number on calling get
+        results: PriorityQueue[tuple[int, bytes]] = PriorityQueue()
+
+        while next_part_to_yield <= num_parts:
+            # if there are unprocessed results in the local queue, check if the correct one is among them
+            if not results.empty():
+                part_number, part = await results.get()
+                if part_number == next_part_to_yield:
+                    next_part_to_yield += 1
+                    yield part
+                else:
+                    # if not, put it back
+                    await results.put((part_number, part))
+
+            if parts_downloaded < num_parts:
+                # fetch next part from download queue
+                part_number, part = await self._queue.get()  # type: ignore
+                parts_downloaded += 1
+
+                # raise exception immediately to abort download process
+                if isinstance(part, BaseException):
                     raise self.storage_cleaner.PartDownloadError(
                         bucket_id=get_bucket_id(self.config),
                         object_id=self.file_id,
                         part_number=part_number,
-                    ) from exc
+                    ) from part
 
-    async def _run_request(
-        self, *, client: httpx.AsyncClient, url: str, headers: dict[str, str]
-    ) -> Response:
-        """Request to be wrapped by retry handler."""
-        response = await client.get(url, headers=headers)
-        return response
+                # yield if it's the expected part, else put it into the local queue
+                if part_number == next_part_to_yield:
+                    next_part_to_yield += 1
+                    yield part
+                else:
+                    await results.put((part_number, part))
 
     async def download(self):
         """Download file in parts and validate checksums"""
@@ -109,18 +152,35 @@ class ChunkedDownloader:
             part_size=self.part_size,
             target_checksums=self.target_checksums,
         )
-        download_func = partial(self._download_parts, fetch_url=url_function)
+        # schedule and start download tasks
 
-        try:
-            await decryptor.process_parts(download_func)
-        except (
-            decryptor.FileChecksumValidationError,
-            decryptor.PartChecksumValidationError,
-        ) as error:
-            raise self.storage_cleaner.ChecksumValidationError(
-                bucket_id=get_bucket_id(self.config),
-                object_id=self.file_id,
-                message=str(error),
-            ) from error
+        task_handler = DownloadTaskHandler()
+        async with httpx_client() as client:
+            for part_number, (start, stop) in enumerate(
+                get_ranges(file_size=self.file_size, part_size=self.config.part_size),
+                start=1,
+            ):
+                headers = httpx.Headers({"Range": f"bytes={start}-{stop}"})
+                await task_handler.schedule(
+                    self._download_part(
+                        client=client,
+                        headers=headers,
+                        url=await url_function(),
+                        part_number=part_number,
+                    )
+                )
+
+            try:
+                await decryptor.process_parts(self._drain_from_queue())
+
+            except (
+                decryptor.FileChecksumValidationError,
+                decryptor.PartChecksumValidationError,
+            ) as error:
+                raise self.storage_cleaner.ChecksumValidationError(
+                    bucket_id=get_bucket_id(self.config),
+                    object_id=self.file_id,
+                    message=str(error),
+                ) from error
 
         LOG.info("(6/7) Successfully validated checksums for %s.", self.file_id)
