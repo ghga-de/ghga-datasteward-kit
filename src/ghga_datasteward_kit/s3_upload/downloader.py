@@ -100,7 +100,7 @@ class ChunkedDownloader:
             except BaseException as exception:
                 await self._queue.put((part_number, exception))
 
-    async def _drain_from_queue(self):
+    async def _drain_queue(self):
         """Fetch downloaded parts from queue and keep local queue to yield parts in order."""
         next_part_to_yield = 1
         parts_downloaded = 0
@@ -170,7 +170,7 @@ class ChunkedDownloader:
                 )
 
             try:
-                await decryptor.process_parts(self._drain_from_queue())
+                await decryptor.process_parts(self._drain_queue())
 
             except (
                 decryptor.FileChecksumValidationError,
