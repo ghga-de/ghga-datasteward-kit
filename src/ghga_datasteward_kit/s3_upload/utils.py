@@ -358,6 +358,7 @@ class StorageCleaner:
         if isinstance(
             exc_v,
             self.ChecksumValidationError
+            | self.DownloadError
             | self.PartDownloadError
             | self.SecretExchangeError
             | self.WritingOutputError,
