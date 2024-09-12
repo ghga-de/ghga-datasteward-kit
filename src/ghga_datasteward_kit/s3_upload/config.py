@@ -111,7 +111,10 @@ class LegacyConfig(S3ObjectStoragesConfig):
     client_timeout: NonNegativeInt | None = Field(
         default=60, description="Timeout for client requests in seconds"
     )
-    client_max_parallel_transfers: PositiveInt = Field(default=5, description="")
+    client_max_parallel_transfers: PositiveInt = Field(
+        default=5,
+        description="Maximum number of inflight part upload or part download requests.",
+    )
     client_num_retries: NonNegativeInt = Field(
         default=5,
         description="Number of times a request should be retried on non critical errors.",

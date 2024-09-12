@@ -114,6 +114,7 @@ class ChunkedUploader:
                             start=start,
                         )
                     )
+                # Wait for all upload tasks to finish
                 await task_handler.gather()
                 if encrypted_file_size != self.encryptor.encrypted_file_size:
                     raise ValueError(

@@ -74,16 +74,21 @@ async def validate_and_transfer_content(
     )
     await uploader.encrypt_and_upload()
 
-    downloader = ChunkedDownloader(
-        config=config,
-        file_id=uploader.file_id,
-        encrypted_file_size=uploader.encryptor.encrypted_file_size,
-        file_secret=uploader.encryptor.file_secret,
-        part_size=config.part_size,
-        target_checksums=uploader.encryptor.checksums,
-        storage_cleaner=storage_cleaner,
-    )
-    await downloader.download()
+    try:
+        downloader = ChunkedDownloader(
+            config=config,
+            file_id=uploader.file_id,
+            encrypted_file_size=uploader.encryptor.encrypted_file_size,
+            file_secret=uploader.encryptor.file_secret,
+            part_size=config.part_size,
+            target_checksums=uploader.encryptor.checksums,
+            storage_cleaner=storage_cleaner,
+        )
+        await downloader.download()
+    except KeyboardInterrupt as error:
+        raise storage_cleaner.DownloadError(
+            bucket_id=get_bucket_id(config), object_id=downloader.file_id
+        ) from error
 
     return uploader, file_size
 

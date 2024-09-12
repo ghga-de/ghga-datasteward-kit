@@ -266,6 +266,15 @@ class StorageCleaner:
             self.object_id = object_id
             super().__init__(message)
 
+    class DownloadError(RuntimeError):
+        """Raised when downloading a file failed due to keyboard interrupts and the uploaded file needs removal."""
+
+        def __init__(self, *, bucket_id: str, object_id: str):
+            self.bucket_id = bucket_id
+            self.object_id = object_id
+            message = f"Failed downloading file for ''{object_id}''."
+            super().__init__(message)
+
     class MultipartUploadCompletionError(RuntimeError):
         """Raised when upload completion failed and the ongoing upload needs to be aborted."""
 
