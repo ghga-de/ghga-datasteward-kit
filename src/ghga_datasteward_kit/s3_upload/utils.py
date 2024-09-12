@@ -42,17 +42,26 @@ class RequestConfigurator:
     """Helper for user configurable httpx request parameters."""
 
     timeout: int | None
+    max_connections: int
 
     @classmethod
     def configure(cls, config: LegacyConfig):
         """Set timeout in seconds"""
         cls.timeout = config.client_timeout
+        cls.max_connections = config.client_max_parallel_transfers
+        logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 @asynccontextmanager
 async def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
-    async with httpx.AsyncClient(timeout=RequestConfigurator.timeout) as client:
+    async with httpx.AsyncClient(
+        timeout=RequestConfigurator.timeout,
+        limits=httpx.Limits(
+            max_connections=RequestConfigurator.max_connections,
+            max_keepalive_connections=RequestConfigurator.max_connections,
+        ),
+    ) as client:
         yield client
 
 

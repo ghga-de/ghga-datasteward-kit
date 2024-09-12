@@ -18,7 +18,6 @@
 import math
 from asyncio import PriorityQueue, Semaphore, Task, create_task
 from collections.abc import Coroutine
-from functools import partial
 from typing import Any
 
 import httpx
@@ -83,12 +82,15 @@ class ChunkedDownloader:
         *,
         client: httpx.AsyncClient,
         headers: httpx.Headers,
-        url: str,
         part_number: int,
     ):
         """Download single file part to queue. This should be scheduled as a asyncio.Task."""
         async with self._semaphore:
             try:
+                url = await self.storage.get_object_download_url(
+                    bucket_id=get_bucket_id(self.config),
+                    object_id=self.file_id,
+                )
                 response: Response = await self.retry_handler(
                     fn=client.get,
                     url=url,
@@ -140,11 +142,6 @@ class ChunkedDownloader:
     async def download(self):
         """Download file in parts and validate checksums"""
         LOG.info("(4/7) Downloading file %s for validation.", self.file_id)
-        url_function = partial(
-            self.storage.get_object_download_url,
-            bucket_id=get_bucket_id(self.config),
-            object_id=self.file_id,
-        )
         num_parts = math.ceil(self.file_size / self.part_size)
         decryptor = Decryptor(
             file_secret=self.file_secret,
@@ -165,7 +162,6 @@ class ChunkedDownloader:
                     self._download_part(
                         client=client,
                         headers=headers,
-                        url=await url_function(),
                         part_number=part_number,
                     )
                 )
