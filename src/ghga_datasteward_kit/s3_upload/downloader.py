@@ -105,7 +105,10 @@ class ChunkedDownloader:
         next_part_to_yield = 1
         parts_downloaded = 0
         num_parts = math.ceil(self.file_size / self.part_size)
-        # priority queue ensures we get the the part with the lowest part number on calling get
+        # Priority queue ensures we get the the part with the lowest part number on calling get
+        # Due to out of order downloading, in the worst case the next part is fetched last in the
+        # current batch of scheduled tasks and we keep around an additional max_parallel_tasks - 1
+        # parts in the intermediary queue, assuming equal transfer speed for any single part.
         results: PriorityQueue[tuple[int, bytes]] = PriorityQueue()
 
         while next_part_to_yield <= num_parts:

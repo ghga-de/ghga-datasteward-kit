@@ -49,6 +49,7 @@ class RequestConfigurator:
         """Set timeout in seconds"""
         cls.timeout = config.client_timeout
         cls.max_connections = config.client_max_parallel_transfers
+        # silence httpx messages on each request due to setting global level info before
         logging.getLogger("httpx").setLevel(logging.WARNING)
 
 

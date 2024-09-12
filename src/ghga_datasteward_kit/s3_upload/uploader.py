@@ -144,6 +144,7 @@ class MultipartUpload:
         self.storage_cleaner = storage_cleaner
         self.retry_handler = configure_retries(config)
         self._semaphore = asyncio.Semaphore(config.client_max_parallel_transfers)
+        self._in_sequence_part_number = 1
 
     async def __aenter__(self):
         """Start multipart upload"""
@@ -192,14 +193,20 @@ class MultipartUpload:
                     fn=client.put, url=upload_url, content=part
                 )
 
+                # mask the actual current file part number and display an in sequence number instead
                 delta = time() - start
-                avg_speed = part_number * (self.config.part_size / 1024**2) / delta
+                avg_speed = (
+                    self._in_sequence_part_number
+                    * (self.config.part_size / 1024**2)
+                    / delta
+                )
                 LOG.info(
                     "(2/7) Processing upload for file part %i/%i (%.2f MiB/s)",
-                    part_number,
+                    self._in_sequence_part_number,
                     num_parts,
                     avg_speed,
                 )
+                self._in_sequence_part_number += 1
 
                 status_code = response.status_code
                 if status_code != 200:
