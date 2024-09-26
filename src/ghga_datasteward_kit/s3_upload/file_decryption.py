@@ -118,7 +118,7 @@ class Decryptor:
             )
 
     async def process_parts(self, download_files: AsyncGenerator[bytes, Any]):
-        """Encrypt and upload file parts."""
+        """Download and decrypt file parts."""
         unprocessed_bytes = b""
         download_buffer = b""
         unencrypted_sha256 = hashlib.sha256()

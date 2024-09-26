@@ -113,7 +113,7 @@ class LegacyConfig(S3ObjectStoragesConfig):
     )
     client_max_parallel_transfers: PositiveInt = Field(
         default=10,
-        description="Maximum number of inflight part upload or part download requests.",
+        description="Maximum number of ongoing concurrent part uploads or downloads.",
     )
     client_num_retries: NonNegativeInt = Field(
         default=5,
