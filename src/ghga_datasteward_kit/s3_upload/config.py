@@ -18,7 +18,7 @@
 import subprocess  # nosec
 from pathlib import Path
 
-from pydantic import Field, NonNegativeInt, SecretStr, field_validator
+from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -110,6 +110,10 @@ class LegacyConfig(S3ObjectStoragesConfig):
     client_retry_status_codes: list[int] = Field(default=[408, 500, 502, 503, 504])
     client_timeout: NonNegativeInt | None = Field(
         default=60, description="Timeout for client requests in seconds"
+    )
+    client_max_parallel_transfers: PositiveInt = Field(
+        default=10,
+        description="Maximum number of ongoing concurrent part uploads or downloads.",
     )
     client_num_retries: NonNegativeInt = Field(
         default=5,

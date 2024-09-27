@@ -17,8 +17,10 @@
 
 import asyncio
 import math
+from collections.abc import Coroutine, Generator
 from pathlib import Path
 from time import time
+from typing import Any
 from uuid import uuid4
 
 import crypt4gh.lib  # type: ignore
@@ -39,6 +41,23 @@ from ghga_datasteward_kit.s3_upload.utils import (
 MAX_TIMEOUT_DEBUG = (
     600  # maximum timeout for upload request used for debugging purposes
 )
+
+
+class UploadTaskHandler:
+    """Wraps task scheduling details."""
+
+    def __init__(self):
+        self._tasks: set[asyncio.Task] = set()
+
+    async def schedule(self, fn: Coroutine[Any, Any, None]):
+        """Create a task and register its callback."""
+        task = asyncio.create_task(fn)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+
+    async def gather(self):
+        """Await all running tasks"""
+        await asyncio.gather(*self._tasks)
 
 
 class ChunkedUploader:
@@ -70,8 +89,6 @@ class ChunkedUploader:
         encrypted_file_size = self.unencrypted_file_size + num_segments * 28
         num_parts = math.ceil(encrypted_file_size / self.config.part_size)
 
-        start = time()
-
         with open(self.input_path, "rb") as file:
             async with (
                 MultipartUpload(
@@ -80,26 +97,25 @@ class ChunkedUploader:
                     encrypted_file_size=encrypted_file_size,
                     part_size=self.config.part_size,
                     storage_cleaner=self._storage_cleaner,
-                    debug_mode=self.debug_mode,
                 ) as upload,
                 httpx_client() as client,
             ):
                 LOG.info("(1/7) Initialized file upload for %s.", upload.file_id)
-                for part_number, part in enumerate(
-                    self.encryptor.process_file(file=file), start=1
-                ):
-                    await upload.send_part(
-                        client=client, part_number=part_number, part=part
-                    )
+                task_handler = UploadTaskHandler()
 
-                    delta = time() - start
-                    avg_speed = part_number * (self.config.part_size / 1024**2) / delta
-                    LOG.info(
-                        "(2/7) Processing upload for file part %i/%i (%.2f MiB/s)",
-                        part_number,
-                        num_parts,
-                        avg_speed,
+                start = time()
+                file_processor = self.encryptor.process_file(file=file)
+                for _ in range(num_parts):
+                    await task_handler.schedule(
+                        upload.send_part(
+                            client=client,
+                            file_processor=file_processor,
+                            num_parts=num_parts,
+                            start=start,
+                        )
                     )
+                # Wait for all upload tasks to finish
+                await task_handler.gather()
                 if encrypted_file_size != self.encryptor.encrypted_file_size:
                     raise ValueError(
                         "Mismatch between actual and theoretical encrypted part size:\n"
@@ -112,14 +128,13 @@ class ChunkedUploader:
 class MultipartUpload:
     """Context manager to handle init + complete/abort for S3 multipart upload"""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         config: LegacyConfig,
         file_id: str,
         encrypted_file_size: int,
         part_size: int,
         storage_cleaner: StorageCleaner,
-        debug_mode: bool,
     ) -> None:
         self.config = config
         self.storage = get_object_storage(config=self.config)
@@ -128,8 +143,9 @@ class MultipartUpload:
         self.part_size = part_size
         self.upload_id = ""
         self.storage_cleaner = storage_cleaner
-        self.debug_mode = debug_mode
         self.retry_handler = configure_retries(config)
+        self._semaphore = asyncio.Semaphore(config.client_max_parallel_transfers)
+        self._in_sequence_part_number = 1
 
     async def __aenter__(self):
         """Start multipart upload"""
@@ -148,7 +164,7 @@ class MultipartUpload:
                 anticipated_part_quantity=math.ceil(self.file_size / self.part_size),
                 anticipated_part_size=self.part_size,
             )
-        except (Exception, KeyboardInterrupt) as exc:
+        except BaseException as exc:
             raise self.storage_cleaner.MultipartUploadCompletionError(
                 cause=str(exc),
                 bucket_id=get_bucket_id(self.config),
@@ -157,39 +173,52 @@ class MultipartUpload:
             ) from exc
 
     async def send_part(
-        self, *, client: httpx.AsyncClient, part: bytes, part_number: int
+        self,
+        *,
+        client: httpx.AsyncClient,
+        file_processor: Generator[tuple[int, bytes], Any, None],
+        num_parts: int,
+        start: float,
     ):
         """Handle upload of one file part"""
-        try:
-            upload_url = await self.storage.get_part_upload_url(
-                upload_id=self.upload_id,
-                bucket_id=get_bucket_id(self.config),
-                object_id=self.file_id,
-                part_number=part_number,
-            )
-            # wait slightly before using the upload URL
-            await asyncio.sleep(0.1)
-            response: Response = await self.retry_handler(
-                fn=self._run_request, client=client, url=upload_url, part=part
-            )
+        async with self._semaphore:
+            part_number, part = next(file_processor)
+            try:
+                upload_url = await self.storage.get_part_upload_url(
+                    upload_id=self.upload_id,
+                    bucket_id=get_bucket_id(self.config),
+                    object_id=self.file_id,
+                    part_number=part_number,
+                )
+                response: Response = await self.retry_handler(
+                    fn=client.put, url=upload_url, content=part
+                )
 
-            status_code = response.status_code
-            if status_code != 200:
-                raise ValueError(f"Received unexpected status code {
-                    status_code} when trying to upload file part {part_number}.")
+                # mask the actual current file part number and display an in sequence number instead
+                delta = time() - start
+                avg_speed = (
+                    self._in_sequence_part_number
+                    * (self.config.part_size / 1024**2)
+                    / delta
+                )
+                LOG.info(
+                    "(2/7) Processing upload for file part %i/%i (%.2f MiB/s)",
+                    self._in_sequence_part_number,
+                    num_parts,
+                    avg_speed,
+                )
+                self._in_sequence_part_number += 1
 
-        except (Exception, KeyboardInterrupt) as exc:
-            raise self.storage_cleaner.PartUploadError(
-                cause=str(exc),
-                bucket_id=get_bucket_id(self.config),
-                object_id=self.file_id,
-                part_number=part_number,
-                upload_id=self.upload_id,
-            ) from exc
+                status_code = response.status_code
+                if status_code != 200:
+                    raise ValueError(f"Received unexpected status code {
+                        status_code} when trying to upload file part {part_number}.")
 
-    async def _run_request(
-        self, *, client: httpx.AsyncClient, url: str, part: bytes
-    ) -> Response:
-        """Request to be wrapped by retry handler."""
-        response = await client.put(url=url, content=part)
-        return response
+            except BaseException as exc:
+                raise self.storage_cleaner.PartUploadError(
+                    cause=str(exc),
+                    bucket_id=get_bucket_id(self.config),
+                    object_id=self.file_id,
+                    part_number=part_number,
+                    upload_id=self.upload_id,
+                ) from exc

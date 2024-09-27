@@ -42,17 +42,27 @@ class RequestConfigurator:
     """Helper for user configurable httpx request parameters."""
 
     timeout: int | None
+    max_connections: int
 
     @classmethod
     def configure(cls, config: LegacyConfig):
         """Set timeout in seconds"""
         cls.timeout = config.client_timeout
+        cls.max_connections = config.client_max_parallel_transfers
+        # silence httpx messages on each request due to setting global level info before
+        logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 @asynccontextmanager
 async def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
-    async with httpx.AsyncClient(timeout=RequestConfigurator.timeout) as client:
+    async with httpx.AsyncClient(
+        timeout=RequestConfigurator.timeout,
+        limits=httpx.Limits(
+            max_connections=RequestConfigurator.max_connections,
+            max_keepalive_connections=RequestConfigurator.max_connections,
+        ),
+    ) as client:
         yield client
 
 
@@ -256,6 +266,15 @@ class StorageCleaner:
             self.object_id = object_id
             super().__init__(message)
 
+    class DownloadError(RuntimeError):
+        """Raised when downloading a file failed due to keyboard interrupts and the uploaded file needs removal."""
+
+        def __init__(self, *, bucket_id: str, object_id: str):
+            self.bucket_id = bucket_id
+            self.object_id = object_id
+            message = f"Failed downloading file for ''{object_id}''."
+            super().__init__(message)
+
     class MultipartUploadCompletionError(RuntimeError):
         """Raised when upload completion failed and the ongoing upload needs to be aborted."""
 
@@ -339,6 +358,7 @@ class StorageCleaner:
         if isinstance(
             exc_v,
             self.ChecksumValidationError
+            | self.DownloadError
             | self.PartDownloadError
             | self.SecretExchangeError
             | self.WritingOutputError,
