@@ -163,6 +163,7 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
         metadata = models.OutputMetadata(
             alias=uploader.alias,
             file_id=uploader.file_id,
+            bucket_id=get_bucket_id(config=config),
             object_id=uploader.file_id,
             original_path=input_path,
             part_size=config.part_size,
@@ -213,6 +214,7 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
         metadata = models.LegacyOutputMetadata(
             alias=uploader.alias,
             file_id=uploader.file_id,
+            bucket_id=get_bucket_id(config=config),
             object_id=uploader.file_id,
             original_path=input_path,
             part_size=config.part_size,

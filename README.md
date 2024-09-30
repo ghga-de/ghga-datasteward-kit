@@ -63,6 +63,8 @@ This is achieved using the data steward kit, using the following steps:
    storage is done in one go. This is achieved using either the
    `ghga-datasteward-kit files upload` for uploading a single file or the
    `ghga-datasteward-kit files batch-upload` for uploading multiple files at once.
+   There also exist legacy versions of these subcommands for compatibility reasons,
+   where the commonad is prefixed with `legacy-`.
    Please see [this section](#files-batch-upload) for further details. This will output
    one summary JSON per uploaded file. The encryption secret is automatically
    transferred to GHGA central.
@@ -120,11 +122,9 @@ content to a (remote) S3-compatible object storage.
 This process consists of multiple steps:
 1. Generate a unique file id
 2. Create unencrypted file checksum
-3. Encrypt file
-4. Extract file secret and remove Crypt4GH envelope
-5. Upload encrypted file content
-6. Download encrypted file content, decrypt and verify checksum
-7. Write file/upload information to output file
+3. Encrypt and upload file in chunks
+4. Download encrypted file content, decrypt and verify checksum
+5. Write file/upload information to output file
 
 The user needs to provide a config yaml containing information as described
 [here](./s3_upload_config.md).
@@ -135,11 +135,13 @@ An overview of important information about each the upload is written to a file 
 It contains the following information:
 1. The file alias
 2. A unique identifier for the file
-3. The local file path
-4. A SHA256 checksum over the unencrypted content
-5. MD5 checksums over all encrypted file parts
-6. SHA256 checksums over all encrypted file parts
-7. The file encryption/decryption secret
+3. An identifier of the storage bucket the file was uploaded to (Added in v4.4.0)
+4. The local file path
+5. A SHA256 checksum over the unencrypted content
+6. MD5 checksums over all encrypted file parts
+7. SHA256 checksums over all encrypted file parts
+8. The file encryption/decryption secret id or the actual textual representation of the secret, if the legacy command was used (Secret ID since v1.0.0)
+9. An alias for the storage node the file was uploaded to (Added in v3.0.0)
 
 Attention: Keep this output file in a safe, private location.
 If this file is lost, the uploaded file content becomes inaccessible.
@@ -153,6 +155,9 @@ Upload all file summary JSONs (produced using the
 running system and make the corresponding files available for download.
 
 This command requires a configuration file as described [here](./ingest_config.md).
+
+### ingest version compatibility
+Currently v4.4.0 of this tool and v3.2.0 of the `File Ingest Service` are compatible.
 
 ### metadata
 

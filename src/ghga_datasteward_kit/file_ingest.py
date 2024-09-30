@@ -14,6 +14,7 @@
 # limitations under the License.
 """Interaction with file ingest service"""
 
+import logging
 from collections.abc import Callable
 from pathlib import Path
 
@@ -25,6 +26,8 @@ from metldata.submission_registry.submission_store import (
 from pydantic import Field, ValidationError
 
 from ghga_datasteward_kit import models, utils
+
+LOG = logging.getLogger(__name__)
 
 
 class IngestConfig(SubmissionStoreConfig):
@@ -140,11 +143,13 @@ def file_ingest(
             input_path=in_path, selected_alias=config.selected_storage_alias
         )
         endpoint = config.file_ingest_federated_endpoint
+        LOG.info("Selected non-legacy endpoint %s for file %s.", endpoint, in_path)
     except (KeyError, ValidationError):
         output_metadata = models.LegacyOutputMetadata.load(
             input_path=in_path, selected_alias=config.selected_storage_alias
         )
         endpoint = config.file_ingest_legacy_endpoint
+        LOG.info("Selected legacy endpoint %s for file %s.", endpoint, in_path)
 
     endpoint_url = utils.path_join(config.file_ingest_baseurl, endpoint)
 
