@@ -179,7 +179,7 @@ def file_ingest(
             if response.status_code == 403:
                 raise ValueError("Not authorized to access ingest endpoint.")
             if response.status_code == 422:
-                raise ValueError("Could not decrypt received payload.")
+                raise ValueError(response.json()["detail"])
             if response.status_code == 500:
                 raise ValueError(
                     "Internal file ingest service error or communication with vault failed."
