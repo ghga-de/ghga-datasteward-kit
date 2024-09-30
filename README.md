@@ -156,8 +156,8 @@ running system and make the corresponding files available for download.
 
 This command requires a configuration file as described [here](./ingest_config.md).
 
-### ingest version compatibility
-Currently v4.4.0 of this tool and v3.2.0 of the `File Ingest Service` are compatible.
+#### ingest version compatibility
+Currently v4.4.0 of this tool and v4.0.0 of the `File Ingest Service` are compatible.
 
 ### metadata
 

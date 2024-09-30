@@ -71,7 +71,7 @@ class MetadataBase(BaseModel):
     """Common base for all output and upload models"""
 
     file_id: str
-    bucket_id: str | None
+    bucket_id: str
     object_id: str
     part_size: int
     unencrypted_size: int
@@ -129,7 +129,7 @@ class OutputMetadata(Metadata):
         os.chmod(path=output_path, mode=0o400)
 
     @classmethod
-    def load(cls, input_path: Path, selected_alias: str):
+    def load(cls, input_path: Path, selected_alias: str, selected_bucket: str):
         """Load metadata from serialized file"""
         with input_path.open("r") as infile:
             data = json.load(infile)
@@ -148,11 +148,10 @@ class OutputMetadata(Metadata):
             bucket_id = data["Bucket ID"]
         except KeyError:
             LOG.warning(
-                "Could not find bucket ID in metadata. Configure the selected_bucket_id option in"
-                " the file ingest service to populate older metadata with the correct value."
-                "Output metadata for different buckets needs to be split into different batches in this case."
+                "Could not find bucket ID in metadata, populating with configured alias '%s' instead.",
+                selected_bucket,
             )
-            bucket_id = None
+            bucket_id = selected_bucket
 
         file_id = data["File UUID"]
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
@@ -226,7 +225,7 @@ class LegacyOutputMetadata(LegacyMetadata):
         os.chmod(path=output_path, mode=0o400)
 
     @classmethod
-    def load(cls, input_path: Path, selected_alias: str):
+    def load(cls, input_path: Path, selected_alias: str, selected_bucket: str):
         """Load metadata from serialized file"""
         with input_path.open("r") as infile:
             data = json.load(infile)
@@ -245,11 +244,10 @@ class LegacyOutputMetadata(LegacyMetadata):
             bucket_id = data["Bucket ID"]
         except KeyError:
             LOG.warning(
-                "Could not find bucket ID in metadata. Configure the selected_bucket_id option in"
-                " the file ingest service to populate older metadata with the correct value."
-                "Output metadata for different buckets needs to be split into different batches in this case."
+                "Could not find bucket ID in metadata, populating with configured alias '%s' instead.",
+                selected_bucket,
             )
-            bucket_id = None
+            bucket_id = selected_bucket
 
         file_id = data["File UUID"]
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
