@@ -49,6 +49,9 @@ EXAMPLE_SUBMISSION = Submission(
     ),
 )
 
+SELECTED_STORAGE_ALIAS = "test"
+SELECTED_BUCKET_ID = "selected-test-bucket"
+
 
 @dataclass
 class IngestFixture:
@@ -70,11 +73,12 @@ def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
             keypair = generate_key_pair()
 
             file_path = Path(input_dir) / "test.json"
-            file_id = "happy_little_object"
+            file_id = "happy-little-object"
 
             metadata = LegacyOutputMetadata(
                 alias="test_alias",
                 file_id=file_id,
+                bucket_id="test-bucket",
                 object_id=file_id,
                 original_path=file_path,
                 part_size=16 * 1024**2,
@@ -95,7 +99,8 @@ def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
                 input_dir=Path(input_dir),
                 map_files_fields=["study_files"],
                 submission_store_dir=Path(submission_store_dir),
-                selected_storage_alias="test",
+                selected_storage_alias=SELECTED_STORAGE_ALIAS,
+                selected_bucket_id=SELECTED_BUCKET_ID,
             )
 
             submission_store = SubmissionStore(config=config)
@@ -124,6 +129,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
             metadata = OutputMetadata(
                 alias="test_alias",
                 file_id=file_id,
+                bucket_id="test-bucket",
                 object_id=file_id,
                 original_path=file_path,
                 part_size=16 * 1024**2,
@@ -144,7 +150,8 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
                 input_dir=Path(input_dir),
                 map_files_fields=["study_files"],
                 submission_store_dir=Path(submission_store_dir),
-                selected_storage_alias="test",
+                selected_storage_alias=SELECTED_STORAGE_ALIAS,
+                selected_bucket_id=SELECTED_BUCKET_ID,
             )
 
             submission_store = SubmissionStore(config=config)

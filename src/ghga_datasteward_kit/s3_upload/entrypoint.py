@@ -70,7 +70,6 @@ async def validate_and_transfer_content(
         config=config,
         unencrypted_file_size=file_size,
         storage_cleaner=storage_cleaner,
-        debug_mode=config.debug,
     )
     await uploader.encrypt_and_upload()
 
