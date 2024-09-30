@@ -218,7 +218,7 @@ def test_fallbacks(
 
     for fixture, metadata_model in zip(
         (legacy_ingest_fixture, ingest_fixture),
-        (models.LegacyOutputMetadata, models.OutputMetadata),
+        (models.LegacyOutputMetadata, models.OutputMetadata),  # type: ignore[arg-type]
         strict=True,
     ):
         with fixture.file_path.open("r") as source:
@@ -231,7 +231,7 @@ def test_fallbacks(
         with modified_metadata_path.open("w") as target:
             json.dump(data, target)
 
-        metadata = metadata_model.load(
+        metadata = metadata_model.load(  # type: ignore[attr-defined]
             input_path=modified_metadata_path,
             selected_alias=storage_alias,
             selected_bucket=bucket_id,
