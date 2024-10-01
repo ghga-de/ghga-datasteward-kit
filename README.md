@@ -64,7 +64,7 @@ This is achieved using the data steward kit, using the following steps:
    `ghga-datasteward-kit files upload` for uploading a single file or the
    `ghga-datasteward-kit files batch-upload` for uploading multiple files at once.
    There also exist legacy versions of these subcommands for compatibility reasons,
-   where the commonad is prefixed with `legacy-`.
+   where the command is prefixed with `legacy-`.
    Please see [this section](#files-batch-upload) for further details. This will output
    one summary JSON per uploaded file. The encryption secret is automatically
    transferred to GHGA central.
