@@ -129,7 +129,7 @@ class OutputMetadata(Metadata):
         os.chmod(path=output_path, mode=0o400)
 
     @classmethod
-    def load(cls, input_path: Path, selected_alias: str, selected_bucket: str):
+    def load(cls, input_path: Path, selected_alias: str, fallback_bucket: str):
         """Load metadata from serialized file"""
         with input_path.open("r") as infile:
             data = json.load(infile)
@@ -149,9 +149,9 @@ class OutputMetadata(Metadata):
         except KeyError:
             LOG.warning(
                 "Could not find bucket ID in metadata, populating with configured bucket '%s' instead.",
-                selected_bucket,
+                fallback_bucket,
             )
-            bucket_id = selected_bucket
+            bucket_id = fallback_bucket
 
         file_id = data["File UUID"]
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
@@ -225,7 +225,7 @@ class LegacyOutputMetadata(LegacyMetadata):
         os.chmod(path=output_path, mode=0o400)
 
     @classmethod
-    def load(cls, input_path: Path, selected_alias: str, selected_bucket: str):
+    def load(cls, input_path: Path, selected_alias: str, fallback_bucket: str):
         """Load metadata from serialized file"""
         with input_path.open("r") as infile:
             data = json.load(infile)
@@ -245,9 +245,9 @@ class LegacyOutputMetadata(LegacyMetadata):
         except KeyError:
             LOG.warning(
                 "Could not find bucket ID in metadata, populating with configured bucket '%s' instead.",
-                selected_bucket,
+                fallback_bucket,
             )
-            bucket_id = selected_bucket
+            bucket_id = fallback_bucket
 
         file_id = data["File UUID"]
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2

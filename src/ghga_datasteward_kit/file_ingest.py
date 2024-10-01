@@ -146,7 +146,7 @@ def file_ingest(
         output_metadata = models.OutputMetadata.load(
             input_path=in_path,
             selected_alias=config.selected_storage_alias,
-            selected_bucket=config.fallback_bucket_id,
+            fallback_bucket=config.fallback_bucket_id,
         )
         endpoint = config.file_ingest_federated_endpoint
         LOG.info("Selected non-legacy endpoint %s for file %s.", endpoint, in_path)
@@ -154,7 +154,7 @@ def file_ingest(
         output_metadata = models.LegacyOutputMetadata.load(
             input_path=in_path,
             selected_alias=config.selected_storage_alias,
-            selected_bucket=config.fallback_bucket_id,
+            fallback_bucket=config.fallback_bucket_id,
         )
         endpoint = config.file_ingest_legacy_endpoint
         LOG.info("Selected legacy endpoint %s for file %s.", endpoint, in_path)

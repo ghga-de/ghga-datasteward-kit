@@ -42,7 +42,7 @@ async def test_alias_to_accession(legacy_ingest_fixture: IngestFixture):  # noqa
     metadata = models.LegacyOutputMetadata.load(
         input_path=legacy_ingest_fixture.file_path,
         selected_alias=legacy_ingest_fixture.config.selected_storage_alias,
-        selected_bucket=legacy_ingest_fixture.config.fallback_bucket_id,
+        fallback_bucket=legacy_ingest_fixture.config.fallback_bucket_id,
     )
 
     accession = alias_to_accession(
@@ -234,7 +234,7 @@ def test_fallbacks(
         metadata = metadata_model.load(  # type: ignore[attr-defined]
             input_path=modified_metadata_path,
             selected_alias=storage_alias,
-            selected_bucket=bucket_id,
+            fallback_bucket=bucket_id,
         )
         assert metadata.bucket_id == bucket_id
         assert metadata.storage_alias == storage_alias
