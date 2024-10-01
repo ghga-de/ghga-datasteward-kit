@@ -148,7 +148,7 @@ class OutputMetadata(Metadata):
             bucket_id = data["Bucket ID"]
         except KeyError:
             LOG.warning(
-                "Could not find bucket ID in metadata, populating with configured alias '%s' instead.",
+                "Could not find bucket ID in metadata, populating with configured bucket '%s' instead.",
                 selected_bucket,
             )
             bucket_id = selected_bucket
