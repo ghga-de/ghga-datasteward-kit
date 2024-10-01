@@ -100,7 +100,7 @@ def legacy_ingest_fixture() -> Generator[IngestFixture, None, None]:
                 map_files_fields=["study_files"],
                 submission_store_dir=Path(submission_store_dir),
                 selected_storage_alias=SELECTED_STORAGE_ALIAS,
-                selected_bucket_id=SELECTED_BUCKET_ID,
+                fallback_bucket_id=SELECTED_BUCKET_ID,
             )
 
             submission_store = SubmissionStore(config=config)
@@ -151,7 +151,7 @@ def ingest_fixture() -> Generator[IngestFixture, None, None]:
                 map_files_fields=["study_files"],
                 submission_store_dir=Path(submission_store_dir),
                 selected_storage_alias=SELECTED_STORAGE_ALIAS,
-                selected_bucket_id=SELECTED_BUCKET_ID,
+                fallback_bucket_id=SELECTED_BUCKET_ID,
             )
 
             submission_store = SubmissionStore(config=config)
