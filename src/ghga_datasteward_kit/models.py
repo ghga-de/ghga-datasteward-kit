@@ -16,12 +16,15 @@
 
 import hashlib
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
 
 from ghga_service_commons.utils.crypt import encrypt
 from pydantic import BaseModel
+
+LOG = logging.getLogger(__name__)
 
 
 class Checksums:
@@ -68,6 +71,7 @@ class MetadataBase(BaseModel):
     """Common base for all output and upload models"""
 
     file_id: str
+    bucket_id: str
     object_id: str
     part_size: int
     unencrypted_size: int
@@ -81,6 +85,7 @@ class MetadataBase(BaseModel):
         """Prepare shared fields for output"""
         output: dict[str, Any] = {}
 
+        output["Bucket ID"] = self.bucket_id
         output["File UUID"] = self.file_id
         output["Part Size"] = f"{self.part_size // 1024**2} MiB"
         output["Unencrypted file size"] = self.unencrypted_size
@@ -124,17 +129,30 @@ class OutputMetadata(Metadata):
         os.chmod(path=output_path, mode=0o400)
 
     @classmethod
-    def load(cls, input_path: Path, selected_alias: str):
+    def load(cls, input_path: Path, selected_alias: str, fallback_bucket: str):
         """Load metadata from serialized file"""
         with input_path.open("r") as infile:
             data = json.load(infile)
 
-        # Support for older file uploads without explicit storage alias
+        # Support for older file uploads without explicit storage alias or bucket id
         # Ingest the configured selected alias if none can be found in the metadata
         try:
             storage_alias = data["Storage alias"]
         except KeyError:
+            LOG.warning(
+                "Could not find storage alias in metadata, populating with configured alias '%s' instead.",
+                selected_alias,
+            )
             storage_alias = selected_alias
+        try:
+            bucket_id = data["Bucket ID"]
+        except KeyError:
+            LOG.warning(
+                "Could not find bucket ID in metadata, populating with configured bucket '%s' instead.",
+                fallback_bucket,
+            )
+            bucket_id = fallback_bucket
+
         file_id = data["File UUID"]
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
 
@@ -142,6 +160,7 @@ class OutputMetadata(Metadata):
             alias=data["Alias"],
             original_path=data["Original filesystem path"],
             file_id=file_id,
+            bucket_id=bucket_id,
             object_id=file_id,
             part_size=part_size,
             secret_id=data["Symmetric file encryption secret ID"],
@@ -157,6 +176,7 @@ class OutputMetadata(Metadata):
         """Convert internal output file representation to request model"""
         return Metadata(
             file_id=file_id,
+            bucket_id=self.bucket_id,
             object_id=self.object_id,
             part_size=self.part_size,
             unencrypted_size=self.unencrypted_size,
@@ -205,17 +225,30 @@ class LegacyOutputMetadata(LegacyMetadata):
         os.chmod(path=output_path, mode=0o400)
 
     @classmethod
-    def load(cls, input_path: Path, selected_alias: str):
+    def load(cls, input_path: Path, selected_alias: str, fallback_bucket: str):
         """Load metadata from serialized file"""
         with input_path.open("r") as infile:
             data = json.load(infile)
 
-        # Support for older file uploads without explicit storage alias
+        # Support for older file uploads without explicit storage alias or bucket id
         # Ingest the configured selected alias if none can be found in the metadata
         try:
             storage_alias = data["Storage alias"]
         except KeyError:
+            LOG.warning(
+                "Could not find storage alias in metadata, populating with configured alias '%s' instead.",
+                selected_alias,
+            )
             storage_alias = selected_alias
+        try:
+            bucket_id = data["Bucket ID"]
+        except KeyError:
+            LOG.warning(
+                "Could not find bucket ID in metadata, populating with configured bucket '%s' instead.",
+                fallback_bucket,
+            )
+            bucket_id = fallback_bucket
+
         file_id = data["File UUID"]
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
 
@@ -223,6 +256,7 @@ class LegacyOutputMetadata(LegacyMetadata):
             alias=data["Alias"],
             original_path=data["Original filesystem path"],
             file_id=file_id,
+            bucket_id=bucket_id,
             object_id=file_id,
             part_size=part_size,
             file_secret=data["Symmetric file encryption secret"],
@@ -238,6 +272,7 @@ class LegacyOutputMetadata(LegacyMetadata):
         """Convert internal output file representation to request model"""
         return LegacyMetadata(
             file_id=file_id,
+            bucket_id=self.bucket_id,
             object_id=self.object_id,
             part_size=self.part_size,
             unencrypted_size=self.unencrypted_size,

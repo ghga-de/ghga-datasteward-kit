@@ -14,6 +14,7 @@
 # limitations under the License.
 """Interaction with file ingest service"""
 
+import logging
 from collections.abc import Callable
 from pathlib import Path
 
@@ -25,6 +26,8 @@ from metldata.submission_registry.submission_store import (
 from pydantic import Field, ValidationError
 
 from ghga_datasteward_kit import models, utils
+
+LOG = logging.getLogger(__name__)
 
 
 class IngestConfig(SubmissionStoreConfig):
@@ -76,6 +79,10 @@ class IngestConfig(SubmissionStoreConfig):
             + " and must also be present in the local storage configuration."
             + " During the later ingest phase, the alias will be validated by the File Ingest Service."
         ),
+    )
+    fallback_bucket_id: str = Field(
+        default=...,
+        description="Fallback bucket_id for older output metadata files that don't contain a bucket ID.",
     )
 
 
@@ -137,14 +144,20 @@ def file_ingest(
     """
     try:
         output_metadata = models.OutputMetadata.load(
-            input_path=in_path, selected_alias=config.selected_storage_alias
+            input_path=in_path,
+            selected_alias=config.selected_storage_alias,
+            fallback_bucket=config.fallback_bucket_id,
         )
         endpoint = config.file_ingest_federated_endpoint
+        LOG.info("Selected non-legacy endpoint %s for file %s.", endpoint, in_path)
     except (KeyError, ValidationError):
         output_metadata = models.LegacyOutputMetadata.load(
-            input_path=in_path, selected_alias=config.selected_storage_alias
+            input_path=in_path,
+            selected_alias=config.selected_storage_alias,
+            fallback_bucket=config.fallback_bucket_id,
         )
         endpoint = config.file_ingest_legacy_endpoint
+        LOG.info("Selected legacy endpoint %s for file %s.", endpoint, in_path)
 
     endpoint_url = utils.path_join(config.file_ingest_baseurl, endpoint)
 

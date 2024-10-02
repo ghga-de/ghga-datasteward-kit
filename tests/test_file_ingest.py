@@ -15,6 +15,8 @@
 
 """File ingest tests."""
 
+import json
+
 import pytest
 import yaml
 from ghga_service_commons.utils.simple_token import generate_token
@@ -40,6 +42,7 @@ async def test_alias_to_accession(legacy_ingest_fixture: IngestFixture):  # noqa
     metadata = models.LegacyOutputMetadata.load(
         input_path=legacy_ingest_fixture.file_path,
         selected_alias=legacy_ingest_fixture.config.selected_storage_alias,
+        fallback_bucket=legacy_ingest_fixture.config.fallback_bucket_id,
     )
 
     accession = alias_to_accession(
@@ -202,3 +205,36 @@ async def test_legacy_main(
         out, _ = capfd.readouterr()
 
         assert "Encountered 1 errors during processing" in out
+
+
+def test_fallbacks(
+    legacy_ingest_fixture: IngestFixture,  # noqa: F811
+    ingest_fixture: IngestFixture,  # noqa: F811
+    tmp_path,
+):
+    """Simulate loading old metadata files and test for newly populated fields"""
+    bucket_id = ingest_fixture.config.fallback_bucket_id
+    storage_alias = ingest_fixture.config.selected_storage_alias
+
+    for fixture, metadata_model in zip(
+        (legacy_ingest_fixture, ingest_fixture),
+        (models.LegacyOutputMetadata, models.OutputMetadata),  # type: ignore[arg-type]
+        strict=True,
+    ):
+        with fixture.file_path.open("r") as source:
+            data = json.load(source)
+
+        del data["Bucket ID"]
+        del data["Storage alias"]
+
+        modified_metadata_path = tmp_path / "old_metadata.txt"
+        with modified_metadata_path.open("w") as target:
+            json.dump(data, target)
+
+        metadata = metadata_model.load(  # type: ignore[attr-defined]
+            input_path=modified_metadata_path,
+            selected_alias=storage_alias,
+            fallback_bucket=bucket_id,
+        )
+        assert metadata.bucket_id == bucket_id
+        assert metadata.storage_alias == storage_alias

@@ -38,10 +38,6 @@ from ghga_datasteward_kit.s3_upload.utils import (
     httpx_client,
 )
 
-MAX_TIMEOUT_DEBUG = (
-    600  # maximum timeout for upload request used for debugging purposes
-)
-
 
 class UploadTaskHandler:
     """Wraps task scheduling details."""
@@ -63,14 +59,13 @@ class UploadTaskHandler:
 class ChunkedUploader:
     """Handler class dealing with upload functionality"""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         input_path: Path,
         alias: str,
         config: LegacyConfig,
         unencrypted_file_size: int,
         storage_cleaner: StorageCleaner,
-        debug_mode: bool,
     ) -> None:
         self.alias = alias
         self.config = config
@@ -80,7 +75,6 @@ class ChunkedUploader:
         self.unencrypted_file_size = unencrypted_file_size
         self.encrypted_file_size = 0
         self._storage_cleaner = storage_cleaner
-        self.debug_mode = debug_mode
 
     async def encrypt_and_upload(self):
         """Delegate encryption and perform multipart upload"""
