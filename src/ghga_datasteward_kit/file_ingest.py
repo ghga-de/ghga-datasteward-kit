@@ -183,7 +183,7 @@ def file_ingest(
             timeout=60,
         )
 
-        if response.status_code != 202:
+        if response.status_code not in (202, 204):
             if response.status_code == 403:
                 raise ValueError("Not authorized to access ingest endpoint.")
             if response.status_code == 422:
