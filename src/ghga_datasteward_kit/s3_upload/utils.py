@@ -284,8 +284,9 @@ class StorageCleaner:
             self.bucket_id = bucket_id
             self.object_id = object_id
             self.upload_id = upload_id
-            message = f"Failed completing file upload for ''{
-                object_id}'' due to:\n {cause}."
+            message = (
+                f"Failed completing file upload for ''{object_id}'' due to:\n {cause}."
+            )
             super().__init__(message)
 
     class PartDownloadError(RuntimeError):
@@ -294,8 +295,7 @@ class StorageCleaner:
         def __init__(self, *, bucket_id: str, object_id: str, part_number: int):
             self.bucket_id = bucket_id
             self.object_id = object_id
-            message = f"Failed downloading file part {
-                part_number} for ''{object_id}''."
+            message = f"Failed downloading file part {part_number} for ''{object_id}''."
             super().__init__(message)
 
     class PartUploadError(RuntimeError):
@@ -314,8 +314,7 @@ class StorageCleaner:
             self.object_id = object_id
             self.part_number = part_number
             self.upload_id = upload_id
-            message = f"Failed uploading file part {
-                part_number} for ''{object_id}'' due to:\n {cause}."
+            message = f"Failed uploading file part {part_number} for ''{object_id}'' due to:\n {cause}."
             super().__init__(message)
 
     class SecretExchangeError(RuntimeError):

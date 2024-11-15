@@ -16,6 +16,8 @@
 """Functionality to upload encrypted file chunks using multipart upload."""
 
 import asyncio
+import base64
+import hashlib
 import math
 from collections.abc import Coroutine, Generator
 from pathlib import Path
@@ -140,12 +142,14 @@ class MultipartUpload:
         self.retry_handler = configure_retries(config)
         self._semaphore = asyncio.Semaphore(config.client_max_parallel_transfers)
         self._in_sequence_part_number = 1
+        self._md5sums: dict[int, bytes]
 
     async def __aenter__(self):
         """Start multipart upload"""
         self.upload_id = await self.storage.init_multipart_upload(
             bucket_id=get_bucket_id(self.config), object_id=self.file_id
         )
+        self._md5sums = {}
         return self
 
     async def __aexit__(self, exc_t, exc_v, exc_tb):
@@ -165,6 +169,22 @@ class MultipartUpload:
                 object_id=self.file_id,
                 upload_id=self.upload_id,
             ) from exc
+        await self._compare_md5()
+
+    async def _compare_md5(self):
+        """TODO"""
+        concat = b"".join(md5 for _, md5 in sorted(self._md5sums.items()))
+        object_md5 = hashlib.md5(concat, usedforsecurity=False).hexdigest()
+
+        num_parts = max(self._md5sums)
+        object_md5 += f"-{num_parts}"
+
+        remote_md5 = await self.storage.get_object_etag(
+            bucket_id=get_bucket_id(self.config), object_id=self.file_id
+        )
+
+        if object_md5 != remote_md5:
+            raise
 
     async def send_part(
         self,
@@ -177,12 +197,15 @@ class MultipartUpload:
         """Handle upload of one file part"""
         async with self._semaphore:
             part_number, part = next(file_processor)
+            part_md5 = hashlib.md5(part, usedforsecurity=False).digest()
+            encoded_part_md5 = base64.b64encode(part_md5).decode("utf-8")
             try:
                 upload_url = await self.storage.get_part_upload_url(
                     upload_id=self.upload_id,
                     bucket_id=get_bucket_id(self.config),
                     object_id=self.file_id,
                     part_number=part_number,
+                    part_md5=encoded_part_md5,
                 )
                 response: Response = await self.retry_handler(
                     fn=client.put, url=upload_url, content=part
@@ -205,8 +228,13 @@ class MultipartUpload:
 
                 status_code = response.status_code
                 if status_code != 200:
-                    raise ValueError(f"Received unexpected status code {
-                        status_code} when trying to upload file part {part_number}.")
+                    if status_code == 400:
+                        raise ValueError(
+                            f"Could not validate uploaded part {part_number}: Mismatched MD5 checksum."
+                        )
+                    raise ValueError(
+                        f"Received unexpected status code {status_code} when trying to upload file part {part_number}."
+                    )
 
             except BaseException as exc:
                 raise self.storage_cleaner.PartUploadError(
