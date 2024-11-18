@@ -45,7 +45,7 @@ BUCKET_ID = "test-bucket"
     assert_all_responses_were_requested=False,
     can_send_already_matched_responses=True,
     should_mock=lambda request: request.url.host
-    not in ("localhost", "host.docker.internal"),
+    not in ("127.0.0.1", "localhost", "host.docker.internal"),
 )
 @pytest.mark.asyncio
 async def test_legacy_process(
@@ -85,7 +85,7 @@ async def test_legacy_process(
     assert_all_responses_were_requested=False,
     can_send_already_matched_responses=True,
     should_mock=lambda request: request.url.host
-    not in ("localhost", "host.docker.internal"),
+    not in ("127.0.0.1", "localhost", "host.docker.internal"),
 )
 @pytest.mark.asyncio
 async def test_process(config_fixture: Config, monkeypatch, httpx_mock: HTTPXMock):  # noqa: F811
