@@ -41,12 +41,12 @@ ALIAS = "test_file"
 BUCKET_ID = "test-bucket"
 
 
-@pytest.fixture
-def non_mocked_hosts() -> list[str]:
-    """Overwrite default behaviour"""
-    return ["localhost", "host.docker.internal"]
-
-
+@pytest.mark.httpx_mock(
+    assert_all_responses_were_requested=False,
+    can_send_already_matched_responses=True,
+    should_mock=lambda request: request.url.host
+    not in ("localhost", "host.docker.internal"),
+)
 @pytest.mark.asyncio
 async def test_legacy_process(
     legacy_config_fixture: LegacyConfig,  # noqa: F811
@@ -81,6 +81,12 @@ async def test_legacy_process(
         assert (config.output_dir / ALIAS).with_suffix(".json").exists()
 
 
+@pytest.mark.httpx_mock(
+    assert_all_responses_were_requested=False,
+    can_send_already_matched_responses=True,
+    should_mock=lambda request: request.url.host
+    not in ("localhost", "host.docker.internal"),
+)
 @pytest.mark.asyncio
 async def test_process(config_fixture: Config, monkeypatch, httpx_mock: HTTPXMock):  # noqa: F811
     """Test whole upload/download process for s3_upload script"""
