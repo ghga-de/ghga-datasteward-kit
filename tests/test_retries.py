@@ -27,6 +27,9 @@ STATUS_CODES = [408, 500, 502, 503, 504]
 URL = "http://not-a-real-url/test"
 
 
+@pytest.mark.httpx_mock(
+    assert_all_responses_were_requested=False, can_send_already_matched_responses=True
+)
 @pytest.mark.asyncio
 async def test_retry_handler(legacy_config_fixture: LegacyConfig, httpx_mock):  # noqa: F811
     """Test if configuration is correctly applied to retry handler"""

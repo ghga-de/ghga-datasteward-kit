@@ -15,11 +15,14 @@
 
 """File related CLI"""
 
+import logging
 from pathlib import Path
 
 import typer
 
 from ghga_datasteward_kit import batch_s3_upload, file_deletion, file_ingest, s3_upload
+
+log = logging.getLogger(__name__)
 
 cli = typer.Typer()
 
@@ -101,12 +104,15 @@ def ingest_upload_metadata(
     config_path: Path = typer.Option(..., help="Path to a config YAML."),
 ):
     """Upload all output metadata files from the given directory to the file ingest service."""
-    errors = file_ingest.main(config_path=config_path)
+    errors, successes = file_ingest.main(config_path=config_path)
 
     if errors:
         print(f"Encountered {len(errors)} errors during processing.")
         for file_path, cause in errors.items():
             print(f" -{file_path}: {cause}")
+        print("\nSuccessfully ingested the following files:")
+        for file_path in sorted(successes):
+            print(f" -{file_path}")
     else:
         print("Successfully sent all file upload metadata for ingest.")
 

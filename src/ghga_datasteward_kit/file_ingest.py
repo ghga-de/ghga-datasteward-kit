@@ -119,6 +119,7 @@ def main(
     token = utils.STEWARD_TOKEN.read_token()
 
     errors = {}
+    successes = set()
 
     for in_path in config.input_dir.iterdir():
         if in_path.suffix != ".json":
@@ -128,8 +129,10 @@ def main(
         except (ValidationError, ValueError) as error:
             errors[in_path.resolve()] = str(error)
             continue
+        else:
+            successes.add(in_path.resolve())
 
-    return errors
+    return errors, successes
 
 
 def file_ingest(
@@ -185,12 +188,20 @@ def file_ingest(
 
         if response.status_code != 202:
             if response.status_code == 403:
-                raise ValueError("Not authorized to access ingest endpoint.")
-            if response.status_code == 422:
-                raise ValueError("Could not decrypt received payload.")
-            if response.status_code == 500:
-                raise ValueError(
+                error = ValueError("Not authorized to access ingest endpoint.")
+            elif response.status_code == 409:
+                error = ValueError("Metadata has already been processed.")
+            elif response.status_code == 422:
+                error = ValueError("Could not decrypt received payload.")
+            elif response.status_code == 500:
+                error = ValueError(
                     "Internal file ingest service error or communication with vault failed."
                 )
+            else:
+                error = ValueError(
+                    f"Unexpected server response: {response.status_code}."
+                )
+            LOG.error(error)
+            raise error
 
-            raise ValueError(f"Unexpected server response: {response.status_code}.")
+    LOG.info("Succesfully ingested metdatada for %s", in_path)
