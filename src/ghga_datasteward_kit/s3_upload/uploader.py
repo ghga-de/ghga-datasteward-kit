@@ -216,10 +216,9 @@ class ChunkedUploader:
         async with self._semaphore:
             part_number, part = next(file_processor)
             self.decryptor.process_part(part)
-            # fetch current part md5 and convert from hexdigest to digest
-            part_md5 = bytes.fromhex(
-                self.encryptor.checksums.encrypted_md5[part_number - 1]
-            )
+            # calculate the hash again here.
+            # Naively fetching from the encryptor is prone to errors
+            part_md5 = hashlib.md5(part, usedforsecurity=False).digest()
             encoded_part_md5 = base64.b64encode(part_md5).decode("utf-8")
             try:
                 upload_url = await upload.storage.get_part_upload_url(
