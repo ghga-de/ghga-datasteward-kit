@@ -24,10 +24,10 @@ from ghga_datasteward_kit import batch_s3_upload, file_deletion, file_ingest, s3
 
 log = logging.getLogger(__name__)
 
-cli = typer.Typer()
+cli = typer.Typer(no_args_is_help=True)
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def legacy_upload(
     input_path: Path = typer.Option(..., help="Local path of the input file"),
     alias: str = typer.Option(..., help="A human readable file alias"),
@@ -37,7 +37,7 @@ def legacy_upload(
     s3_upload.legacy_main(input_path=input_path, alias=alias, config_path=config_path)
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def upload(
     input_path: Path = typer.Option(..., help="Local path of the input file"),
     alias: str = typer.Option(..., help="A human readable file alias"),
@@ -47,7 +47,7 @@ def upload(
     s3_upload.main(input_path=input_path, alias=alias, config_path=config_path)
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def legacy_batch_upload(
     tsv: Path = typer.Option(
         ...,
@@ -73,7 +73,7 @@ def legacy_batch_upload(
     )
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def batch_upload(
     tsv: Path = typer.Option(
         ...,
@@ -99,7 +99,7 @@ def batch_upload(
     )
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def ingest_upload_metadata(
     config_path: Path = typer.Option(..., help="Path to a config YAML."),
 ):
@@ -117,7 +117,7 @@ def ingest_upload_metadata(
         print("Successfully sent all file upload metadata for ingest.")
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def delete_file(
     file_id: str = typer.Option(
         ...,

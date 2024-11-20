@@ -343,6 +343,8 @@ class StorageCleaner:
 
     async def __aexit__(self, exc_t, exc_v, exc_tb):
         """The context manager exit function."""
+        if exc_v is None:
+            return
         # error handling while upload is still ongoing
         if isinstance(
             exc_v, self.MultipartUploadCompletionError | self.PartUploadError
@@ -352,9 +354,8 @@ class StorageCleaner:
                 bucket_id=exc_v.bucket_id,
                 object_id=exc_v.object_id,
             )
-            raise exc_v
         # error handling after upload has been completed
-        if isinstance(
+        elif isinstance(
             exc_v,
             self.ChecksumValidationError
             | self.DownloadError
@@ -366,7 +367,4 @@ class StorageCleaner:
                 bucket_id=exc_v.bucket_id,
                 object_id=exc_v.object_id,
             )
-            raise exc_v
-        # simply reraise unhandled exceptions with unknown upload status
-        if exc_v is not None:
-            raise exc_v
+        raise exc_v

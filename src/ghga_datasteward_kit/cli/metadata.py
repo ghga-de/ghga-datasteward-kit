@@ -23,12 +23,12 @@ from ghga_transpiler.cli import transpile
 
 from ghga_datasteward_kit import metadata
 
-cli = typer.Typer()
+cli = typer.Typer(no_args_is_help=True)
 
-cli.command()(transpile)
+cli.command(no_args_is_help=True)(transpile)
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def submit(
     submission_title: str = typer.Option(..., help="The title of the submission."),
     submission_description: str = typer.Option(
@@ -61,7 +61,7 @@ def submit(
     )
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def generate_artifact_models(
     config_path: Path = typer.Option(
         ...,
@@ -77,7 +77,7 @@ def generate_artifact_models(
     metadata.generate_artifact_models_from_path(config_path=config_path)
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def transform(
     config_path: Path = typer.Option(
         ...,

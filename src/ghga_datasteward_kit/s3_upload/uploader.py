@@ -30,6 +30,7 @@ import httpx
 from httpx import Response
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
+from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
@@ -39,6 +40,76 @@ from ghga_datasteward_kit.s3_upload.utils import (
     get_object_storage,
     httpx_client,
 )
+
+
+class MultipartUpload:
+    """Context manager to handle init + complete/abort for S3 multipart upload"""
+
+    def __init__(
+        self,
+        config: LegacyConfig,
+        file_id: str,
+        encrypted_file_size: int,
+        part_size: int,
+        storage_cleaner: StorageCleaner,
+    ) -> None:
+        self.config = config
+        self.storage = get_object_storage(config=self.config)
+        self.file_id = file_id
+        self.file_size = encrypted_file_size
+        self.part_size = part_size
+        self.upload_id = ""
+        self.storage_cleaner = storage_cleaner
+        self.md5sums: list[str]
+
+    async def __aenter__(self):
+        """Start multipart upload"""
+        self.upload_id = await self.storage.init_multipart_upload(
+            bucket_id=get_bucket_id(self.config), object_id=self.file_id
+        )
+        self.md5sums = []
+        return self
+
+    async def __aexit__(self, exc_t, exc_v, exc_tb):
+        """Complete or clean up multipart upload"""
+        try:
+            await self.storage.complete_multipart_upload(
+                upload_id=self.upload_id,
+                bucket_id=get_bucket_id(self.config),
+                object_id=self.file_id,
+                anticipated_part_quantity=math.ceil(self.file_size / self.part_size),
+                anticipated_part_size=self.part_size,
+            )
+        except BaseException as exc:
+            raise self.storage_cleaner.MultipartUploadCompletionError(
+                cause=str(exc),
+                bucket_id=get_bucket_id(self.config),
+                object_id=self.file_id,
+                upload_id=self.upload_id,
+            ) from exc
+        else:
+            await self._check_md5_matches()
+
+    async def _check_md5_matches(self):
+        """Calculates final object MD5 and checks if the remote matches."""
+        concat = b"".join(bytes.fromhex(md5) for md5 in self.md5sums)
+        object_md5 = hashlib.md5(concat, usedforsecurity=False).hexdigest()
+
+        num_parts = len(self.md5sums)
+        object_md5 += f"-{num_parts}"
+
+        remote_md5 = await self.storage.get_object_etag(
+            bucket_id=get_bucket_id(self.config), object_id=self.file_id
+        )
+        remote_md5 = remote_md5.strip('"')
+
+        if object_md5 != remote_md5:
+            raise self.storage_cleaner.ChecksumValidationError(
+                bucket_id=get_bucket_id(self.config),
+                object_id=self.file_id,
+                message=f"Object MD5 {remote_md5} of the uploaded object does not match"
+                f" the locally computed one: {object_md5}.",
+            )
 
 
 class UploadTaskHandler:
@@ -63,6 +134,7 @@ class ChunkedUploader:
 
     def __init__(
         self,
+        *,
         input_path: Path,
         alias: str,
         config: LegacyConfig,
@@ -73,9 +145,13 @@ class ChunkedUploader:
         self.config = config
         self.input_path = input_path
         self.encryptor = Encryptor(self.config.part_size)
+        self.decryptor = Decryptor(self.encryptor.file_secret)
         self.file_id = str(uuid4())
         self.unencrypted_file_size = unencrypted_file_size
         self.encrypted_file_size = 0
+        self.retry_handler = configure_retries(config)
+        self._in_sequence_part_number = 1
+        self._semaphore = asyncio.Semaphore(config.client_max_parallel_transfers)
         self._storage_cleaner = storage_cleaner
 
     async def encrypt_and_upload(self):
@@ -96,95 +172,36 @@ class ChunkedUploader:
                 ) as upload,
                 httpx_client() as client,
             ):
-                LOG.info("(1/7) Initialized file upload for %s.", upload.file_id)
+                LOG.info("(1/4) Initialized file upload for %s.", upload.file_id)
                 task_handler = UploadTaskHandler()
 
                 start = time()
                 file_processor = self.encryptor.process_file(file=file)
                 for _ in range(num_parts):
                     await task_handler.schedule(
-                        upload.send_part(
+                        self.send_part(
                             client=client,
                             file_processor=file_processor,
                             num_parts=num_parts,
                             start=start,
+                            upload=upload,
                         )
                     )
                 # Wait for all upload tasks to finish
                 await task_handler.gather()
+                # assign md5 sums for content MD5 comparison of the assembled object
+                upload.md5sums = self.encryptor.checksums.encrypted_md5
                 if encrypted_file_size != self.encryptor.encrypted_file_size:
                     raise ValueError(
                         "Mismatch between actual and theoretical encrypted part size:\n"
                         + f"Is: {self.encryptor.encrypted_file_size}\n"
                         + f"Should be: {encrypted_file_size}"
                     )
-                LOG.info("(3/7) Finished upload for %s.", upload.file_id)
-
-
-class MultipartUpload:
-    """Context manager to handle init + complete/abort for S3 multipart upload"""
-
-    def __init__(
-        self,
-        config: LegacyConfig,
-        file_id: str,
-        encrypted_file_size: int,
-        part_size: int,
-        storage_cleaner: StorageCleaner,
-    ) -> None:
-        self.config = config
-        self.storage = get_object_storage(config=self.config)
-        self.file_id = file_id
-        self.file_size = encrypted_file_size
-        self.part_size = part_size
-        self.upload_id = ""
-        self.storage_cleaner = storage_cleaner
-        self.retry_handler = configure_retries(config)
-        self._semaphore = asyncio.Semaphore(config.client_max_parallel_transfers)
-        self._in_sequence_part_number = 1
-        self._md5sums: dict[int, bytes]
-
-    async def __aenter__(self):
-        """Start multipart upload"""
-        self.upload_id = await self.storage.init_multipart_upload(
-            bucket_id=get_bucket_id(self.config), object_id=self.file_id
-        )
-        self._md5sums = {}
-        return self
-
-    async def __aexit__(self, exc_t, exc_v, exc_tb):
-        """Complete or clean up multipart upload"""
-        try:
-            await self.storage.complete_multipart_upload(
-                upload_id=self.upload_id,
-                bucket_id=get_bucket_id(self.config),
-                object_id=self.file_id,
-                anticipated_part_quantity=math.ceil(self.file_size / self.part_size),
-                anticipated_part_size=self.part_size,
-            )
-        except BaseException as exc:
-            raise self.storage_cleaner.MultipartUploadCompletionError(
-                cause=str(exc),
-                bucket_id=get_bucket_id(self.config),
-                object_id=self.file_id,
-                upload_id=self.upload_id,
-            ) from exc
-        await self._compare_md5()
-
-    async def _compare_md5(self):
-        """TODO"""
-        concat = b"".join(md5 for _, md5 in sorted(self._md5sums.items()))
-        object_md5 = hashlib.md5(concat, usedforsecurity=False).hexdigest()
-
-        num_parts = max(self._md5sums)
-        object_md5 += f"-{num_parts}"
-
-        remote_md5 = await self.storage.get_object_etag(
-            bucket_id=get_bucket_id(self.config), object_id=self.file_id
-        )
-
-        if object_md5 != remote_md5:
-            raise
+                # Confirm local checksum to verify encryption/decryption works correctly
+                self.decryptor.complete_processing(
+                    self.encryptor.checksums.unencrypted_sha256.hexdigest()
+                )
+                LOG.info("(3/4) Finished upload for %s.", upload.file_id)
 
     async def send_part(
         self,
@@ -193,22 +210,30 @@ class MultipartUpload:
         file_processor: Generator[tuple[int, bytes], Any, None],
         num_parts: int,
         start: float,
+        upload: MultipartUpload,
     ):
         """Handle upload of one file part"""
         async with self._semaphore:
             part_number, part = next(file_processor)
-            part_md5 = hashlib.md5(part, usedforsecurity=False).digest()
+            self.decryptor.process_part(part)
+            # fetch current part md5 and convert from hexdigest to digest
+            part_md5 = bytes.fromhex(
+                self.encryptor.checksums.encrypted_md5[part_number - 1]
+            )
             encoded_part_md5 = base64.b64encode(part_md5).decode("utf-8")
             try:
-                upload_url = await self.storage.get_part_upload_url(
-                    upload_id=self.upload_id,
+                upload_url = await upload.storage.get_part_upload_url(
+                    upload_id=upload.upload_id,
                     bucket_id=get_bucket_id(self.config),
                     object_id=self.file_id,
                     part_number=part_number,
                     part_md5=encoded_part_md5,
                 )
                 response: Response = await self.retry_handler(
-                    fn=client.put, url=upload_url, content=part
+                    fn=client.put,
+                    url=upload_url,
+                    content=part,
+                    headers=httpx.Headers({"Content-MD5": encoded_part_md5}),
                 )
 
                 # mask the actual current file part number and display an in sequence number instead
@@ -219,13 +244,12 @@ class MultipartUpload:
                     / delta
                 )
                 LOG.info(
-                    "(2/7) Processing upload for file part %i/%i (%.2f MiB/s)",
+                    "(2/4) Processing upload for file part %i/%i (%.2f MiB/s)",
                     self._in_sequence_part_number,
                     num_parts,
                     avg_speed,
                 )
                 self._in_sequence_part_number += 1
-
                 status_code = response.status_code
                 if status_code != 200:
                     if status_code == 400:
@@ -237,10 +261,10 @@ class MultipartUpload:
                     )
 
             except BaseException as exc:
-                raise self.storage_cleaner.PartUploadError(
+                raise self._storage_cleaner.PartUploadError(
                     cause=str(exc),
                     bucket_id=get_bucket_id(self.config),
                     object_id=self.file_id,
                     part_number=part_number,
-                    upload_id=self.upload_id,
+                    upload_id=upload.upload_id,
                 ) from exc

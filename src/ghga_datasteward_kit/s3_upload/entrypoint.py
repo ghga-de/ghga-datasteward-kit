@@ -26,7 +26,6 @@ from ghga_service_commons.utils.crypt import encrypt
 
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.s3_upload.config import Config, LegacyConfig
-from ghga_datasteward_kit.s3_upload.downloader import ChunkedDownloader
 from ghga_datasteward_kit.s3_upload.uploader import ChunkedUploader
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
@@ -72,22 +71,6 @@ async def validate_and_transfer_content(
         storage_cleaner=storage_cleaner,
     )
     await uploader.encrypt_and_upload()
-
-    try:
-        downloader = ChunkedDownloader(
-            config=config,
-            file_id=uploader.file_id,
-            encrypted_file_size=uploader.encryptor.encrypted_file_size,
-            file_secret=uploader.encryptor.file_secret,
-            part_size=config.part_size,
-            target_checksums=uploader.encryptor.checksums,
-            storage_cleaner=storage_cleaner,
-        )
-        await downloader.download()
-    except KeyboardInterrupt as error:
-        raise storage_cleaner.DownloadError(
-            bucket_id=get_bucket_id(config), object_id=downloader.file_id
-        ) from error
 
     return uploader, file_size
 
@@ -175,7 +158,7 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
             storage_alias=config.selected_storage_alias,
         )
         output_path = config.output_dir / f"{uploader.alias}.json"
-        LOG.info("(7/7) Writing metadata to %s.", output_path)
+        LOG.info("(4/4) Writing metadata to %s.", output_path)
         try:
             metadata.serialize(output_path)
         except (
@@ -226,7 +209,7 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
             storage_alias=config.selected_storage_alias,
         )
         output_path = config.output_dir / f"{uploader.alias}.json"
-        LOG.info("(7/7) Writing metadata to %s.", output_path)
+        LOG.info("(4/4) Writing metadata to %s.", output_path)
         try:
             metadata.serialize(output_path)
         except (

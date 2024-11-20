@@ -29,12 +29,12 @@ from ghga_datasteward_kit.utils import (
     TokenNotExistError,
 )
 
-cli = typer.Typer()
+cli = typer.Typer(no_args_is_help=True)
 cli.add_typer(file_cli, name="files", help="File related operations.")
 cli.add_typer(metadata_cli, name="metadata", help="Metadata related operations.")
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def generate_catalog_accessions(
     *,
     store_path: Path = typer.Option(
@@ -65,7 +65,7 @@ def generate_catalog_accessions(
         typer.echo(accession)
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 def load(
     *,
     config_path: Path = typer.Option(

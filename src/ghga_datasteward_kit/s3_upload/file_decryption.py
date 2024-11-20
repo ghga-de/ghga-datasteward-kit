@@ -15,18 +15,11 @@
 #
 """Functionality to decrypt Crypt4GH encrypted files on-the-fly for validation purposes."""
 
-import gc
 import hashlib
-from collections.abc import AsyncGenerator
-from time import time
-from typing import Any
 
 import crypt4gh.lib  # type: ignore
 
-from ghga_datasteward_kit import models
-from ghga_datasteward_kit.s3_upload.utils import LOG, get_segments
-
-COLLECTION_LIMIT_MIB = 256 * 1024**2
+from ghga_datasteward_kit.s3_upload.utils import get_segments
 
 
 class Decryptor:
@@ -45,45 +38,17 @@ class Decryptor:
             self.upload_checksum = upload_checksum
             super().__init__(message)
 
-    class PartChecksumValidationError(RuntimeError):
-        """Raised when checksum validation failed and the uploaded file needs removal."""
-
-        def __init__(
-            self,
-            *,
-            part_number: int,
-            current_part_checksum: str,
-            upload_part_checksum: str,
-        ):
-            message = (
-                f"Checksum mismatch for part no. {part_number}:\n"
-                + f"Upload:\n{current_part_checksum}\nDownload:\n{upload_part_checksum}\n"
-                + "Uploaded file was deleted due to validation failure."
-            )
-            self.part_number = part_number
-            self.current_part_checksum = current_part_checksum
-            self.upload_part_checksum = upload_part_checksum
-            super().__init__(message)
-
-    def __init__(
-        self,
-        *,
-        file_secret: bytes,
-        num_parts: int,
-        part_size: int,
-        target_checksums: models.Checksums,
-    ) -> None:
+    def __init__(self, file_secret: bytes) -> None:
         self.file_secret = file_secret
-        self.num_parts = num_parts
-        self.part_size = part_size
-        self.target_checksums = target_checksums
+        self.unencrypted_sha256 = hashlib.sha256()
+        self.unprocessed_bytes = b""
+        self.download_buffer = b""
 
-    def _decrypt(self, part: bytes):
+    def _decrypt(self, part: bytes) -> tuple[bytes, bytes]:
         """Decrypt file part"""
         segments, incomplete_segment = get_segments(
             part=part, segment_size=crypt4gh.lib.CIPHER_SEGMENT_SIZE
         )
-
         decrypted_segments = []
         for segment in segments:
             decrypted_segments.append(self._decrypt_segment(segment))
@@ -96,77 +61,27 @@ class Decryptor:
             ciphersegment=segment, session_keys=[self.file_secret]
         )
 
-    def _validate_current_checksum(self, *, file_part: bytes, part_number: int):
-        """Verify checksums match for the given file part."""
-        current_part_md5 = hashlib.md5(file_part, usedforsecurity=False).hexdigest()
-        current_part_sha256 = hashlib.sha256(file_part).hexdigest()
+    def process_part(self, file_part: bytes):
+        """Decrypt current file part and compute checksum"""
+        self.unprocessed_bytes += file_part
 
-        upload_part_md5 = self.target_checksums.encrypted_md5[part_number - 1]
-        upload_part_sha256 = self.target_checksums.encrypted_sha256[part_number - 1]
+        # decrypt in chunks
+        decrypted_bytes, self.unprocessed_bytes = self._decrypt(self.unprocessed_bytes)
+        self.unencrypted_sha256.update(decrypted_bytes)
 
-        if current_part_md5 != upload_part_md5:
-            raise self.PartChecksumValidationError(
-                part_number=part_number,
-                current_part_checksum=current_part_md5,
-                upload_part_checksum=upload_part_md5,
-            )
-        elif current_part_sha256 != upload_part_sha256:
-            raise self.PartChecksumValidationError(
-                part_number=part_number,
-                current_part_checksum=current_part_sha256,
-                upload_part_checksum=upload_part_sha256,
-            )
+        self.unencrypted_sha256.update(self.download_buffer)
+        self.download_buffer = b""
 
-    async def process_parts(self, download_files: AsyncGenerator[bytes, Any]):
-        """Download and decrypt file parts."""
-        unprocessed_bytes = b""
-        download_buffer = b""
-        unencrypted_sha256 = hashlib.sha256()
-
-        start = time()
-
-        part_number = 1
-        collection_tracker_mib = 0
-
-        async for file_part in download_files:
-            # process encrypted
-            self._validate_current_checksum(
-                file_part=file_part, part_number=part_number
-            )
-            unprocessed_bytes += file_part
-            collection_tracker_mib += len(file_part)
-
-            # decrypt in chunks
-            decrypted_bytes, unprocessed_bytes = self._decrypt(unprocessed_bytes)
-            download_buffer += decrypted_bytes
-
-            unencrypted_sha256.update(download_buffer)
-            download_buffer = b""
-
-            delta = time() - start
-            avg_speed = (part_number * (self.part_size / 1024**2)) / delta
-
-            LOG.info(
-                "(5/7) Downloading part %i/%i (%.2f MiB/s)",
-                part_number,
-                self.num_parts,
-                avg_speed,
-            )
-            part_number += 1
-            if collection_tracker_mib >= COLLECTION_LIMIT_MIB:
-                collection_tracker_mib = 0
-                gc.collect()
-
+    def complete_processing(self, target_unencrypted_sha256: str):
+        """Consume remaining bytes and compare checksums"""
         # process dangling bytes
-        if unprocessed_bytes:
-            download_buffer += self._decrypt_segment(unprocessed_bytes)
+        if self.unprocessed_bytes:
+            last_segment = self._decrypt_segment(self.unprocessed_bytes)
+            self.unencrypted_sha256.update(last_segment)
 
-        unencrypted_sha256.update(download_buffer)
-        download_buffer = b""
-
-        current_checksum = unencrypted_sha256.hexdigest()
-        upload_checksum = self.target_checksums.unencrypted_sha256.hexdigest()
-        if current_checksum != upload_checksum:
+        current_checksum = self.unencrypted_sha256.hexdigest()
+        if current_checksum != target_unencrypted_sha256:
             raise self.FileChecksumValidationError(
-                current_checksum=current_checksum, upload_checksum=upload_checksum
+                current_checksum=current_checksum,
+                upload_checksum=target_unencrypted_sha256,
             )
