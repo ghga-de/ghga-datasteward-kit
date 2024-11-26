@@ -253,86 +253,93 @@ def check_output_path(output_path: Path):
         handle_superficial_error(msg=msg)
 
 
+class ChecksumValidationError(RuntimeError):
+    """Raised when checksum validation failed and the uploaded file needs removal."""
+
+    def __init__(self, *, bucket_id: str, object_id: str, message: str):
+        self.bucket_id = bucket_id
+        self.object_id = object_id
+        super().__init__(message)
+
+
+class DownloadError(RuntimeError):
+    """Raised when downloading a file failed due to keyboard interrupts and the uploaded file needs removal."""
+
+    def __init__(self, *, bucket_id: str, object_id: str):
+        self.bucket_id = bucket_id
+        self.object_id = object_id
+        message = f"Failed downloading file for ''{object_id}''."
+        super().__init__(message)
+
+
+class MultipartUploadCompletionError(RuntimeError):
+    """Raised when upload completion failed and the ongoing upload needs to be aborted."""
+
+    def __init__(
+        self, *, cause: str, bucket_id: str, object_id: str, upload_id: str
+    ) -> None:
+        self.bucket_id = bucket_id
+        self.object_id = object_id
+        self.upload_id = upload_id
+        message = (
+            f"Failed completing file upload for ''{object_id}'' due to:\n {cause}."
+        )
+        super().__init__(message)
+
+
+class PartDownloadError(RuntimeError):
+    """Raised when downloading a file part failed and the uploaded file needs removal."""
+
+    def __init__(self, *, bucket_id: str, object_id: str, part_number: int):
+        self.bucket_id = bucket_id
+        self.object_id = object_id
+        message = f"Failed downloading file part {part_number} for ''{object_id}''."
+        super().__init__(message)
+
+
+class PartUploadError(RuntimeError):
+    """Raised when uploading a file part failed and the ongoing upload needs to be aborted."""
+
+    def __init__(
+        self,
+        *,
+        cause: str,
+        bucket_id: str,
+        object_id: str,
+        part_number: int,
+        upload_id: str,
+    ) -> None:
+        self.bucket_id = bucket_id
+        self.object_id = object_id
+        self.part_number = part_number
+        self.upload_id = upload_id
+        message = f"Failed uploading file part {part_number} for ''{object_id}'' due to:\n {cause}."
+        super().__init__(message)
+
+
+class SecretExchangeError(RuntimeError):
+    """Raised when secret exchange failed and the uploaded file needs removal."""
+
+    def __init__(self, *, bucket_id: str, object_id: str, message: str):
+        self.bucket_id = bucket_id
+        self.object_id = object_id
+        super().__init__(message)
+
+
+class WritingOutputError(RuntimeError):
+    """Raised when output metadata could not be written and the uploaded file needs removal."""
+
+    def __init__(self, *, bucket_id: str, object_id: str):
+        self.bucket_id = bucket_id
+        self.object_id = object_id
+        message = f"Failed writing output file for ''{object_id}''."
+        super().__init__(message)
+
+
 class StorageCleaner:
     """Async context manager to wrap full upload path and clean storage up if any
     exceptions were encountered along the way
     """
-
-    class ChecksumValidationError(RuntimeError):
-        """Raised when checksum validation failed and the uploaded file needs removal."""
-
-        def __init__(self, *, bucket_id: str, object_id: str, message: str):
-            self.bucket_id = bucket_id
-            self.object_id = object_id
-            super().__init__(message)
-
-    class DownloadError(RuntimeError):
-        """Raised when downloading a file failed due to keyboard interrupts and the uploaded file needs removal."""
-
-        def __init__(self, *, bucket_id: str, object_id: str):
-            self.bucket_id = bucket_id
-            self.object_id = object_id
-            message = f"Failed downloading file for ''{object_id}''."
-            super().__init__(message)
-
-    class MultipartUploadCompletionError(RuntimeError):
-        """Raised when upload completion failed and the ongoing upload needs to be aborted."""
-
-        def __init__(
-            self, *, cause: str, bucket_id: str, object_id: str, upload_id: str
-        ) -> None:
-            self.bucket_id = bucket_id
-            self.object_id = object_id
-            self.upload_id = upload_id
-            message = (
-                f"Failed completing file upload for ''{object_id}'' due to:\n {cause}."
-            )
-            super().__init__(message)
-
-    class PartDownloadError(RuntimeError):
-        """Raised when downloading a file part failed and the uploaded file needs removal."""
-
-        def __init__(self, *, bucket_id: str, object_id: str, part_number: int):
-            self.bucket_id = bucket_id
-            self.object_id = object_id
-            message = f"Failed downloading file part {part_number} for ''{object_id}''."
-            super().__init__(message)
-
-    class PartUploadError(RuntimeError):
-        """Raised when uploading a file part failed and the ongoing upload needs to be aborted."""
-
-        def __init__(
-            self,
-            *,
-            cause: str,
-            bucket_id: str,
-            object_id: str,
-            part_number: int,
-            upload_id: str,
-        ) -> None:
-            self.bucket_id = bucket_id
-            self.object_id = object_id
-            self.part_number = part_number
-            self.upload_id = upload_id
-            message = f"Failed uploading file part {part_number} for ''{object_id}'' due to:\n {cause}."
-            super().__init__(message)
-
-    class SecretExchangeError(RuntimeError):
-        """Raised when secret exchange failed and the uploaded file needs removal."""
-
-        def __init__(self, *, bucket_id: str, object_id: str, message: str):
-            self.bucket_id = bucket_id
-            self.object_id = object_id
-            super().__init__(message)
-
-    class WritingOutputError(RuntimeError):
-        """Raised when output metadata could not be written and the uploaded file needs removal."""
-
-        def __init__(self, *, bucket_id: str, object_id: str):
-            self.bucket_id = bucket_id
-            self.object_id = object_id
-            message = f"Failed writing output file for ''{object_id}''."
-            super().__init__(message)
 
     def __init__(self, *, config: LegacyConfig) -> None:
         self.storage = get_object_storage(config=config)
@@ -346,9 +353,7 @@ class StorageCleaner:
         if exc_v is None:
             return
         # error handling while upload is still ongoing
-        if isinstance(
-            exc_v, self.MultipartUploadCompletionError | self.PartUploadError
-        ):
+        if isinstance(exc_v, MultipartUploadCompletionError | PartUploadError):
             await self.storage.abort_multipart_upload(
                 upload_id=exc_v.upload_id,
                 bucket_id=exc_v.bucket_id,
@@ -357,11 +362,11 @@ class StorageCleaner:
         # error handling after upload has been completed
         elif isinstance(
             exc_v,
-            self.ChecksumValidationError
-            | self.DownloadError
-            | self.PartDownloadError
-            | self.SecretExchangeError
-            | self.WritingOutputError,
+            ChecksumValidationError
+            | DownloadError
+            | PartDownloadError
+            | SecretExchangeError
+            | WritingOutputError,
         ):
             await self.storage.delete_object(
                 bucket_id=exc_v.bucket_id,

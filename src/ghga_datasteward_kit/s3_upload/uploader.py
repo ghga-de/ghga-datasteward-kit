@@ -34,7 +34,9 @@ from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
-    StorageCleaner,
+    ChecksumValidationError,
+    MultipartUploadCompletionError,
+    PartUploadError,
     configure_retries,
     get_bucket_id,
     get_object_storage,
@@ -51,7 +53,6 @@ class MultipartUpload:
         file_id: str,
         encrypted_file_size: int,
         part_size: int,
-        storage_cleaner: StorageCleaner,
     ) -> None:
         self.config = config
         self.storage = get_object_storage(config=self.config)
@@ -59,7 +60,6 @@ class MultipartUpload:
         self.file_size = encrypted_file_size
         self.part_size = part_size
         self.upload_id = ""
-        self.storage_cleaner = storage_cleaner
         self.md5sums: list[str]
 
     async def __aenter__(self):
@@ -81,7 +81,7 @@ class MultipartUpload:
                 anticipated_part_size=self.part_size,
             )
         except BaseException as exc:
-            raise self.storage_cleaner.MultipartUploadCompletionError(
+            raise MultipartUploadCompletionError(
                 cause=str(exc),
                 bucket_id=get_bucket_id(self.config),
                 object_id=self.file_id,
@@ -104,7 +104,7 @@ class MultipartUpload:
         remote_md5 = remote_md5.strip('"')
 
         if object_md5 != remote_md5:
-            raise self.storage_cleaner.ChecksumValidationError(
+            raise ChecksumValidationError(
                 bucket_id=get_bucket_id(self.config),
                 object_id=self.file_id,
                 message=f"Object MD5 {remote_md5} of the uploaded object does not match"
@@ -132,27 +132,27 @@ class UploadTaskHandler:
 class ChunkedUploader:
     """Handler class dealing with upload functionality"""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         *,
         input_path: Path,
         alias: str,
         config: LegacyConfig,
         unencrypted_file_size: int,
-        storage_cleaner: StorageCleaner,
+        encryptor: Encryptor,
+        decryptor: Decryptor,
     ) -> None:
         self.alias = alias
         self.config = config
         self.input_path = input_path
-        self.encryptor = Encryptor(self.config.part_size)
-        self.decryptor = Decryptor(self.encryptor.file_secret)
+        self.encryptor = encryptor
+        self.decryptor = decryptor
         self.file_id = str(uuid4())
         self.unencrypted_file_size = unencrypted_file_size
         self.encrypted_file_size = 0
         self.retry_handler = configure_retries(config)
         self._in_sequence_part_number = 1
         self._semaphore = asyncio.Semaphore(config.client_max_parallel_transfers)
-        self._storage_cleaner = storage_cleaner
 
     async def encrypt_and_upload(self):
         """Delegate encryption and perform multipart upload"""
@@ -168,7 +168,6 @@ class ChunkedUploader:
                     file_id=self.file_id,
                     encrypted_file_size=encrypted_file_size,
                     part_size=self.config.part_size,
-                    storage_cleaner=self._storage_cleaner,
                 ) as upload,
                 httpx_client() as client,
             ):
@@ -260,7 +259,7 @@ class ChunkedUploader:
                     )
 
             except BaseException as exc:
-                raise self._storage_cleaner.PartUploadError(
+                raise PartUploadError(
                     cause=str(exc),
                     bucket_id=get_bucket_id(self.config),
                     object_id=self.file_id,

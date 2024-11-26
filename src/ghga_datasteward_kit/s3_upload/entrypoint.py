@@ -26,11 +26,15 @@ from ghga_service_commons.utils.crypt import encrypt
 
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.s3_upload.config import Config, LegacyConfig
+from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
+from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
 from ghga_datasteward_kit.s3_upload.uploader import ChunkedUploader
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
     RequestConfigurator,
+    SecretExchangeError,
     StorageCleaner,
+    WritingOutputError,
     check_adjust_part_size,
     check_output_path,
     get_bucket_id,
@@ -41,7 +45,7 @@ from ghga_datasteward_kit.utils import STEWARD_TOKEN, load_config_yaml, path_joi
 
 
 async def validate_and_transfer_content(
-    input_path: Path, alias: str, config: LegacyConfig, storage_cleaner: StorageCleaner
+    input_path: Path, alias: str, config: LegacyConfig
 ):
     """
     Check and upload encrypted file content. This also includes a verification of the
@@ -63,12 +67,16 @@ async def validate_and_transfer_content(
     file_size = input_path.stat().st_size
     check_adjust_part_size(config=config, file_size=file_size)
 
+    encryptor = Encryptor(config.part_size)
+    decryptor = Decryptor(file_secret=encryptor.file_secret)
+
     uploader = ChunkedUploader(
         input_path=input_path,
         alias=alias,
         config=config,
         unencrypted_file_size=file_size,
-        storage_cleaner=storage_cleaner,
+        encryptor=encryptor,
+        decryptor=decryptor,
     )
     await uploader.encrypt_and_upload()
 
@@ -81,7 +89,6 @@ async def exchange_secret_for_id(
     secret: bytes,
     token: str,
     config: Config,
-    storage_cleaner: StorageCleaner,
 ) -> str:
     """
     Call file ingest service to store the file secret and obtain a secret ID by which
@@ -107,7 +114,7 @@ async def exchange_secret_for_id(
                 f"Failed to deposit secret for {file_id} with response code"
                 + f" {response.status_code}."
             )
-            raise storage_cleaner.SecretExchangeError(
+            raise SecretExchangeError(
                 bucket_id=get_bucket_id(config), object_id=file_id, message=message
             )
         return response.json()["secret_id"]
@@ -120,12 +127,11 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
     """
     RequestConfigurator.configure(config=config)
 
-    async with StorageCleaner(config=config) as storage_cleaner:
+    async with StorageCleaner(config=config):
         uploader, file_size = await validate_and_transfer_content(
             input_path=input_path,
             alias=alias,
             config=config,
-            storage_cleaner=storage_cleaner,
         )
 
         (
@@ -139,7 +145,6 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
             secret=uploader.encryptor.file_secret,
             token=token,
             config=config,
-            storage_cleaner=storage_cleaner,
         )
 
         metadata = models.OutputMetadata(
@@ -165,7 +170,7 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
             Exception,
             KeyboardInterrupt,
         ) as exc:
-            raise storage_cleaner.WritingOutputError(
+            raise WritingOutputError(
                 bucket_id=get_bucket_id(config), object_id=uploader.file_id
             ) from exc
 
@@ -177,12 +182,11 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
     """
     RequestConfigurator.configure(config=config)
 
-    async with StorageCleaner(config=config) as storage_cleaner:
+    async with StorageCleaner(config=config):
         uploader, file_size = await validate_and_transfer_content(
             input_path=input_path,
             alias=alias,
             config=config,
-            storage_cleaner=storage_cleaner,
         )
 
         (
@@ -216,7 +220,7 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
             Exception,
             KeyboardInterrupt,
         ) as exc:
-            raise storage_cleaner.WritingOutputError(
+            raise WritingOutputError(
                 bucket_id=get_bucket_id(config), object_id=uploader.file_id
             ) from exc
 
