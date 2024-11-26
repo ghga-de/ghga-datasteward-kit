@@ -67,7 +67,9 @@ This is achieved using the data steward kit, using the following steps:
    where the command is prefixed with `legacy-`.
    Please see [this section](#files-batch-upload) for further details. This will output
    one summary JSON per uploaded file. The encryption secret is automatically
-   transferred to GHGA central.
+   transferred to GHGA central for the normal upload path.
+   For the legacy version of the commands, the encryption secret is present in the summary
+   JSON and will be exchanged for a secret during ingest.
 
 Once the upload of all files of a submission has completed, please notify the GHGA
 Central Data Steward and provide the summary JSONs obtained in step 2.
@@ -120,11 +122,13 @@ The following paragraphs provide additional help for using the different command
 This command facilitates encrypting files using Crypt4GH and uploading the encrypted
 content to a (remote) S3-compatible object storage.
 This process consists of multiple steps:
-1. Generate a unique file id
-2. Create unencrypted file checksum
-3. Encrypt and upload file in chunks
-4. Download encrypted file content, decrypt and verify checksum
-5. Write file/upload information to output file
+1. Generate a unique file/object id for S3
+2. Create SHA256 checksum for the unencrypted file
+3. Encrypt and upload file in chunks, generate checksums for encrypted parts.
+Verify successful transfer using content MD5 on the part level
+4. Compute content MD5 of the assembled object locally and compare with S3
+5. Decrypt local parts, generate SHA256 checksum and compare with checksum calculated in step 2
+6. Write file/upload information to output file
 
 The user needs to provide a config yaml containing information as described
 [here](./s3_upload_config.md).
@@ -146,6 +150,15 @@ It contains the following information:
 Attention: Keep this output file in a safe, private location.
 If this file is lost, the uploaded file content becomes inaccessible.
 
+#### About concurrency
+
+In addition to the already existing batch upload command that allows for parallel processing and transfer on the file level, v4.3.0 added an asynchronous task handler for upload and download parallelization on the file part level.
+
+Moving from directly downloading the uploaded file to using content MD5 for validation purposes, there is no clear preference in which mode of parallelism should be used, as no benchmarking has been done yet with the current changes.
+
+By default, part level parallelism is set by the `client_max_parallel_transfers` to a value of 10.
+If you want to disable it, the value has to be explicitly set to 1.
+
 ### files ingest-upload-metadata
 
 *To be performed by Central Data Stewards only.*
@@ -156,8 +169,12 @@ running system and make the corresponding files available for download.
 
 This command requires a configuration file as described [here](./ingest_config.md).
 
-#### ingest version compatibility
-Currently v4.4.0 of this tool and v4.0.0 of the `File Ingest Service` are compatible.
+#### Ingest version compatibility
+
+| Datasteward Kit Version | File Ingest Service Version |
+| :---------------------: | :-------------------------: |
+| >=4.5.0 | >=5.0.0 |
+| >=4.4.0, <4.5.0  | >=4.0.0, <5 |
 
 ### metadata
 

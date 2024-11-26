@@ -19,6 +19,8 @@
 
 - **`selected_storage_alias`** *(string)*: Alias of the selected storage node/location. Has to match the backend configuration and must also be present in the local storage configuration. During the later ingest phase, the alias will be validated by the File Ingest Service.
 
+- **`client_max_parallel_transfers`** *(integer)*: Maximum number of parallel transfer tasks for file parts. Exclusive minimum: 0. Default: 10.
+
 ## Definitions
 
 - <a id="$defs/S3Config"></a>**`S3Config`** *(object)*: S3 server specific config params.
