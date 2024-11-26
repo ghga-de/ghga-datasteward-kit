@@ -26,7 +26,6 @@ from pytest_httpx import HTTPXMock
 from ghga_datasteward_kit.s3_upload import Config, LegacyConfig
 from ghga_datasteward_kit.s3_upload.entrypoint import async_main, legacy_async_main
 from ghga_datasteward_kit.s3_upload.utils import (
-    StorageCleaner,
     get_bucket_id,
     get_object_storage,
 )
@@ -97,7 +96,6 @@ async def test_process(config_fixture: Config, monkeypatch, httpx_mock: HTTPXMoc
         secret: bytes,
         token: str,
         config: Config,
-        storage_cleaner: StorageCleaner,
     ):
         return "test-secret-id"
 

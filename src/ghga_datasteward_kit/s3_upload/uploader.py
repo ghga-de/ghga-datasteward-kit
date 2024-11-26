@@ -27,6 +27,7 @@ from uuid import uuid4
 
 import crypt4gh.lib  # type: ignore
 import httpx
+from hexkit.providers.s3 import S3ObjectStorage
 from httpx import Response
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
@@ -126,7 +127,15 @@ class UploadTaskHandler:
 
     async def gather(self):
         """Await all running tasks"""
-        await asyncio.gather(*self._tasks)
+        try:
+            await asyncio.gather(*self._tasks)
+        except PartUploadError:
+            # root cause should always be PartUploadError if `send_part` is scheduled as task
+            # cancel still running tasks and propagate exception to caller
+            for task in self._tasks:
+                if not task.done():
+                    task.cancel()
+            raise
 
 
 class ChunkedUploader:
@@ -215,25 +224,14 @@ class ChunkedUploader:
         async with self._semaphore:
             part_number, part = next(file_processor)
             self.decryptor.process_part(part)
-            # calculate the hash again here.
-            # Naively fetching from the encryptor is prone to errors
-            part_md5 = hashlib.md5(part, usedforsecurity=False).digest()
-            encoded_part_md5 = base64.b64encode(part_md5).decode("utf-8")
             try:
-                upload_url = await upload.storage.get_part_upload_url(
+                response = await self._prepare_and_send_request(
+                    client=client,
+                    storage=upload.storage,
                     upload_id=upload.upload_id,
-                    bucket_id=get_bucket_id(self.config),
-                    object_id=self.file_id,
+                    part=part,
                     part_number=part_number,
-                    part_md5=encoded_part_md5,
                 )
-                response: Response = await self.retry_handler(
-                    fn=client.put,
-                    url=upload_url,
-                    content=part,
-                    headers=httpx.Headers({"Content-MD5": encoded_part_md5}),
-                )
-
                 # mask the actual current file part number and display an in sequence number instead
                 delta = time() - start
                 avg_speed = (
@@ -266,3 +264,36 @@ class ChunkedUploader:
                     part_number=part_number,
                     upload_id=upload.upload_id,
                 ) from exc
+
+    async def _prepare_and_send_request(
+        self,
+        *,
+        client: httpx.AsyncClient,
+        storage: S3ObjectStorage,
+        upload_id: str,
+        part: bytes,
+        part_number: int,
+    ) -> Response:
+        """Calculate part MD5, get upload URL and send upload request.
+
+        Exceptions arising during MD5 calculation, encoding or API calls need to be
+        handled by the caller.
+        """
+        # calculate the hash again here.
+        # Naively fetching from the encryptor is prone to errors
+        part_md5 = hashlib.md5(part, usedforsecurity=False).digest()
+        encoded_part_md5 = base64.b64encode(part_md5).decode("utf-8")
+        upload_url = await storage.get_part_upload_url(
+            upload_id=upload_id,
+            bucket_id=get_bucket_id(self.config),
+            object_id=self.file_id,
+            part_number=part_number,
+            part_md5=encoded_part_md5,
+        )
+        response: Response = await self.retry_handler(
+            fn=client.put,
+            url=upload_url,
+            content=part,
+            headers=httpx.Headers({"Content-MD5": encoded_part_md5}),
+        )
+        return response
