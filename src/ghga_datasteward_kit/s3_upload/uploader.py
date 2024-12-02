@@ -93,8 +93,8 @@ class MultipartUpload:
 
     async def _check_md5_matches(self):
         """Calculates final object MD5 and checks if the remote matches."""
-        concat = b"".join(bytes.fromhex(md5) for md5 in self.md5sums)
-        object_md5 = hashlib.md5(concat, usedforsecurity=False).hexdigest()
+        concatenated_md5s = b"".join(bytes.fromhex(md5) for md5 in self.md5sums)
+        object_md5 = hashlib.md5(concatenated_md5s, usedforsecurity=False).hexdigest()
 
         num_parts = len(self.md5sums)
         object_md5 += f"-{num_parts}"
