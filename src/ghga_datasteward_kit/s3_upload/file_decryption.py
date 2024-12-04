@@ -49,9 +49,10 @@ class Decryptor:
         segments, incomplete_segment = get_segments(
             part=part, segment_size=crypt4gh.lib.CIPHER_SEGMENT_SIZE
         )
-        decrypted_segments = []
-        for segment in segments:
-            decrypted_segments.append(self._decrypt_segment(segment))
+        decrypted_segments = [
+            self._decrypt_segment(segment)
+            for segment in segments:
+        ]
 
         return b"".join(decrypted_segments), incomplete_segment
 
