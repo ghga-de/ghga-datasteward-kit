@@ -19,24 +19,11 @@ import hashlib
 
 import crypt4gh.lib  # type: ignore
 
-from ghga_datasteward_kit.s3_upload.utils import get_segments
+from ghga_datasteward_kit.s3_upload.utils import ChecksumValidationError, get_segments
 
 
 class Decryptor:
     """Handles on the fly decryption and checksum calculation"""
-
-    class FileChecksumValidationError(RuntimeError):
-        """Raised when checksum validation failed and the uploaded file needs removal."""
-
-        def __init__(self, *, current_checksum: str, upload_checksum: str):
-            message = (
-                "Checksum mismatch for file:\n"
-                + f"Upload:\n{current_checksum}\nDownload:\n{upload_checksum}\n"
-                + "Uploaded file was deleted due to validation failure."
-            )
-            self.current_checksum = current_checksum
-            self.upload_checksum = upload_checksum
-            super().__init__(message)
 
     def __init__(self, file_secret: bytes) -> None:
         self.file_secret = file_secret
@@ -58,16 +45,23 @@ class Decryptor:
             ciphersegment=segment, session_keys=[self.file_secret]
         )
 
-    def complete_processing(self, target_unencrypted_sha256: str):
+    def complete_processing(
+        self, *, bucket_id: str, object_id: str, encryption_file_sha256: str
+    ):
         """Consume remaining bytes and compare checksums"""
         # process dangling bytes
         if self.unprocessed_bytes:
             last_segment = self._decrypt_segment(self.unprocessed_bytes)
             self.unencrypted_sha256.update(last_segment)
 
-        current_checksum = self.unencrypted_sha256.hexdigest()
-        if current_checksum != target_unencrypted_sha256:
-            raise self.FileChecksumValidationError(
-                current_checksum=current_checksum,
-                upload_checksum=target_unencrypted_sha256,
+        decryption_file_sha256 = self.unencrypted_sha256.hexdigest()
+        if decryption_file_sha256 != encryption_file_sha256:
+            raise ChecksumValidationError(
+                bucket_id=bucket_id,
+                object_id=object_id,
+                message=(
+                    f"Checksum mismatch for file:\nDecryption:\n{decryption_file_sha256}\n"
+                    + f"Encryption:\n{encryption_file_sha256}\n"
+                    + "Uploaded file was deleted due to validation failure."
+                ),
             )

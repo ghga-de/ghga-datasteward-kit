@@ -21,6 +21,7 @@ from ghga_service_commons.utils.temp_files import big_temp_file
 
 from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
+from ghga_datasteward_kit.s3_upload.utils import ChecksumValidationError
 
 
 def test_encryption_decryption():
@@ -32,12 +33,19 @@ def test_encryption_decryption():
     with big_temp_file(50 * 1024**2) as input_file:
         for _, part in encryptor.process_file(input_file):  # type: ignore
             decryptor.decrypt_part(part)
+
+    bucket_id = "test"
+    object_id = "test"
     # check positive case
     decryptor.complete_processing(
-        target_unencrypted_sha256=encryptor.checksums.unencrypted_sha256.hexdigest()
+        bucket_id=bucket_id,
+        object_id=object_id,
+        encryption_file_sha256=encryptor.checksums.unencrypted_sha256.hexdigest(),
     )
     # check error is raised
-    with pytest.raises(decryptor.FileChecksumValidationError):
+    with pytest.raises(ChecksumValidationError):
         decryptor.complete_processing(
-            target_unencrypted_sha256=hashlib.sha256(b"random").hexdigest()
+            bucket_id=bucket_id,
+            object_id=object_id,
+            encryption_file_sha256=hashlib.sha256(b"random").hexdigest(),
         )

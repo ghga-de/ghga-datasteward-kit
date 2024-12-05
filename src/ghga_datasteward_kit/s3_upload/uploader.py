@@ -129,14 +129,13 @@ class UploadTaskHandler:
         """Create a task and register its callback."""
         task = asyncio.create_task(fn)
         self._tasks.add(task)
-        task.add_done_callback(self._tasks.discard)
 
     async def gather(self):
         """Await all running tasks"""
         # Changed back to how it was before, as gather should take care of cancelling
         # all remaining tasks and correctly propagate the first error encounterd upwards.
         # The infinite loop when all tasks fail happened due to mistakenly converting
-        # CancelledError into a PartUploadError previously.
+        # CancelledError into a PartUploadError inside the task.
         await asyncio.gather(*self._tasks)
 
 
@@ -208,9 +207,11 @@ class ChunkedUploader:
                         + f"Is: {self.encryptor.encrypted_file_size}\n"
                         + f"Should be: {encrypted_file_size}"
                     )
-                # Confirm local checksum to verify encryption/decryption works correctly
+                # Confirm unencrypted file checksum to verify encryption/decryption works correctly
                 self.decryptor.complete_processing(
-                    self.encryptor.checksums.unencrypted_sha256.hexdigest()
+                    bucket_id=self.bucket_id,
+                    object_id=self.file_id,
+                    encryption_file_sha256=self.encryptor.checksums.unencrypted_sha256.hexdigest(),
                 )
                 LOG.info("(3/4) Finished upload for %s.", upload.file_id)
 
