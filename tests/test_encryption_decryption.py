@@ -31,7 +31,7 @@ def test_encryption_decryption():
 
     with big_temp_file(50 * 1024**2) as input_file:
         for _, part in encryptor.process_file(input_file):  # type: ignore
-            decryptor.process_part(part)
+            decryptor.decrypt_part(part)
     # check positive case
     decryptor.complete_processing(
         target_unencrypted_sha256=encryptor.checksums.unencrypted_sha256.hexdigest()

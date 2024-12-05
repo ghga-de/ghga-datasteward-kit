@@ -42,36 +42,21 @@ class Decryptor:
         self.file_secret = file_secret
         self.unencrypted_sha256 = hashlib.sha256()
         self.unprocessed_bytes = b""
-        self.download_buffer = b""
 
-    def _decrypt(self, part: bytes) -> tuple[bytes, bytes]:
+    def decrypt_part(self, part: bytes):
         """Decrypt file part"""
-        segments, incomplete_segment = get_segments(
-            part=part, segment_size=crypt4gh.lib.CIPHER_SEGMENT_SIZE
+        part_to_decrypt = self.unprocessed_bytes + part
+        segments, self.unprocessed_bytes = get_segments(
+            part=part_to_decrypt, segment_size=crypt4gh.lib.CIPHER_SEGMENT_SIZE
         )
-        decrypted_segments = [
-            self._decrypt_segment(segment)
-            for segment in segments:
-        ]
-
-        return b"".join(decrypted_segments), incomplete_segment
+        decrypted_segments = [self._decrypt_segment(segment) for segment in segments]
+        self.unencrypted_sha256.update(b"".join(decrypted_segments))
 
     def _decrypt_segment(self, segment: bytes):
         """Decrypt single ciphersegment"""
         return crypt4gh.lib.decrypt_block(
             ciphersegment=segment, session_keys=[self.file_secret]
         )
-
-    def process_part(self, file_part: bytes):
-        """Decrypt current file part and compute checksum"""
-        self.unprocessed_bytes += file_part
-
-        # decrypt in chunks
-        decrypted_bytes, self.unprocessed_bytes = self._decrypt(self.unprocessed_bytes)
-        self.unencrypted_sha256.update(decrypted_bytes)
-
-        self.unencrypted_sha256.update(self.download_buffer)
-        self.download_buffer = b""
 
     def complete_processing(self, target_unencrypted_sha256: str):
         """Consume remaining bytes and compare checksums"""

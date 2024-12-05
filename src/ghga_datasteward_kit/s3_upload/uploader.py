@@ -58,6 +58,7 @@ class MultipartUpload:
         self.config = config
         self.storage = get_object_storage(config=self.config)
         self.file_id = file_id
+        self.bucket_id = get_bucket_id(self.config)
         self.file_size = encrypted_file_size
         self.part_size = part_size
         self.upload_id = ""
@@ -66,7 +67,7 @@ class MultipartUpload:
     async def __aenter__(self):
         """Start multipart upload"""
         self.upload_id = await self.storage.init_multipart_upload(
-            bucket_id=get_bucket_id(self.config), object_id=self.file_id
+            bucket_id=self.bucket_id, object_id=self.file_id
         )
         self.md5sums = []
         return self
@@ -76,7 +77,7 @@ class MultipartUpload:
         try:
             await self.storage.complete_multipart_upload(
                 upload_id=self.upload_id,
-                bucket_id=get_bucket_id(self.config),
+                bucket_id=self.bucket_id,
                 object_id=self.file_id,
                 anticipated_part_quantity=math.ceil(self.file_size / self.part_size),
                 anticipated_part_size=self.part_size,
@@ -84,7 +85,7 @@ class MultipartUpload:
         except BaseException as exc:
             raise MultipartUploadCompletionError(
                 cause=str(exc),
-                bucket_id=get_bucket_id(self.config),
+                bucket_id=self.bucket_id,
                 object_id=self.file_id,
                 upload_id=self.upload_id,
             ) from exc
@@ -93,7 +94,7 @@ class MultipartUpload:
 
     async def _check_md5_matches(self):
         """Calculate final object MD5 and check if the remote matches.
-        
+
         The final object MD5 is equal to the MD5 of all the concatenated
         MD5s from the individual file parts, followed by a dash ("-") and
         the number of file parts.
@@ -105,13 +106,13 @@ class MultipartUpload:
         object_md5 += f"-{num_parts}"
 
         remote_md5 = await self.storage.get_object_etag(
-            bucket_id=get_bucket_id(self.config), object_id=self.file_id
+            bucket_id=self.bucket_id, object_id=self.file_id
         )
         remote_md5 = remote_md5.strip('"')
 
         if object_md5 != remote_md5:
             raise ChecksumValidationError(
-                bucket_id=get_bucket_id(self.config),
+                bucket_id=self.bucket_id,
                 object_id=self.file_id,
                 message=f"Object MD5 {remote_md5} of the uploaded object does not match"
                 f" the locally computed one: {object_md5}.",
@@ -132,15 +133,11 @@ class UploadTaskHandler:
 
     async def gather(self):
         """Await all running tasks"""
-        try:
-            await asyncio.gather(*self._tasks)
-        except PartUploadError:
-            # root cause should always be PartUploadError if `send_part` is scheduled as task
-            # cancel still running tasks and propagate exception to caller
-            for task in self._tasks:
-                if not task.done():
-                    task.cancel()
-            raise
+        # Changed back to how it was before, as gather should take care of cancelling
+        # all remaining tasks and correctly propagate the first error encounterd upwards.
+        # The infinite loop when all tasks fail happened due to mistakenly converting
+        # CancelledError into a PartUploadError previously.
+        await asyncio.gather(*self._tasks)
 
 
 class ChunkedUploader:
@@ -162,6 +159,7 @@ class ChunkedUploader:
         self.encryptor = encryptor
         self.decryptor = decryptor
         self.file_id = str(uuid4())
+        self.bucket_id = get_bucket_id(config)
         self.unencrypted_file_size = unencrypted_file_size
         self.encrypted_file_size = 0
         self.retry_handler = configure_retries(config)
@@ -227,9 +225,9 @@ class ChunkedUploader:
     ):
         """Handle upload of one file part"""
         async with self._semaphore:
-            part_number, part = next(file_processor)
-            self.decryptor.process_part(part)
             try:
+                part_number, part = next(file_processor)
+                self.decryptor.decrypt_part(part)
                 response = await self._prepare_and_send_request(
                     client=client,
                     storage=upload.storage,
@@ -262,9 +260,13 @@ class ChunkedUploader:
                     )
 
             except BaseException as exc:
+                # correctly reraise CancelledError, else this might get stuck waiting
+                # on semaphore lock release
+                if isinstance(exc, asyncio.CancelledError):
+                    raise
                 raise PartUploadError(
                     cause=str(exc),
-                    bucket_id=get_bucket_id(self.config),
+                    bucket_id=self.bucket_id,
                     object_id=self.file_id,
                     part_number=part_number,
                     upload_id=upload.upload_id,
@@ -290,7 +292,7 @@ class ChunkedUploader:
         encoded_part_md5 = base64.b64encode(part_md5).decode("utf-8")
         upload_url = await storage.get_part_upload_url(
             upload_id=upload_id,
-            bucket_id=get_bucket_id(self.config),
+            bucket_id=self.bucket_id,
             object_id=self.file_id,
             part_number=part_number,
             part_md5=encoded_part_md5,

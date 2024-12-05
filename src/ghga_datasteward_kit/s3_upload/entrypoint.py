@@ -46,10 +46,15 @@ from ghga_datasteward_kit.utils import STEWARD_TOKEN, load_config_yaml, path_joi
 
 async def validate_and_transfer_content(
     input_path: Path, alias: str, config: LegacyConfig
-):
+) -> tuple[ChunkedUploader, int]:
     """
-    Check and upload encrypted file content. This also includes a verification of the
-    upload by downloading the content again and performing a checksum validation.
+    Check and upload encrypted file content.
+
+    This also includes a verification of the upload by calculating and supplying part MD5
+    sums and checking the ETag of the uploaded object.
+    Additionally the encrypted parts are decrypted locally and the checksum of the initial
+    unencrypted and the decrypted file are compared.
+
 
     Returns:
         A tuple of the used uploader instance and the file size
