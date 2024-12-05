@@ -156,20 +156,17 @@ def retrieve_endpoint_urls(config: LegacyConfig, value_name: str = "storage_alia
     try:
         response = httpx.get(url)
     except httpx.RequestError:
-        LOG.error(f"Could not retrieve data from {
-            url} due to connection issues.")
+        LOG.error(f"Could not retrieve data from {url} due to connection issues.")
         raise
 
     status_code = response.status_code
     if status_code != 200:
-        raise ValueError(f"Received unexpected response code {
-                         status_code} from {url}.")
+        raise ValueError(f"Received unexpected response code {status_code} from {url}.")
     try:
         return response.json()[value_name]
     except KeyError as err:
         raise ValueError(
-            f"Response from {
-                url} did not include expected field '{value_name}'"
+            f"Response from {url} did not include expected field '{value_name}'"
         ) from err
 
 
