@@ -16,75 +16,20 @@
 """Helper functions used across different modules in the s3_upload package."""
 
 import logging
+import math
 import sys
 from collections.abc import Iterator
-from contextlib import asynccontextmanager
 from io import BufferedReader
 from pathlib import Path
 
+import crypt4gh.lib
 import httpx
 from hexkit.providers.s3 import S3Config, S3ObjectStorage
-from tenacity import (
-    AsyncRetrying,
-    retry_if_exception_type,
-    retry_if_result,
-    stop_after_attempt,
-    wait_exponential_jitter,
-)
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
 from ghga_datasteward_kit.utils import path_join
 
 LOG = logging.getLogger("s3_upload")
-
-
-class RequestConfigurator:
-    """Helper for user configurable httpx request parameters."""
-
-    timeout: int | None
-    max_connections: int
-
-    @classmethod
-    def configure(cls, config: LegacyConfig):
-        """Set timeout in seconds"""
-        cls.timeout = config.client_timeout
-        cls.max_connections = config.client_max_parallel_transfers
-        # silence httpx messages on each request due to setting global level info before
-        logging.getLogger("httpx").setLevel(logging.WARNING)
-
-
-@asynccontextmanager
-async def httpx_client():
-    """Yields a context manager httpx client and closes it afterward"""
-    async with httpx.AsyncClient(
-        timeout=RequestConfigurator.timeout,
-        limits=httpx.Limits(
-            max_connections=RequestConfigurator.max_connections,
-            max_keepalive_connections=RequestConfigurator.max_connections,
-        ),
-    ) as client:
-        yield client
-
-
-def configure_retries(config: LegacyConfig):
-    """Initialize retry handler from config"""
-    return AsyncRetrying(
-        retry=(
-            retry_if_exception_type(
-                (
-                    httpx.ConnectError,
-                    httpx.ConnectTimeout,
-                    httpx.TimeoutException,
-                )
-            )
-            | retry_if_result(
-                lambda response: response.status_code
-                in config.client_retry_status_codes
-            )
-        ),
-        stop=stop_after_attempt(config.client_num_retries),
-        wait=wait_exponential_jitter(max=config.client_exponential_backoff_max),
-    )
 
 
 def read_file_parts(
@@ -250,99 +195,12 @@ def check_output_path(output_path: Path):
         handle_superficial_error(msg=msg)
 
 
-class ChecksumValidationError(RuntimeError):
-    """Raised when checksum validation failed and the uploaded file needs removal."""
+def get_encrypted_file_size_and_num_parts(
+    *, unencrypted_file_size: int, part_size: int
+) -> tuple[int, int]:
+    """Calculate encrypted file size and number of parts."""
+    num_segments = math.ceil(unencrypted_file_size / crypt4gh.lib.SEGMENT_SIZE)
+    encrypted_file_size = unencrypted_file_size + num_segments * 28
+    num_parts = math.ceil(encrypted_file_size / part_size)
 
-    def __init__(self, *, bucket_id: str, object_id: str, message: str):
-        self.bucket_id = bucket_id
-        self.object_id = object_id
-        super().__init__(message)
-
-
-class MultipartUploadCompletionError(RuntimeError):
-    """Raised when upload completion failed and the ongoing upload needs to be aborted."""
-
-    def __init__(
-        self, *, cause: str, bucket_id: str, object_id: str, upload_id: str
-    ) -> None:
-        self.bucket_id = bucket_id
-        self.object_id = object_id
-        self.upload_id = upload_id
-        message = (
-            f"Failed completing file upload for ''{object_id}'' due to:\n {cause}."
-        )
-        super().__init__(message)
-
-
-class PartUploadError(RuntimeError):
-    """Raised when uploading a file part failed and the ongoing upload needs to be aborted."""
-
-    def __init__(
-        self,
-        *,
-        cause: str,
-        bucket_id: str,
-        object_id: str,
-        part_number: int,
-        upload_id: str,
-    ) -> None:
-        self.bucket_id = bucket_id
-        self.object_id = object_id
-        self.part_number = part_number
-        self.upload_id = upload_id
-        message = f"Failed uploading file part {part_number} for ''{object_id}'' due to:\n {cause}."
-        super().__init__(message)
-
-
-class SecretExchangeError(RuntimeError):
-    """Raised when secret exchange failed and the uploaded file needs removal."""
-
-    def __init__(self, *, bucket_id: str, object_id: str, message: str):
-        self.bucket_id = bucket_id
-        self.object_id = object_id
-        super().__init__(message)
-
-
-class WritingOutputError(RuntimeError):
-    """Raised when output metadata could not be written and the uploaded file needs removal."""
-
-    def __init__(self, *, bucket_id: str, object_id: str):
-        self.bucket_id = bucket_id
-        self.object_id = object_id
-        message = f"Failed writing output file for ''{object_id}''."
-        super().__init__(message)
-
-
-class StorageCleaner:
-    """Async context manager to wrap full upload path and clean storage up if any
-    exceptions were encountered along the way
-    """
-
-    def __init__(self, *, config: LegacyConfig) -> None:
-        self.storage = get_object_storage(config=config)
-
-    async def __aenter__(self):
-        """The context manager enter function."""
-        return self
-
-    async def __aexit__(self, exc_t, exc_v, exc_tb):
-        """The context manager exit function."""
-        if exc_v is None:
-            return
-        # error handling while upload is still ongoing
-        if isinstance(exc_v, MultipartUploadCompletionError | PartUploadError):
-            await self.storage.abort_multipart_upload(
-                upload_id=exc_v.upload_id,
-                bucket_id=exc_v.bucket_id,
-                object_id=exc_v.object_id,
-            )
-        # error handling after upload has been completed
-        elif isinstance(
-            exc_v,
-            ChecksumValidationError | SecretExchangeError | WritingOutputError,
-        ):
-            await self.storage.delete_object(
-                bucket_id=exc_v.bucket_id,
-                object_id=exc_v.object_id,
-            )
-        raise exc_v
+    return encrypted_file_size, num_parts
