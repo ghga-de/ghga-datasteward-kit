@@ -42,7 +42,7 @@ class UploadTaskHandler:
     def __init__(self):
         self._tasks: set[asyncio.Task] = set()
 
-    async def schedule(self, fn: Coroutine[Any, Any, None]):
+    def schedule(self, fn: Coroutine[Any, Any, None]):
         """Create a task and register its callback."""
         task = asyncio.create_task(fn)
         self._tasks.add(task)
@@ -83,12 +83,12 @@ class ChunkedUploader:
         with open(self.input_path, "rb") as file:
             async with httpx_client() as client:
                 LOG.info("(1/4) Initialized file upload for %s.", self.upload.file_id)
-                task_handler = UploadTaskHandler()
 
                 start = time()
                 file_processor = self.encryptor.process_file(file=file)
+                task_handler = UploadTaskHandler()
                 for _ in range(self.upload.num_parts):
-                    await task_handler.schedule(
+                    task_handler.schedule(
                         self.send_part(
                             client=client,
                             file_processor=file_processor,
@@ -99,24 +99,22 @@ class ChunkedUploader:
                     )
                 # Wait for all upload tasks to finish
                 await task_handler.gather()
-                # assign md5 sums for content MD5 comparison of the assembled object
-                self.upload.md5sums = self.encryptor.checksums.encrypted_md5
-                if (
-                    self.upload.encrypted_file_size
-                    != self.encryptor.encrypted_file_size
-                ):
-                    raise ValueError(
-                        "Mismatch between actual and theoretical encrypted part size:\n"
-                        + f"Is: {self.encryptor.encrypted_file_size}\n"
-                        + f"Should be: {self.upload.encrypted_file_size}"
-                    )
-                # Confirm unencrypted file checksum to verify encryption/decryption works correctly
-                self.decryptor.complete_processing(
-                    bucket_id=self.bucket_id,
-                    object_id=self.upload.file_id,
-                    encryption_file_sha256=self.encryptor.checksums.unencrypted_sha256.hexdigest(),
-                )
-                LOG.info("(3/4) Finished upload for %s.", self.upload.file_id)
+
+        if self.upload.encrypted_file_size != self.encryptor.encrypted_file_size:
+            raise ValueError(
+                "Mismatch between actual and theoretical encrypted part size:\n"
+                + f"Is: {self.encryptor.encrypted_file_size}\n"
+                + f"Should be: {self.upload.encrypted_file_size}"
+            )
+        # assign md5 sums for content MD5 comparison of the assembled object
+        self.upload.md5sums = self.encryptor.checksums.encrypted_md5
+        # Confirm unencrypted file checksum to verify encryption/decryption works correctly
+        self.decryptor.complete_processing(
+            bucket_id=self.bucket_id,
+            object_id=self.upload.file_id,
+            encryption_file_sha256=self.encryptor.checksums.unencrypted_sha256.hexdigest(),
+        )
+        LOG.info("(3/4) Finished upload for %s.", self.upload.file_id)
 
     async def send_part(
         self,
