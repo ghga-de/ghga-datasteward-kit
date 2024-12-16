@@ -53,11 +53,12 @@ class MultipartUpload:
         self.upload_id = await self.storage.init_multipart_upload(
             bucket_id=self.bucket_id, object_id=self.file_id
         )
-        self.md5sums = []
         return self
 
     async def __aexit__(self, exc_t, exc_v, exc_tb):
         """Deal with errors"""
+        if exc_v == None:
+            return
         # error handling while upload is still ongoing
         if isinstance(exc_v, ShouldAbortUploadError):
             await self.storage.abort_multipart_upload(
@@ -83,6 +84,7 @@ class MultipartUpload:
         MD5s from the individual file parts, followed by a dash ("-") and
         the number of file parts.
         """
+        # concatenation needs the raw bytes, convert from hexdigest
         concatenated_md5s = b"".join(bytes.fromhex(md5) for md5 in self.md5sums)
         object_md5 = hashlib.md5(concatenated_md5s, usedforsecurity=False).hexdigest()
 

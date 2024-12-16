@@ -19,9 +19,9 @@ import hashlib
 import pytest
 from ghga_service_commons.utils.temp_files import big_temp_file
 
+from ghga_datasteward_kit.s3_upload.exceptions import ChecksumValidationError
 from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
 from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
-from ghga_datasteward_kit.s3_upload.utils import ChecksumValidationError
 
 
 def test_encryption_decryption():

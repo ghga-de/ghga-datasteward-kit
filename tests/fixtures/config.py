@@ -28,7 +28,7 @@ from ghga_datasteward_kit.s3_upload.config import (
     NoEndpointURLS3Config,
     S3ObjectStorageNodeConfig,
 )
-from ghga_datasteward_kit.s3_upload.utils import RequestConfigurator
+from ghga_datasteward_kit.s3_upload.http_client import RequestConfigurator
 
 
 def storage_config(

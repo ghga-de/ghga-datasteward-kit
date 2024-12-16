@@ -19,7 +19,7 @@ import pytest
 from tenacity import RetryError
 
 from ghga_datasteward_kit.s3_upload import LegacyConfig
-from ghga_datasteward_kit.s3_upload.utils import configure_retries, httpx_client
+from ghga_datasteward_kit.s3_upload.http_client import configure_retries, httpx_client
 from tests.fixtures.config import legacy_config_fixture  # noqa: F401
 
 EXCEPTIONS = [httpx.ConnectError, httpx.ConnectTimeout, httpx.TimeoutException]
