@@ -247,6 +247,21 @@ async def validate_and_transfer_content(
             object_id=upload.file_id,
             upload_id=upload.upload_id,
         ) from exc
+
+    # Sanity checks
+    if uploader.upload.encrypted_file_size != uploader.encryptor.encrypted_file_size:
+        raise ValueError(
+            "Mismatch between actual and theoretical encrypted part size:\n"
+            + f"Is: {uploader.encryptor.encrypted_file_size}\n"
+            + f"Should be: {uploader.upload.encrypted_file_size}"
+        )
+    # check local checksums of the unencrypted content
+    uploader.decryptor.complete_processing(
+        bucket_id=upload.bucket_id,
+        object_id=upload.file_id,
+        encryption_file_sha256=uploader.encryptor.checksums.unencrypted_sha256.hexdigest(),
+    )
+    # check remote md5 matches locally calculated one
     await upload.check_md5_matches()
 
     return uploader

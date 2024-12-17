@@ -100,20 +100,8 @@ class ChunkedUploader:
                 # Wait for all upload tasks to finish
                 await task_handler.gather()
 
-        if self.upload.encrypted_file_size != self.encryptor.encrypted_file_size:
-            raise ValueError(
-                "Mismatch between actual and theoretical encrypted part size:\n"
-                + f"Is: {self.encryptor.encrypted_file_size}\n"
-                + f"Should be: {self.upload.encrypted_file_size}"
-            )
         # assign md5 sums for content MD5 comparison of the assembled object
         self.upload.md5sums = self.encryptor.checksums.encrypted_md5
-        # Confirm unencrypted file checksum to verify encryption/decryption works correctly
-        self.decryptor.complete_processing(
-            bucket_id=self.bucket_id,
-            object_id=self.upload.file_id,
-            encryption_file_sha256=self.encryptor.checksums.unencrypted_sha256.hexdigest(),
-        )
         LOG.info("(3/4) Finished upload for %s.", self.upload.file_id)
 
     async def send_part(
@@ -127,6 +115,7 @@ class ChunkedUploader:
     ):
         """Handle upload of one file part"""
         async with self._semaphore:
+            part_number = 0  # defined here so it can be used in the exception
             try:
                 part_number, part = next(file_processor)
                 self.decryptor.decrypt_part(part)

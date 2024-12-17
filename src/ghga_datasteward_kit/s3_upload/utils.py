@@ -202,5 +202,4 @@ def get_encrypted_file_size_and_num_parts(
     num_segments = math.ceil(unencrypted_file_size / crypt4gh.lib.SEGMENT_SIZE)
     encrypted_file_size = unencrypted_file_size + num_segments * 28
     num_parts = math.ceil(encrypted_file_size / part_size)
-
     return encrypted_file_size, num_parts
