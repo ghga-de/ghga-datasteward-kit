@@ -88,7 +88,7 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
     )
 
     async with MultipartUpload(file_size=file_size, config=config) as upload:
-        uploader = await validate_and_transfer_content(
+        checksums, raw_file_secret = await validate_and_transfer_content(
             input_path=input_path, config=config, upload=upload
         )
 
@@ -96,11 +96,11 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
             unencrypted_checksum,
             encrypted_md5_checksums,
             encrypted_sha256_checksums,
-        ) = uploader.encryptor.checksums.get()
+        ) = checksums.get()
 
         secret_id = await exchange_secret_for_id(
             file_id=upload.file_id,
-            secret=uploader.encryptor.file_secret,
+            secret=raw_file_secret,
             token=token,
             config=config,
         )
@@ -120,17 +120,13 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
             encrypted_size=upload.encrypted_file_size,
             storage_alias=config.selected_storage_alias,
         )
-        output_path = config.output_dir / f"{alias}.json"
-        LOG.info("(4/4) Writing metadata to %s.", output_path)
-        try:
-            metadata.serialize(output_path)
-        except (
-            Exception,
-            KeyboardInterrupt,
-        ) as exc:
-            raise WritingOutputError(
-                bucket_id=get_bucket_id(config), object_id=upload.file_id
-            ) from exc
+        write_output(
+            alias=alias,
+            bucket_id=get_bucket_id(config),
+            object_id=upload.file_id,
+            metadata=metadata,
+            output_dir=config.output_dir,
+        )
 
 
 async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
@@ -144,7 +140,7 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
     )
 
     async with MultipartUpload(file_size=file_size, config=config) as upload:
-        uploader = await validate_and_transfer_content(
+        checksums, raw_file_secret = await validate_and_transfer_content(
             input_path=input_path, config=config, upload=upload
         )
 
@@ -152,9 +148,9 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
             unencrypted_checksum,
             encrypted_md5_checksums,
             encrypted_sha256_checksums,
-        ) = uploader.encryptor.checksums.get()
+        ) = checksums.get()
 
-        file_secret = base64.b64encode(uploader.encryptor.file_secret).decode("utf-8")
+        file_secret = base64.b64encode(raw_file_secret).decode("utf-8")
 
         metadata = models.LegacyOutputMetadata(
             alias=alias,
@@ -171,17 +167,13 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
             encrypted_size=upload.encrypted_file_size,
             storage_alias=config.selected_storage_alias,
         )
-        output_path = config.output_dir / f"{alias}.json"
-        LOG.info("(4/4) Writing metadata to %s.", output_path)
-        try:
-            metadata.serialize(output_path)
-        except (
-            Exception,
-            KeyboardInterrupt,
-        ) as exc:
-            raise WritingOutputError(
-                bucket_id=get_bucket_id(config), object_id=upload.file_id
-            ) from exc
+        write_output(
+            alias=alias,
+            bucket_id=get_bucket_id(config),
+            object_id=upload.file_id,
+            metadata=metadata,
+            output_dir=config.output_dir,
+        )
 
 
 async def check_adjust_input_file(
@@ -206,7 +198,7 @@ async def check_adjust_input_file(
 
 async def validate_and_transfer_content(
     input_path: Path, upload: MultipartUpload, config: LegacyConfig
-) -> ChunkedUploader:
+) -> tuple[models.Checksums, bytes]:
     """
     Check and upload encrypted file content.
 
@@ -264,7 +256,7 @@ async def validate_and_transfer_content(
     # check remote md5 matches locally calculated one
     await upload.check_md5_matches()
 
-    return uploader
+    return uploader.encryptor.checksums, uploader.encryptor.file_secret
 
 
 async def exchange_secret_for_id(
@@ -279,7 +271,7 @@ async def exchange_secret_for_id(
     it can be retrieved.
 
     If storing the secret fails, the uploaded file is deleted from object storage and
-    a ValueError is raised containing the file alias and response status code.
+    a SecretExchangeError is raised with the file ID, bucket ID, and response status code.
     """
     endpoint = "/federated/ingest_secret"
     endpoint_url = path_join(config.secret_ingest_baseurl, endpoint)
@@ -302,6 +294,26 @@ async def exchange_secret_for_id(
                 bucket_id=get_bucket_id(config), object_id=file_id, message=message
             )
         return response.json()["secret_id"]
+
+
+def write_output(
+    *,
+    alias: str,
+    bucket_id: str,
+    object_id: str,
+    metadata: models.LegacyOutputMetadata | models.OutputMetadata,
+    output_dir: Path,
+):
+    """Write local output metadata file."""
+    output_path = output_dir / f"{alias}.json"
+    LOG.info("(4/4) Writing metadata to %s.", output_path)
+    try:
+        metadata.serialize(output_path)
+    except (
+        Exception,
+        KeyboardInterrupt,
+    ) as exc:
+        raise WritingOutputError(bucket_id=bucket_id, object_id=object_id) from exc
 
 
 if __name__ == "__main__":

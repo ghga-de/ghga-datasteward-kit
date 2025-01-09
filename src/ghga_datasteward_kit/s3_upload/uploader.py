@@ -92,7 +92,6 @@ class ChunkedUploader:
                         self.send_part(
                             client=client,
                             file_processor=file_processor,
-                            num_parts=self.upload.num_parts,
                             start=start,
                             upload=self.upload,
                         )
@@ -109,7 +108,6 @@ class ChunkedUploader:
         *,
         client: httpx.AsyncClient,
         file_processor: Generator[tuple[int, bytes], Any, None],
-        num_parts: int,
         start: float,
         upload: MultipartUpload,
     ):
@@ -136,7 +134,7 @@ class ChunkedUploader:
                 LOG.info(
                     "(2/4) Processing upload for file part %i/%i (%.2f MiB/s)",
                     self._in_sequence_part_number,
-                    num_parts,
+                    self.upload.num_parts,
                     avg_speed,
                 )
                 self._in_sequence_part_number += 1

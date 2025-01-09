@@ -225,7 +225,7 @@ async def test_error_handling(
 
         object_id = ""
         # check encryption/decryption errors raise correctly
-        with pytest.raises(exceptions.ChecksumValidationError):
+        with pytest.raises(exceptions.ShouldDeleteObjectError):
             async with MultipartUpload(file_size=file_size, config=config) as upload:
                 object_id = upload.file_id
                 with monkeypatch.context() as patch:
@@ -260,7 +260,7 @@ async def test_error_handling(
         )
 
         # check content MD5 comparison errors raise correctly
-        with pytest.raises(exceptions.ChecksumValidationError):
+        with pytest.raises(exceptions.ShouldDeleteObjectError):
             async with MultipartUpload(file_size=file_size, config=config) as upload:
                 object_id = upload.file_id
                 with monkeypatch.context() as patch:
@@ -289,7 +289,7 @@ async def test_error_handling(
         )
 
         # check upload completion errors are raised correctly
-        with pytest.raises(exceptions.MultipartUploadCompletionError):
+        with pytest.raises(exceptions.ShouldAbortUploadError):
             async with MultipartUpload(file_size=file_size, config=config) as upload:
                 object_id = upload.file_id
 
@@ -324,8 +324,8 @@ async def test_error_handling(
             bucket_id=BUCKET_ID, object_id=object_id
         )
 
-        # check content MD5 comparison errors raise correctly
-        with pytest.raises(exceptions.PartUploadError):
+        # check part upload errors raise correctly
+        with pytest.raises(exceptions.ShouldAbortUploadError):
             async with MultipartUpload(file_size=file_size, config=config) as upload:
                 object_id = upload.file_id
                 with monkeypatch.context() as patch:
@@ -335,7 +335,6 @@ async def test_error_handling(
                         *,
                         client: httpx.AsyncClient,
                         file_processor: Generator[tuple[int, bytes], Any, None],
-                        num_parts: int,
                         start: float,
                         upload: MultipartUpload,
                     ):
