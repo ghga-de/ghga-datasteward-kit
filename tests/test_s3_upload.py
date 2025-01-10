@@ -188,12 +188,12 @@ async def test_process(config_fixture: Config, monkeypatch, httpx_mock: HTTPXMoc
             assert (config.output_dir / ALIAS).with_suffix(".json").exists()
 
 
-async def test_error_handling(
+async def test_error_handling_local_checksum_validation(
     config_fixture: Config,  # noqa: F811
     monkeypatch,
     httpx_mock: HTTPXMock,
 ):
-    """Test error handling and cleanup"""
+    """Test upload context manager error handling and cleanup when raising local checksum validation errors."""
     sys.set_int_max_str_digits(FILE_SIZE)
     with S3ContainerFixture() as container, big_temp_file(FILE_SIZE) as file:
         s3_config = container.s3_config
@@ -259,6 +259,43 @@ async def test_error_handling(
             bucket_id=BUCKET_ID, object_id=object_id
         )
 
+
+async def test_error_handling_remote_checksum_validation(
+    config_fixture: Config,  # noqa: F811
+    monkeypatch,
+    httpx_mock: HTTPXMock,
+):
+    """Test upload context manager error handling and cleanup when raising remote checksum validation errors."""
+    sys.set_int_max_str_digits(FILE_SIZE)
+    with S3ContainerFixture() as container, big_temp_file(FILE_SIZE) as file:
+        s3_config = container.s3_config
+        config = config_fixture.model_copy(
+            update={
+                "object_storages": storage_config(
+                    s3_access_key_id=s3_config.s3_access_key_id,
+                    s3_secret_access_key=s3_config.s3_secret_access_key.get_secret_value(),
+                    bucket_id=BUCKET_ID,
+                ),
+            }
+        )
+        httpx_mock.add_response(
+            url=path_join(config.wkvs_api_url, "values/storage_aliases"),
+            json={"storage_aliases": {"test": s3_config.s3_endpoint_url}},
+            status_code=200,
+        )
+        storage = get_object_storage(config=config)
+        await storage.create_bucket(bucket_id=get_bucket_id(config))
+
+        alias = "test_error_handling"
+        input_path = Path(file.name)
+        file_size = await check_adjust_input_file(
+            input_path=input_path, alias=alias, config=config
+        )
+
+        object_ids = await storage.list_all_object_ids(bucket_id=BUCKET_ID)
+        assert len(object_ids) == 0
+
+        object_id = ""
         # check content MD5 comparison errors raise correctly
         with pytest.raises(exceptions.ShouldDeleteObjectError):
             async with MultipartUpload(file_size=file_size, config=config) as upload:
@@ -288,6 +325,43 @@ async def test_error_handling(
             bucket_id=BUCKET_ID, object_id=object_id
         )
 
+
+async def test_error_handling_upload_completion(
+    config_fixture: Config,  # noqa: F811
+    monkeypatch,
+    httpx_mock: HTTPXMock,
+):
+    """Test upload context manager error handling and cleanup when raising upload completion errors."""
+    sys.set_int_max_str_digits(FILE_SIZE)
+    with S3ContainerFixture() as container, big_temp_file(FILE_SIZE) as file:
+        s3_config = container.s3_config
+        config = config_fixture.model_copy(
+            update={
+                "object_storages": storage_config(
+                    s3_access_key_id=s3_config.s3_access_key_id,
+                    s3_secret_access_key=s3_config.s3_secret_access_key.get_secret_value(),
+                    bucket_id=BUCKET_ID,
+                ),
+            }
+        )
+        httpx_mock.add_response(
+            url=path_join(config.wkvs_api_url, "values/storage_aliases"),
+            json={"storage_aliases": {"test": s3_config.s3_endpoint_url}},
+            status_code=200,
+        )
+        storage = get_object_storage(config=config)
+        await storage.create_bucket(bucket_id=get_bucket_id(config))
+
+        alias = "test_error_handling"
+        input_path = Path(file.name)
+        file_size = await check_adjust_input_file(
+            input_path=input_path, alias=alias, config=config
+        )
+
+        object_ids = await storage.list_all_object_ids(bucket_id=BUCKET_ID)
+        assert len(object_ids) == 0
+
+        object_id = ""
         # check upload completion errors are raised correctly
         with pytest.raises(exceptions.ShouldAbortUploadError):
             async with MultipartUpload(file_size=file_size, config=config) as upload:
@@ -324,6 +398,43 @@ async def test_error_handling(
             bucket_id=BUCKET_ID, object_id=object_id
         )
 
+
+async def test_error_handling_part_upload(
+    config_fixture: Config,  # noqa: F811
+    monkeypatch,
+    httpx_mock: HTTPXMock,
+):
+    """Test upload context manager error handling and cleanup when raising part upload errors."""
+    sys.set_int_max_str_digits(FILE_SIZE)
+    with S3ContainerFixture() as container, big_temp_file(FILE_SIZE) as file:
+        s3_config = container.s3_config
+        config = config_fixture.model_copy(
+            update={
+                "object_storages": storage_config(
+                    s3_access_key_id=s3_config.s3_access_key_id,
+                    s3_secret_access_key=s3_config.s3_secret_access_key.get_secret_value(),
+                    bucket_id=BUCKET_ID,
+                ),
+            }
+        )
+        httpx_mock.add_response(
+            url=path_join(config.wkvs_api_url, "values/storage_aliases"),
+            json={"storage_aliases": {"test": s3_config.s3_endpoint_url}},
+            status_code=200,
+        )
+        storage = get_object_storage(config=config)
+        await storage.create_bucket(bucket_id=get_bucket_id(config))
+
+        alias = "test_error_handling"
+        input_path = Path(file.name)
+        file_size = await check_adjust_input_file(
+            input_path=input_path, alias=alias, config=config
+        )
+
+        object_ids = await storage.list_all_object_ids(bucket_id=BUCKET_ID)
+        assert len(object_ids) == 0
+
+        object_id = ""
         # check part upload errors raise correctly
         with pytest.raises(exceptions.ShouldAbortUploadError):
             async with MultipartUpload(file_size=file_size, config=config) as upload:
