@@ -19,6 +19,7 @@
 import asyncio
 import base64
 import logging
+import math
 from pathlib import Path
 
 import typer
@@ -26,216 +27,24 @@ from ghga_service_commons.utils.crypt import encrypt
 
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.s3_upload.config import Config, LegacyConfig
-from ghga_datasteward_kit.s3_upload.downloader import ChunkedDownloader
+from ghga_datasteward_kit.s3_upload.exceptions import (
+    MultipartUploadCompletionError,
+    SecretExchangeError,
+    WritingOutputError,
+)
+from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
+from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
+from ghga_datasteward_kit.s3_upload.http_client import RequestConfigurator, httpx_client
+from ghga_datasteward_kit.s3_upload.multipart_upload import MultipartUpload
 from ghga_datasteward_kit.s3_upload.uploader import ChunkedUploader
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
-    RequestConfigurator,
-    StorageCleaner,
     check_adjust_part_size,
     check_output_path,
     get_bucket_id,
     handle_superficial_error,
-    httpx_client,
 )
 from ghga_datasteward_kit.utils import STEWARD_TOKEN, load_config_yaml, path_join
-
-
-async def validate_and_transfer_content(
-    input_path: Path, alias: str, config: LegacyConfig, storage_cleaner: StorageCleaner
-):
-    """
-    Check and upload encrypted file content. This also includes a verification of the
-    upload by downloading the content again and performing a checksum validation.
-
-    Returns:
-        A tuple of the used uploader instance and the file size
-    """
-    if not input_path.exists():
-        msg = f"No such file: {input_path.resolve()}"
-        handle_superficial_error(msg=msg)
-
-    if input_path.is_dir():
-        msg = f"File location points to a directory: {input_path.resolve()}"
-        handle_superficial_error(msg=msg)
-
-    check_output_path(config.output_dir / f"{alias}.json")
-
-    file_size = input_path.stat().st_size
-    check_adjust_part_size(config=config, file_size=file_size)
-
-    uploader = ChunkedUploader(
-        input_path=input_path,
-        alias=alias,
-        config=config,
-        unencrypted_file_size=file_size,
-        storage_cleaner=storage_cleaner,
-    )
-    await uploader.encrypt_and_upload()
-
-    try:
-        downloader = ChunkedDownloader(
-            config=config,
-            file_id=uploader.file_id,
-            encrypted_file_size=uploader.encryptor.encrypted_file_size,
-            file_secret=uploader.encryptor.file_secret,
-            part_size=config.part_size,
-            target_checksums=uploader.encryptor.checksums,
-            storage_cleaner=storage_cleaner,
-        )
-        await downloader.download()
-    except KeyboardInterrupt as error:
-        raise storage_cleaner.DownloadError(
-            bucket_id=get_bucket_id(config), object_id=downloader.file_id
-        ) from error
-
-    return uploader, file_size
-
-
-async def exchange_secret_for_id(
-    *,
-    file_id: str,
-    secret: bytes,
-    token: str,
-    config: Config,
-    storage_cleaner: StorageCleaner,
-) -> str:
-    """
-    Call file ingest service to store the file secret and obtain a secret ID by which
-    it can be retrieved.
-
-    If storing the secret fails, the uploaded file is deleted from object storage and
-    a ValueError is raised containing the file alias and response status code.
-    """
-    endpoint = "/federated/ingest_secret"
-    endpoint_url = path_join(config.secret_ingest_baseurl, endpoint)
-    file_secret = base64.b64encode(secret).decode("utf-8")
-    payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
-    encrypted_secret = models.EncryptedPayload(payload=payload)
-
-    async with httpx_client() as client:
-        headers = {"Authorization": f"Bearer {token}"}
-        response = await client.post(
-            url=endpoint_url, json=encrypted_secret.model_dump(), headers=headers
-        )
-
-        if response.status_code != 200:
-            message = (
-                f"Failed to deposit secret for {file_id} with response code"
-                + f" {response.status_code}."
-            )
-            raise storage_cleaner.SecretExchangeError(
-                bucket_id=get_bucket_id(config), object_id=file_id, message=message
-            )
-        return response.json()["secret_id"]
-
-
-async def async_main(input_path: Path, alias: str, config: Config, token: str):
-    """
-    Run encryption, upload and validation.
-    Prints metadata to <alias>.json in the specified output directory
-    """
-    RequestConfigurator.configure(config=config)
-
-    async with StorageCleaner(config=config) as storage_cleaner:
-        uploader, file_size = await validate_and_transfer_content(
-            input_path=input_path,
-            alias=alias,
-            config=config,
-            storage_cleaner=storage_cleaner,
-        )
-
-        (
-            unencrypted_checksum,
-            encrypted_md5_checksums,
-            encrypted_sha256_checksums,
-        ) = uploader.encryptor.checksums.get()
-
-        secret_id = await exchange_secret_for_id(
-            file_id=uploader.file_id,
-            secret=uploader.encryptor.file_secret,
-            token=token,
-            config=config,
-            storage_cleaner=storage_cleaner,
-        )
-
-        metadata = models.OutputMetadata(
-            alias=uploader.alias,
-            file_id=uploader.file_id,
-            bucket_id=get_bucket_id(config=config),
-            object_id=uploader.file_id,
-            original_path=input_path,
-            part_size=config.part_size,
-            secret_id=secret_id,
-            unencrypted_checksum=unencrypted_checksum,
-            encrypted_md5_checksums=encrypted_md5_checksums,
-            encrypted_sha256_checksums=encrypted_sha256_checksums,
-            unencrypted_size=file_size,
-            encrypted_size=uploader.encryptor.encrypted_file_size,
-            storage_alias=config.selected_storage_alias,
-        )
-        output_path = config.output_dir / f"{uploader.alias}.json"
-        LOG.info("(7/7) Writing metadata to %s.", output_path)
-        try:
-            metadata.serialize(output_path)
-        except (
-            Exception,
-            KeyboardInterrupt,
-        ) as exc:
-            raise storage_cleaner.WritingOutputError(
-                bucket_id=get_bucket_id(config), object_id=uploader.file_id
-            ) from exc
-
-
-async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
-    """
-    Run encryption, upload and validation.
-    Prints metadata to <alias>.json in the specified output directory
-    """
-    RequestConfigurator.configure(config=config)
-
-    async with StorageCleaner(config=config) as storage_cleaner:
-        uploader, file_size = await validate_and_transfer_content(
-            input_path=input_path,
-            alias=alias,
-            config=config,
-            storage_cleaner=storage_cleaner,
-        )
-
-        (
-            unencrypted_checksum,
-            encrypted_md5_checksums,
-            encrypted_sha256_checksums,
-        ) = uploader.encryptor.checksums.get()
-
-        file_secret = base64.b64encode(uploader.encryptor.file_secret).decode("utf-8")
-
-        metadata = models.LegacyOutputMetadata(
-            alias=uploader.alias,
-            file_id=uploader.file_id,
-            bucket_id=get_bucket_id(config=config),
-            object_id=uploader.file_id,
-            original_path=input_path,
-            part_size=config.part_size,
-            file_secret=file_secret,
-            unencrypted_checksum=unencrypted_checksum,
-            encrypted_md5_checksums=encrypted_md5_checksums,
-            encrypted_sha256_checksums=encrypted_sha256_checksums,
-            unencrypted_size=file_size,
-            encrypted_size=uploader.encryptor.encrypted_file_size,
-            storage_alias=config.selected_storage_alias,
-        )
-        output_path = config.output_dir / f"{uploader.alias}.json"
-        LOG.info("(7/7) Writing metadata to %s.", output_path)
-        try:
-            metadata.serialize(output_path)
-        except (
-            Exception,
-            KeyboardInterrupt,
-        ) as exc:
-            raise storage_cleaner.WritingOutputError(
-                bucket_id=get_bucket_id(config), object_id=uploader.file_id
-            ) from exc
 
 
 def main(
@@ -266,6 +75,245 @@ def legacy_main(
     """
     config = load_config_yaml(config_path, LegacyConfig)
     asyncio.run(legacy_async_main(input_path=input_path, alias=alias, config=config))
+
+
+async def async_main(input_path: Path, alias: str, config: Config, token: str):
+    """
+    Run encryption, upload and validation.
+    Prints metadata to <alias>.json in the specified output directory
+    """
+    RequestConfigurator.configure(config=config)
+    file_size = await check_adjust_input_file(
+        input_path=input_path, alias=alias, config=config
+    )
+
+    async with MultipartUpload(file_size=file_size, config=config) as upload:
+        checksums, raw_file_secret = await validate_and_transfer_content(
+            input_path=input_path, config=config, upload=upload
+        )
+
+        (
+            unencrypted_checksum,
+            encrypted_md5_checksums,
+            encrypted_sha256_checksums,
+        ) = checksums.get()
+
+        secret_id = await exchange_secret_for_id(
+            file_id=upload.file_id,
+            secret=raw_file_secret,
+            token=token,
+            config=config,
+        )
+
+        metadata = models.OutputMetadata(
+            alias=alias,
+            file_id=upload.file_id,
+            bucket_id=get_bucket_id(config=config),
+            object_id=upload.file_id,
+            original_path=input_path,
+            part_size=config.part_size,
+            secret_id=secret_id,
+            unencrypted_checksum=unencrypted_checksum,
+            encrypted_md5_checksums=encrypted_md5_checksums,
+            encrypted_sha256_checksums=encrypted_sha256_checksums,
+            unencrypted_size=file_size,
+            encrypted_size=upload.encrypted_file_size,
+            storage_alias=config.selected_storage_alias,
+        )
+        write_output(
+            alias=alias,
+            bucket_id=get_bucket_id(config),
+            object_id=upload.file_id,
+            metadata=metadata,
+            output_dir=config.output_dir,
+        )
+
+
+async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
+    """
+    Run encryption, upload and validation.
+    Prints metadata to <alias>.json in the specified output directory
+    """
+    RequestConfigurator.configure(config=config)
+    file_size = await check_adjust_input_file(
+        input_path=input_path, alias=alias, config=config
+    )
+
+    async with MultipartUpload(file_size=file_size, config=config) as upload:
+        checksums, raw_file_secret = await validate_and_transfer_content(
+            input_path=input_path, config=config, upload=upload
+        )
+
+        (
+            unencrypted_checksum,
+            encrypted_md5_checksums,
+            encrypted_sha256_checksums,
+        ) = checksums.get()
+
+        file_secret = base64.b64encode(raw_file_secret).decode("utf-8")
+
+        metadata = models.LegacyOutputMetadata(
+            alias=alias,
+            file_id=upload.file_id,
+            bucket_id=get_bucket_id(config=config),
+            object_id=upload.file_id,
+            original_path=input_path,
+            part_size=config.part_size,
+            file_secret=file_secret,
+            unencrypted_checksum=unencrypted_checksum,
+            encrypted_md5_checksums=encrypted_md5_checksums,
+            encrypted_sha256_checksums=encrypted_sha256_checksums,
+            unencrypted_size=file_size,
+            encrypted_size=upload.encrypted_file_size,
+            storage_alias=config.selected_storage_alias,
+        )
+        write_output(
+            alias=alias,
+            bucket_id=get_bucket_id(config),
+            object_id=upload.file_id,
+            metadata=metadata,
+            output_dir=config.output_dir,
+        )
+
+
+async def check_adjust_input_file(
+    input_path: Path, alias: str, config: LegacyConfig
+) -> int:
+    """Check if input file exists, get file size and adjust part size if necessary."""
+    if not input_path.exists():
+        msg = f"No such file: {input_path.resolve()}"
+        handle_superficial_error(msg=msg)
+
+    if input_path.is_dir():
+        msg = f"File location points to a directory: {input_path.resolve()}"
+        handle_superficial_error(msg=msg)
+
+    check_output_path(config.output_dir / f"{alias}.json")
+
+    file_size = input_path.stat().st_size
+    check_adjust_part_size(config=config, file_size=file_size)
+
+    return file_size
+
+
+async def validate_and_transfer_content(
+    input_path: Path, upload: MultipartUpload, config: LegacyConfig
+) -> tuple[models.Checksums, bytes]:
+    """
+    Check and upload encrypted file content.
+
+    This also includes a verification of the upload by calculating and supplying part MD5
+    sums and checking the ETag of the uploaded object.
+    Additionally the encrypted parts are decrypted locally and the checksum of the initial
+    unencrypted and the decrypted file are compared.
+
+
+    Returns:
+        A tuple of the used uploader instance and the file size
+    """
+    encryptor = Encryptor(config.part_size)
+    decryptor = Decryptor(file_secret=encryptor.file_secret)
+
+    uploader = ChunkedUploader(
+        input_path=input_path,
+        config=config,
+        encryptor=encryptor,
+        decryptor=decryptor,
+        upload=upload,
+    )
+    await uploader.encrypt_and_upload()
+    try:
+        await upload.storage.complete_multipart_upload(
+            upload_id=upload.upload_id,
+            bucket_id=upload.bucket_id,
+            object_id=upload.file_id,
+            anticipated_part_quantity=math.ceil(
+                upload.encrypted_file_size / upload.part_size
+            ),
+            anticipated_part_size=upload.part_size,
+        )
+    except BaseException as exc:
+        raise MultipartUploadCompletionError(
+            cause=str(exc),
+            bucket_id=upload.bucket_id,
+            object_id=upload.file_id,
+            upload_id=upload.upload_id,
+        ) from exc
+
+    # Sanity checks
+    if uploader.upload.encrypted_file_size != uploader.encryptor.encrypted_file_size:
+        raise ValueError(
+            "Mismatch between actual and theoretical encrypted part size:\n"
+            + f"Is: {uploader.encryptor.encrypted_file_size}\n"
+            + f"Should be: {uploader.upload.encrypted_file_size}"
+        )
+    # check local checksums of the unencrypted content
+    uploader.decryptor.complete_processing(
+        bucket_id=upload.bucket_id,
+        object_id=upload.file_id,
+        encryption_file_sha256=uploader.encryptor.checksums.unencrypted_sha256.hexdigest(),
+    )
+    # check remote md5 matches locally calculated one
+    await upload.check_md5_matches()
+
+    return uploader.encryptor.checksums, uploader.encryptor.file_secret
+
+
+async def exchange_secret_for_id(
+    *,
+    file_id: str,
+    secret: bytes,
+    token: str,
+    config: Config,
+) -> str:
+    """
+    Call file ingest service to store the file secret and obtain a secret ID by which
+    it can be retrieved.
+
+    If storing the secret fails, the uploaded file is deleted from object storage and
+    a SecretExchangeError is raised with the file ID, bucket ID, and response status code.
+    """
+    endpoint = "/federated/ingest_secret"
+    endpoint_url = path_join(config.secret_ingest_baseurl, endpoint)
+    file_secret = base64.b64encode(secret).decode("utf-8")
+    payload = encrypt(data=file_secret, key=config.secret_ingest_pubkey)
+    encrypted_secret = models.EncryptedPayload(payload=payload)
+
+    async with httpx_client() as client:
+        headers = {"Authorization": f"Bearer {token}"}
+        response = await client.post(
+            url=endpoint_url, json=encrypted_secret.model_dump(), headers=headers
+        )
+
+        if response.status_code != 200:
+            message = (
+                f"Failed to deposit secret for {file_id} with response code"
+                + f" {response.status_code}."
+            )
+            raise SecretExchangeError(
+                bucket_id=get_bucket_id(config), object_id=file_id, message=message
+            )
+        return response.json()["secret_id"]
+
+
+def write_output(
+    *,
+    alias: str,
+    bucket_id: str,
+    object_id: str,
+    metadata: models.LegacyOutputMetadata | models.OutputMetadata,
+    output_dir: Path,
+):
+    """Write local output metadata file."""
+    output_path = output_dir / f"{alias}.json"
+    LOG.info("(4/4) Writing metadata to %s.", output_path)
+    try:
+        metadata.serialize(output_path)
+    except (
+        Exception,
+        KeyboardInterrupt,
+    ) as exc:
+        raise WritingOutputError(bucket_id=bucket_id, object_id=object_id) from exc
 
 
 if __name__ == "__main__":
