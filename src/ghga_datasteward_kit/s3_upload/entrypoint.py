@@ -19,7 +19,6 @@
 import asyncio
 import base64
 import logging
-import math
 from pathlib import Path
 
 import typer
@@ -28,15 +27,11 @@ from ghga_service_commons.utils.crypt import encrypt
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.s3_upload.config import Config, LegacyConfig
 from ghga_datasteward_kit.s3_upload.exceptions import (
-    MultipartUploadCompletionError,
     SecretExchangeError,
     WritingOutputError,
 )
-from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
-from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
 from ghga_datasteward_kit.s3_upload.http_client import RequestConfigurator, httpx_client
 from ghga_datasteward_kit.s3_upload.multipart_upload import MultipartUpload
-from ghga_datasteward_kit.s3_upload.uploader import ChunkedUploader
 from ghga_datasteward_kit.s3_upload.utils import (
     LOG,
     check_adjust_part_size,
@@ -88,8 +83,8 @@ async def async_main(input_path: Path, alias: str, config: Config, token: str):
     )
 
     async with MultipartUpload(file_size=file_size, config=config) as upload:
-        checksums, raw_file_secret = await validate_and_transfer_content(
-            input_path=input_path, config=config, upload=upload
+        checksums, raw_file_secret = await upload.validate_and_transfer_content(
+            input_path=input_path
         )
 
         (
@@ -140,8 +135,8 @@ async def legacy_async_main(input_path: Path, alias: str, config: LegacyConfig):
     )
 
     async with MultipartUpload(file_size=file_size, config=config) as upload:
-        checksums, raw_file_secret = await validate_and_transfer_content(
-            input_path=input_path, config=config, upload=upload
+        checksums, raw_file_secret = await upload.validate_and_transfer_content(
+            input_path=input_path
         )
 
         (
@@ -194,69 +189,6 @@ async def check_adjust_input_file(
     check_adjust_part_size(config=config, file_size=file_size)
 
     return file_size
-
-
-async def validate_and_transfer_content(
-    input_path: Path, upload: MultipartUpload, config: LegacyConfig
-) -> tuple[models.Checksums, bytes]:
-    """
-    Check and upload encrypted file content.
-
-    This also includes a verification of the upload by calculating and supplying part MD5
-    sums and checking the ETag of the uploaded object.
-    Additionally the encrypted parts are decrypted locally and the checksum of the initial
-    unencrypted and the decrypted file are compared.
-
-
-    Returns:
-        A tuple of the used uploader instance and the file size
-    """
-    encryptor = Encryptor(config.part_size)
-    decryptor = Decryptor(file_secret=encryptor.file_secret)
-
-    uploader = ChunkedUploader(
-        input_path=input_path,
-        config=config,
-        encryptor=encryptor,
-        decryptor=decryptor,
-        upload=upload,
-    )
-    await uploader.encrypt_and_upload()
-    try:
-        await upload.storage.complete_multipart_upload(
-            upload_id=upload.upload_id,
-            bucket_id=upload.bucket_id,
-            object_id=upload.file_id,
-            anticipated_part_quantity=math.ceil(
-                upload.encrypted_file_size / upload.part_size
-            ),
-            anticipated_part_size=upload.part_size,
-        )
-    except BaseException as exc:
-        raise MultipartUploadCompletionError(
-            cause=str(exc),
-            bucket_id=upload.bucket_id,
-            object_id=upload.file_id,
-            upload_id=upload.upload_id,
-        ) from exc
-
-    # Sanity checks
-    if uploader.upload.encrypted_file_size != uploader.encryptor.encrypted_file_size:
-        raise ValueError(
-            "Mismatch between actual and theoretical encrypted part size:\n"
-            + f"Is: {uploader.encryptor.encrypted_file_size}\n"
-            + f"Should be: {uploader.upload.encrypted_file_size}"
-        )
-    # check local checksums of the unencrypted content
-    uploader.decryptor.complete_processing(
-        bucket_id=upload.bucket_id,
-        object_id=upload.file_id,
-        encryption_file_sha256=uploader.encryptor.checksums.unencrypted_sha256.hexdigest(),
-    )
-    # check remote md5 matches locally calculated one
-    await upload.check_md5_matches()
-
-    return uploader.encryptor.checksums, uploader.encryptor.file_secret
 
 
 async def exchange_secret_for_id(
