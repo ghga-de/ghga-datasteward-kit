@@ -440,7 +440,6 @@ async def test_error_handling_part_upload(
                         client: httpx.AsyncClient,
                         file_processor: Generator[tuple[int, bytes], Any, None],
                         start: float,
-                        upload: MultipartUpload,
                     ):
                         """Mock to be used as patch for raising a custom exception"""
                         raise exceptions.PartUploadError(

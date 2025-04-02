@@ -117,7 +117,7 @@ class MultipartUpload:
             storage=self.storage,
             upload_params=upload_params,
         )
-        await uploader.encrypt_and_upload()
+        self.md5sums = await uploader.encrypt_and_upload()
         try:
             await self.storage.complete_multipart_upload(
                 upload_id=self.upload_id,
