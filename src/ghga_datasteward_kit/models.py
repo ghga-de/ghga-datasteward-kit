@@ -1,4 +1,4 @@
-# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2025 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ import hashlib
 import json
 import logging
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -283,3 +284,13 @@ class LegacyOutputMetadata(LegacyMetadata):
             encrypted_sha256_checksums=self.encrypted_sha256_checksums,
             storage_alias=self.storage_alias,
         )
+
+
+@dataclass
+class UploadParameters:
+    """Contains information needed by the uploader class within a multipart upload."""
+
+    bucket_id: str
+    file_id: str
+    upload_id: str
+    num_parts: int

@@ -1,4 +1,4 @@
-# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2025 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,23 @@
 """Multipart upload context manager dealing with initialization and cleanup."""
 
 import hashlib
+import math
+from pathlib import Path
 from uuid import uuid4
 
-from ghga_datasteward_kit.s3_upload.config import LegacyConfig
-from ghga_datasteward_kit.s3_upload.exceptions import (
+from ghga_datasteward_kit import models
+
+from .config import LegacyConfig
+from .exceptions import (
     ChecksumValidationError,
+    MultipartUploadCompletionError,
     ShouldAbortUploadError,
     ShouldDeleteObjectError,
 )
-from ghga_datasteward_kit.s3_upload.utils import (
+from .file_decryption import Decryptor
+from .file_encryption import Encryptor
+from .uploader import ChunkedUploader
+from .utils import (
     get_bucket_id,
     get_encrypted_file_size_and_num_parts,
     get_object_storage,
@@ -76,6 +84,75 @@ class MultipartUpload:
                 object_id=exc_v.object_id,
             )
         raise exc_v
+
+    async def validate_and_transfer_content(
+        self, input_path: Path
+    ) -> tuple[models.Checksums, bytes]:
+        """
+        Check and upload encrypted file content.
+
+        This also includes a verification of the upload by calculating and supplying part MD5
+        sums and checking the ETag of the uploaded object.
+        Additionally the encrypted parts are decrypted locally and the checksum of the initial
+        unencrypted and the decrypted file are compared.
+
+
+        Returns:
+            A tuple of the used uploader instance and the file size
+        """
+        encryptor = Encryptor(self.config.part_size)
+        decryptor = Decryptor(file_secret=encryptor.file_secret)
+        upload_params = models.UploadParameters(
+            bucket_id=self.bucket_id,
+            file_id=self.file_id,
+            upload_id=self.upload_id,
+            num_parts=self.num_parts,
+        )
+
+        uploader = ChunkedUploader(
+            input_path=input_path,
+            config=self.config,
+            encryptor=encryptor,
+            decryptor=decryptor,
+            storage=self.storage,
+            upload_params=upload_params,
+        )
+        self.md5sums = await uploader.encrypt_and_upload()
+        try:
+            await self.storage.complete_multipart_upload(
+                upload_id=self.upload_id,
+                bucket_id=self.bucket_id,
+                object_id=self.file_id,
+                anticipated_part_quantity=math.ceil(
+                    self.encrypted_file_size / self.part_size
+                ),
+                anticipated_part_size=self.part_size,
+            )
+        except BaseException as exc:
+            raise MultipartUploadCompletionError(
+                cause=str(exc),
+                bucket_id=self.bucket_id,
+                object_id=self.file_id,
+                upload_id=self.upload_id,
+            ) from exc
+
+        # Sanity checks
+        if self.encrypted_file_size != uploader.encryptor.encrypted_file_size:
+            raise ValueError(
+                "Mismatch between actual and theoretical encrypted part size:\n"
+                + f"Is: {uploader.encryptor.encrypted_file_size}\n"
+                + f"Should be: {self.encrypted_file_size}"
+            )
+        # check local checksums of the unencrypted content
+        uploader.decryptor.complete_processing(
+            bucket_id=self.bucket_id,
+            object_id=self.file_id,
+            encryption_file_sha256=uploader.encryptor.checksums.unencrypted_sha256.hexdigest(),
+        )
+        # check remote md5 matches locally calculated one
+        await self.check_md5_matches()
+
+        return uploader.encryptor.checksums, uploader.encryptor.file_secret
 
     async def check_md5_matches(self):
         """Calculate final object MD5 and check if the remote matches.

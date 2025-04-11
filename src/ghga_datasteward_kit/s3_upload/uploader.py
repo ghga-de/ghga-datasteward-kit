@@ -1,4 +1,4 @@
-# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2025 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,13 +27,14 @@ import httpx
 from hexkit.providers.s3 import S3ObjectStorage
 from httpx import Response
 
-from ghga_datasteward_kit.s3_upload.config import LegacyConfig
-from ghga_datasteward_kit.s3_upload.exceptions import PartUploadError
-from ghga_datasteward_kit.s3_upload.file_decryption import Decryptor
-from ghga_datasteward_kit.s3_upload.file_encryption import Encryptor
-from ghga_datasteward_kit.s3_upload.http_client import configure_retries, httpx_client
-from ghga_datasteward_kit.s3_upload.multipart_upload import MultipartUpload
-from ghga_datasteward_kit.s3_upload.utils import LOG, get_bucket_id
+from ghga_datasteward_kit.models import UploadParameters
+
+from .config import LegacyConfig
+from .exceptions import PartUploadError
+from .file_decryption import Decryptor
+from .file_encryption import Encryptor
+from .http_client import configure_retries, httpx_client
+from .utils import LOG
 
 
 class UploadTaskHandler:
@@ -59,49 +60,54 @@ class UploadTaskHandler:
 class ChunkedUploader:
     """Handler class dealing with upload functionality"""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         *,
         input_path: Path,
         config: LegacyConfig,
         encryptor: Encryptor,
         decryptor: Decryptor,
-        upload: MultipartUpload,
+        storage: S3ObjectStorage,
+        upload_params: UploadParameters,
     ) -> None:
         self.config = config
         self.input_path = input_path
         self.encryptor = encryptor
         self.decryptor = decryptor
-        self.bucket_id = get_bucket_id(config)
+        self.storage = storage
+        self.upload_params = upload_params
         self.retry_handler = configure_retries(config)
-        self.upload = upload
         self._in_sequence_part_number = 1
         self._semaphore = asyncio.Semaphore(config.client_max_parallel_transfers)
 
-    async def encrypt_and_upload(self):
-        """Delegate encryption and perform multipart upload"""
+    async def encrypt_and_upload(self) -> list[str]:
+        """Delegate encryption and perform multipart upload
+
+        Returns MD5 checksums of the encrypted parts.
+        """
         with open(self.input_path, "rb") as file:
             async with httpx_client() as client:
-                LOG.info("(1/4) Initialized file upload for %s.", self.upload.file_id)
+                LOG.info(
+                    "(1/4) Initialized file upload for %s.", self.upload_params.file_id
+                )
 
                 start = time()
                 file_processor = self.encryptor.process_file(file=file)
                 task_handler = UploadTaskHandler()
-                for _ in range(self.upload.num_parts):
+                for _ in range(self.upload_params.num_parts):
                     task_handler.schedule(
                         self.send_part(
                             client=client,
                             file_processor=file_processor,
                             start=start,
-                            upload=self.upload,
                         )
                     )
                 # Wait for all upload tasks to finish
                 await task_handler.gather()
 
-        # assign md5 sums for content MD5 comparison of the assembled object
-        self.upload.md5sums = self.encryptor.checksums.encrypted_md5
-        LOG.info("(3/4) Finished upload for %s.", self.upload.file_id)
+        LOG.info("(3/4) Finished upload for %s.", self.upload_params.file_id)
+        # return md5 sums for content MD5 comparison of the assembled object
+        return self.encryptor.checksums.encrypted_md5
 
     async def send_part(
         self,
@@ -109,7 +115,6 @@ class ChunkedUploader:
         client: httpx.AsyncClient,
         file_processor: Generator[tuple[int, bytes], Any, None],
         start: float,
-        upload: MultipartUpload,
     ):
         """Handle upload of one file part"""
         async with self._semaphore:
@@ -119,8 +124,6 @@ class ChunkedUploader:
                 self.decryptor.decrypt_part(part)
                 response = await self._prepare_and_send_request(
                     client=client,
-                    storage=upload.storage,
-                    upload_id=upload.upload_id,
                     part=part,
                     part_number=part_number,
                 )
@@ -134,7 +137,7 @@ class ChunkedUploader:
                 LOG.info(
                     "(2/4) Processing upload for file part %i/%i (%.2f MiB/s)",
                     self._in_sequence_part_number,
-                    self.upload.num_parts,
+                    self.upload_params.num_parts,
                     avg_speed,
                 )
                 self._in_sequence_part_number += 1
@@ -155,18 +158,16 @@ class ChunkedUploader:
                     raise
                 raise PartUploadError(
                     cause=str(exc),
-                    bucket_id=self.bucket_id,
-                    object_id=self.upload.file_id,
+                    bucket_id=self.upload_params.bucket_id,
+                    object_id=self.upload_params.file_id,
                     part_number=part_number,
-                    upload_id=upload.upload_id,
+                    upload_id=self.upload_params.upload_id,
                 ) from exc
 
     async def _prepare_and_send_request(
         self,
         *,
         client: httpx.AsyncClient,
-        storage: S3ObjectStorage,
-        upload_id: str,
         part: bytes,
         part_number: int,
     ) -> Response:
@@ -179,10 +180,10 @@ class ChunkedUploader:
         # Naively fetching from the encryptor is prone to errors
         part_md5 = hashlib.md5(part, usedforsecurity=False).digest()
         encoded_part_md5 = base64.b64encode(part_md5).decode("utf-8")
-        upload_url = await storage.get_part_upload_url(
-            upload_id=upload_id,
-            bucket_id=self.bucket_id,
-            object_id=self.upload.file_id,
+        upload_url = await self.storage.get_part_upload_url(
+            upload_id=self.upload_params.upload_id,
+            bucket_id=self.upload_params.bucket_id,
+            object_id=self.upload_params.file_id,
             part_number=part_number,
             part_md5=encoded_part_md5,
         )

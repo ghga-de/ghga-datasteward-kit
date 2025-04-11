@@ -1,4 +1,4 @@
-# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2025 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -190,8 +190,9 @@ def check_adjust_part_size(config: LegacyConfig, file_size: int):
 def check_output_path(output_path: Path):
     """Check if we accidentally try to overwrite an already existing metadata file"""
     if output_path.exists():
-        msg = f"Output file {output_path.resolve(
-        )} already exists and cannot be overwritten."
+        msg = f"Output file {
+            output_path.resolve()
+        } already exists and cannot be overwritten."
         handle_superficial_error(msg=msg)
 
 

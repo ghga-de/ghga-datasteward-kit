@@ -1,4 +1,4 @@
-# Copyright 2021 - 2024 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2025 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,6 @@ from ghga_datasteward_kit.s3_upload.entrypoint import (
     async_main,
     check_adjust_input_file,
     legacy_async_main,
-    validate_and_transfer_content,
 )
 from ghga_datasteward_kit.s3_upload.multipart_upload import MultipartUpload
 from ghga_datasteward_kit.s3_upload.utils import (
@@ -248,9 +247,7 @@ async def test_error_handling_local_checksum_validation(
                         "ghga_datasteward_kit.s3_upload.uploader.Decryptor.complete_processing",
                         raise_checksum_processing_exception,
                     )
-                    await validate_and_transfer_content(
-                        input_path=input_path, upload=upload, config=config
-                    )
+                    await upload.validate_and_transfer_content(input_path=input_path)
 
         assert not await storage.does_object_exist(
             bucket_id=BUCKET_ID, object_id=object_id
@@ -314,9 +311,7 @@ async def test_error_handling_remote_checksum_validation(
                         "ghga_datasteward_kit.s3_upload.multipart_upload.MultipartUpload.check_md5_matches",
                         raise_content_checksum_exception,
                     )
-                    await validate_and_transfer_content(
-                        input_path=input_path, upload=upload, config=config
-                    )
+                    await upload.validate_and_transfer_content(input_path=input_path)
 
         assert not await storage.does_object_exist(
             bucket_id=BUCKET_ID, object_id=object_id
@@ -387,9 +382,7 @@ async def test_error_handling_upload_completion(
                     raise_upload_completion_exception
                 )
 
-                await validate_and_transfer_content(
-                    input_path=input_path, upload=upload, config=config
-                )
+                await upload.validate_and_transfer_content(input_path=input_path)
 
         assert not await storage.does_object_exist(
             bucket_id=BUCKET_ID, object_id=object_id
@@ -447,7 +440,6 @@ async def test_error_handling_part_upload(
                         client: httpx.AsyncClient,
                         file_processor: Generator[tuple[int, bytes], Any, None],
                         start: float,
-                        upload: MultipartUpload,
                     ):
                         """Mock to be used as patch for raising a custom exception"""
                         raise exceptions.PartUploadError(
@@ -462,9 +454,7 @@ async def test_error_handling_part_upload(
                         "ghga_datasteward_kit.s3_upload.uploader.ChunkedUploader.send_part",
                         raise_part_upload_exception,
                     )
-                    await validate_and_transfer_content(
-                        input_path=input_path, upload=upload, config=config
-                    )
+                    await upload.validate_and_transfer_content(input_path=input_path)
 
         assert not await storage.does_object_exist(
             bucket_id=BUCKET_ID, object_id=object_id
