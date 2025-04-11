@@ -82,8 +82,8 @@ class ChunkedUploader:
 
     async def encrypt_and_upload(self) -> list[str]:
         """Delegate encryption and perform multipart upload
-        
-        Returns the encrypted MD5 checksums.
+
+        Returns MD5 checksums of the encrypted parts.
         """
         with open(self.input_path, "rb") as file:
             async with httpx_client() as client:
