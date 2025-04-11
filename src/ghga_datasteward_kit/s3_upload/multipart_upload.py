@@ -61,16 +61,6 @@ class MultipartUpload:
         self.upload_id = await self.storage.init_multipart_upload(
             bucket_id=self.bucket_id, object_id=self.file_id
         )
-        active_uploads = await self.storage._list_multipart_upload_for_object(
-            bucket_id=self.bucket_id, object_id=self.file_id
-        )
-        if len(active_uploads) < 1:
-            raise ValueError(
-                f"Failed to initialiaze multipart upload, but still got upload ID: {self.upload_id}"
-            )
-        await self.storage._assert_multipart_upload_exists(
-            upload_id=self.upload_id, bucket_id=self.bucket_id, object_id=self.file_id
-        )
         return self
 
     async def __aexit__(self, exc_t, exc_v, exc_tb):
