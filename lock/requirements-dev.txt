@@ -126,6 +126,10 @@ botocore==1.37.32 \
     #   boto3
     #   hexkit
     #   s3transfer
+casefy==1.1.0 \
+    --hash=sha256:849d6e0f80506fac70ab8e18999a4ca1eb7d8f70941682383d64aa22a7497f8f \
+    --hash=sha256:a3dfcb14d85902d90702db1e9835760237f6a73ec0ae3b7e991ad767513a3cbc
+    # via -r lock/requirements-dev-template.in
 certifi==2025.1.31 \
     --hash=sha256:3d5da6925056f6f18f119200434a4780a94263f10d1c21d032a6f6b2baa20651 \
     --hash=sha256:ca78db4565a652026a4db2bcdf68f2fb589ea80d0be70e03929ed730746b84fe
@@ -1617,9 +1621,7 @@ starlette==0.46.1 \
     # via fastapi
 stringcase==1.2.0 \
     --hash=sha256:48a06980661908efe8d9d34eab2b6c13aefa2163b3ced26972902e3bdfd87008
-    # via
-    #   -r lock/requirements-dev-template.in
-    #   linkml-validator
+    # via linkml-validator
 tenacity==9.1.2 \
     --hash=sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb \
     --hash=sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138

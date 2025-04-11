@@ -190,8 +190,9 @@ def check_adjust_part_size(config: LegacyConfig, file_size: int):
 def check_output_path(output_path: Path):
     """Check if we accidentally try to overwrite an already existing metadata file"""
     if output_path.exists():
-        msg = f"Output file {output_path.resolve(
-        )} already exists and cannot be overwritten."
+        msg = f"Output file {
+            output_path.resolve()
+        } already exists and cannot be overwritten."
         handle_superficial_error(msg=msg)
 
 
