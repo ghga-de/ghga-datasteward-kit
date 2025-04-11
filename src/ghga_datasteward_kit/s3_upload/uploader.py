@@ -81,7 +81,10 @@ class ChunkedUploader:
         self._semaphore = asyncio.Semaphore(config.client_max_parallel_transfers)
 
     async def encrypt_and_upload(self) -> list[str]:
-        """Delegate encryption and perform multipart upload"""
+        """Delegate encryption and perform multipart upload
+        
+        Returns the encrypted MD5 checksums.
+        """
         with open(self.input_path, "rb") as file:
             async with httpx_client() as client:
                 LOG.info(
