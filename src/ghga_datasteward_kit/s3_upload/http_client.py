@@ -65,6 +65,7 @@ def configure_retries(config: LegacyConfig):
                 (
                     httpx.ConnectError,
                     httpx.ConnectTimeout,
+                    httpx.ReadError,
                     httpx.TimeoutException,
                 )
             )
