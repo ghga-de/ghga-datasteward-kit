@@ -18,7 +18,9 @@
 import sys
 from collections.abc import Generator
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
+from unittest.mock import Mock
 
 import httpx
 import pytest
@@ -26,6 +28,8 @@ from ghga_service_commons.utils.temp_files import big_temp_file
 from hexkit.providers.s3.testutils import S3ContainerFixture
 from pytest_httpx import HTTPXMock
 
+from ghga_datasteward_kit.batch_s3_upload import FileMetadata
+from ghga_datasteward_kit.batch_s3_upload import main as batch_upload_main
 from ghga_datasteward_kit.s3_upload import Config, LegacyConfig, exceptions
 from ghga_datasteward_kit.s3_upload.entrypoint import (
     async_main,
@@ -462,3 +466,76 @@ async def test_error_handling_part_upload(
         assert not await storage._list_multipart_upload_for_object(
             bucket_id=BUCKET_ID, object_id=object_id
         )
+
+
+async def test_batch_upload_retries(
+    config_fixture: Config,  # noqa: F811
+    monkeypatch,
+    httpx_mock: HTTPXMock,
+):
+    """Test the batch upload auto-retry mechanism"""
+    sys.set_int_max_str_digits(FILE_SIZE)
+    with S3ContainerFixture() as container, big_temp_file(FILE_SIZE) as file:
+        s3_config = container.s3_config
+        config = config_fixture.model_copy(
+            update={
+                "object_storages": storage_config(
+                    s3_access_key_id=s3_config.s3_access_key_id,
+                    s3_secret_access_key=s3_config.s3_secret_access_key.get_secret_value(),
+                    bucket_id=BUCKET_ID,
+                ),
+            }
+        )
+        httpx_mock.add_response(
+            url=path_join(config.wkvs_api_url, "values/storage_aliases"),
+            json={"storage_aliases": {"test": s3_config.s3_endpoint_url}},
+            status_code=200,
+        )
+        storage = get_object_storage(config=config)
+        await storage.create_bucket(bucket_id=get_bucket_id(config))
+
+        alias = "test_batch_retry"
+        input_path = Path(file.name)
+
+        object_ids = await storage.list_all_object_ids(bucket_id=BUCKET_ID)
+        assert len(object_ids) == 0
+
+        with TemporaryDirectory() as tmp_dir:
+            config_path = Path(tmp_dir) / "config.yaml"
+            file_overview_tsv = Path(tmp_dir) / "file_overview.tsv"
+            legacy_config = LegacyConfig(
+                client_exponential_backoff_max=config.client_exponential_backoff_max,
+                client_max_parallel_transfers=config.client_max_parallel_transfers,
+                client_num_retries=config.client_num_retries,
+                object_storages=config.object_storages,
+                output_dir=Path(tmp_dir),
+                selected_storage_alias="test",
+            )
+
+            files = [FileMetadata(path=input_path, alias=alias)]
+
+            monkeypatch.setattr(
+                "ghga_datasteward_kit.batch_s3_upload.load_config_yaml",
+                lambda path, config_cls: legacy_config,
+            )
+            monkeypatch.setattr(
+                "ghga_datasteward_kit.batch_s3_upload.load_file_metadata",
+                lambda file_overview_tsv: files,
+            )
+            trigger_mock = Mock()
+            trigger_mock.side_effect = RuntimeError()
+            monkeypatch.setattr(
+                "ghga_datasteward_kit.batch_s3_upload.BatchUploadManager.trigger_file_upload",
+                trigger_mock,
+            )
+
+            with pytest.raises(RuntimeError):
+                batch_upload_main(
+                    config_path=config_path,
+                    file_overview_tsv=file_overview_tsv,
+                    parallel_processes=1,
+                    legacy_mode=True,
+                    dry_run=False,
+                    max_retries=3,
+                )
+        assert trigger_mock.call_count == 4
