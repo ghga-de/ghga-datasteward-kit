@@ -115,7 +115,9 @@ class BatchUploadManager:
     def trigger_file_upload(self, file: FileMetadata) -> subprocess.Popen | None:
         """
         Checks whether the file was already uploaded, if not, the upload is triggered
-        in a separate process and the corresponding subprocess.Popen object is returned.
+        in a separate process and the corresponding subprocess.
+
+        Popen object is returned.
         """
         if check_file_upload(file=file, output_dir=self.output_dir):
             logging.info("File '%s' has already been uploaded: skipping.", file.alias)
@@ -140,6 +142,7 @@ class BatchUploadManager:
         )
 
     def _start_next_file(self):
+        """Triggers a file upload process for the next file and tracks the process."""
         next_file = self.files_to_do[-1]
         process = self.trigger_file_upload(file=next_file)
         if process:
@@ -171,10 +174,10 @@ class BatchUploadManager:
         self.files_to_do = copy(files)
         self.files_to_do.reverse()
 
-        # Outer `try` only exists to execute `finally`
+        # The outer while loop runs while there is still any work to do
         while self.files_to_do or self.in_progress:
             try:
-                # start new processes:
+                # Kick off as many file uploads in parallel as possible until none remain
                 while (
                     len(self.in_progress) < self.parallel_processes and self.files_to_do
                 ):
@@ -182,21 +185,25 @@ class BatchUploadManager:
 
                 # check status of uploads in progress:
                 self._poll_uploads()
-
-                # Sleep briefly before polling uploads again or starting new uploads
-                if not self.dry_run:
-                    sleep(2)
             except:
+                # If an error occurs, either retry while allowed or log the stats and
+                #  terminate any running upload processes before re-raising.
                 if self.max_retries is None:
                     logging.warning("Error encountered during file upload, retrying.")
                 elif self.max_retries > 0:
                     self.max_retries -= 1
+                    logging.warning("Error encountered during file upload, retrying.")
                 else:
                     logging.error("Error during file upload")
                     self._log_upload_stats()
                     for _, process in self.in_progress.items():
                         process.terminate()
                     raise
+            # Sleep briefly before polling uploads again or starting new uploads
+            #  The sleep is placed here so that there is still a pause between retries
+            if not self.dry_run:
+                sleep(2)
+        # If the entire batch was finished successfully, log the upload stats
         self._log_upload_stats()
 
     def _log_upload_stats(self):
@@ -222,7 +229,7 @@ def main(  # noqa: PLR0913
 ):
     """
     Custom script to encrypt data using Crypt4GH and directly uploading it to S3
-    objectstorage.
+    object storage.
     """
     config_class: type[LegacyConfig | Config] = LegacyConfig if legacy_mode else Config
     config = load_config_yaml(path=config_path, config_cls=config_class)
