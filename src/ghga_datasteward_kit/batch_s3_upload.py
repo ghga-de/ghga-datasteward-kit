@@ -105,7 +105,7 @@ class BatchUploadManager:
         self.parallel_processes = parallel_processes
         self.dry_run = dry_run
         self.legacy_mode = legacy_mode
-        self.max_retries = max_retries
+        self.retries_remaining = max_retries
         self.files_failed: list[FileMetadata] = []
         self.files_succeeded: list[FileMetadata] = []
         self.files_skipped: list[FileMetadata] = []
@@ -135,21 +135,52 @@ class BatchUploadManager:
             return None
 
         logging.info("The upload of the file with alias '%s' has started.", file.alias)
+
         return subprocess.Popen(  # noqa: S602
             command_line,
             shell=True,
             executable="/bin/bash",
         )
 
+    def _redeem_retry(self) -> bool:
+        """Returns True if allowed to retry, else False.
+
+        If `retries_remaining` is `None`, infinite retries are allowed.
+        Otherwise, `retries_remaining` is decremented by 1.
+        """
+        if self.retries_remaining is None:
+            return True
+
+        if self.retries_remaining > 0:
+            self.retries_remaining -= 1
+            return True
+        return False
+
+    def _retry_failed(self):
+        """Retry upload process but only attempt the failed files from a previous run"""
+        logging.info("Retrying failed and/or remaining files...")
+        while self.files_failed:
+            self.files_to_do.append(self.files_failed.pop())
+        sleep(2)
+        new_file_list = list(reversed(self.files_to_do))
+        self.handle_file_uploads(new_file_list)
+
     def _start_next_file(self):
-        """Triggers a file upload process for the next file and tracks the process."""
-        next_file = self.files_to_do[-1]
-        process = self.trigger_file_upload(file=next_file)
-        if process:
-            self.in_progress[next_file] = process
-            self.files_to_do.pop()
+        """Triggers a file upload process for the next file and tracks the process.
+
+        If an error occurs during the call to `trigger_file_upload`, the file will
+        be placed in the list of failed files.
+        """
+        next_file = self.files_to_do.pop()
+        try:
+            process = self.trigger_file_upload(file=next_file)
+        except:
+            self.files_failed.append(next_file)
         else:
-            self.files_skipped.append(next_file)
+            if process:
+                self.in_progress[next_file] = process
+            else:
+                self.files_skipped.append(next_file)
 
     def _poll_uploads(self):
         """Check ongoing uploads. Log and remove completed or errored uploads."""
@@ -185,38 +216,55 @@ class BatchUploadManager:
 
                 # check status of uploads in progress:
                 self._poll_uploads()
-            except:
+            except Exception:
                 # If an error occurs, either retry while allowed or log the stats and
                 #  terminate any running upload processes before re-raising.
-                if self.max_retries is None:
-                    logging.warning("Error encountered during file upload, retrying.")
-                elif self.max_retries > 0:
-                    self.max_retries -= 1
-                    logging.warning("Error encountered during file upload, retrying.")
+                logging.error(
+                    "Unhandled error during file upload, canceling in-progress uploads."
+                )
+                # Cancel in-progress uploads and list them as failed
+                for file, process in self.in_progress.items():
+                    self.files_failed.append(file)
+                    process.terminate()
+
+                # If able, immediately retry any failed files. Otherwise, re-raise.
+                self._log_upload_stats()
+                if (self.files_failed or self.files_to_do) and self._redeem_retry():
+                    self._retry_failed()
                 else:
-                    logging.error("Error during file upload")
-                    self._log_upload_stats()
-                    for _, process in self.in_progress.items():
-                        process.terminate()
                     raise
             # Sleep briefly before polling uploads again or starting new uploads
             #  The sleep is placed here so that there is still a pause between retries
             if not self.dry_run:
                 sleep(2)
-        # If the entire batch was finished successfully, log the upload stats
+
+        # If reaching this point, the batch was finished without unhandled errors.
+        #  There might have been files that failed, however. If that's the case, retry.
         self._log_upload_stats()
+        if (self.files_failed or self.files_to_do) and self._redeem_retry():
+            self._retry_failed()
 
     def _log_upload_stats(self):
+        succeeded = len(self.files_succeeded)
+        failed = len(self.files_failed)
+        skipped = len(self.files_skipped)
+        processed = succeeded + failed + skipped
+        remaining = len(self.files_to_do)
+        total = processed + remaining
+        verb = "was" if skipped == 1 else "were"
+        logging.info(f"Finished processing {total} files:")
         logging.info(
-            "Finished with %s successful and %s failed uploads. %s were skipped.",
-            str(len(self.files_succeeded)),
-            str(len(self.files_failed)),
-            str(len(self.files_skipped)),
+            f"  {succeeded} succeeded, {failed} failed, and {skipped} {verb} skipped."
         )
-        logging.info(
-            "The files with following aliases failed: "
-            + ", ".join([file.alias for file in self.files_failed])
-        )
+        if remaining:
+            logging.info(
+                f"  {remaining} file(s) remain to be uploaded, including failures."
+            )
+        if self.files_failed:
+            logging.info(
+                "The files with following aliases failed: "
+                + ", ".join([file.alias for file in self.files_failed])
+            )
 
 
 def main(  # noqa: PLR0913

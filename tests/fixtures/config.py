@@ -15,6 +15,7 @@
 
 """A config fixture"""
 
+import os
 from collections.abc import Generator
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -29,6 +30,7 @@ from ghga_datasteward_kit.s3_upload.config import (
     S3ObjectStorageNodeConfig,
 )
 from ghga_datasteward_kit.s3_upload.http_client import RequestConfigurator
+from ghga_datasteward_kit.utils import TOKEN_PATH
 
 
 def storage_config(
@@ -78,3 +80,30 @@ def config_fixture() -> Generator[Config, None, None]:
         )
         RequestConfigurator.configure(config)
         yield config
+
+
+@pytest.fixture
+def steward_token_fixture():
+    """Generates a test file for the steward token.
+
+    If a file already exists at that location, the file is temporarily renamed.
+    When the test finishes, the temp data is removed.
+    If applicable, the original filename is restored.
+    """
+    # Rename the existing file for a moment
+    prior_token_exists = False
+    real_token_path = TOKEN_PATH.with_name(".super-real-token123.txt")
+    if TOKEN_PATH.exists():
+        prior_token_exists = True
+        os.rename(TOKEN_PATH, real_token_path)
+
+    # Author the test token file
+    with open(TOKEN_PATH, "w") as f:
+        f.write("dummy-token")
+
+    yield
+
+    # Clean up by removing the test file and renaming the og file if applicable
+    os.remove(TOKEN_PATH)
+    if prior_token_exists:
+        os.rename(real_token_path, TOKEN_PATH)
