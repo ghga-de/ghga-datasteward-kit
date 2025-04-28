@@ -15,7 +15,6 @@
 
 """A config fixture"""
 
-import os
 from collections.abc import Generator
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -91,19 +90,19 @@ def steward_token_fixture():
     If applicable, the original filename is restored.
     """
     # Rename the existing file for a moment
-    prior_token_exists = False
-    real_token_path = TOKEN_PATH.with_name(".super-real-token123.txt")
+    token_file_exists = False
+    existing_token_path = TOKEN_PATH.with_name(".token_backup_file_for_testing.txt")
     if TOKEN_PATH.exists():
-        prior_token_exists = True
-        os.rename(TOKEN_PATH, real_token_path)
+        token_file_exists = True
+        _ = TOKEN_PATH.rename(existing_token_path)
 
     # Author the test token file
-    with open(TOKEN_PATH, "w") as f:
+    with TOKEN_PATH.open("w") as f:
         f.write("dummy-token")
 
     yield
 
     # Clean up by removing the test file and renaming the og file if applicable
-    os.remove(TOKEN_PATH)
-    if prior_token_exists:
-        os.rename(real_token_path, TOKEN_PATH)
+    TOKEN_PATH.unlink()
+    if token_file_exists:
+        _ = existing_token_path.rename(existing_token_path)

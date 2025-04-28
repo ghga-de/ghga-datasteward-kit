@@ -159,8 +159,8 @@ class BatchUploadManager:
     def _retry_failed(self):
         """Retry upload process but only attempt the failed files from a previous run"""
         logging.info("Retrying failed and/or remaining files...")
-        while self.files_failed:
-            self.files_to_do.append(self.files_failed.pop())
+        self.files_to_do.extend(reversed(self.files_failed))
+        self.files_failed.clear()
         sleep(2)
         new_file_list = list(reversed(self.files_to_do))
         self.handle_file_uploads(new_file_list)
