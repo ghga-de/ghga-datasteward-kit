@@ -224,8 +224,18 @@ class BatchUploadManager:
                 )
                 # Cancel in-progress uploads and list them as failed
                 for file, process in self.in_progress.items():
-                    self.files_failed.append(file)
-                    process.terminate()
+                    try:
+                        # Attempt to do one last check for completed uploads
+                        status = process.poll()
+                        if status == 0 and check_file_upload(
+                            file=file, output_dir=self.output_dir
+                        ):
+                            self.files_succeeded.append(file)
+                        else:
+                            self.files_failed.append(file)
+                    finally:
+                        process.terminate()
+                        del self.in_progress[file]
 
                 # If able, immediately retry any failed files. Otherwise, re-raise.
                 self._log_upload_stats()
