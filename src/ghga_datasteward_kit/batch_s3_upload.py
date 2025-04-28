@@ -112,94 +112,6 @@ class BatchUploadManager:
         self.files_to_do: list[FileMetadata] = []
         self.in_progress: dict[FileMetadata, subprocess.Popen] = {}
 
-    def trigger_file_upload(self, file: FileMetadata) -> subprocess.Popen | None:
-        """
-        Checks whether the file was already uploaded, if not, the upload is triggered
-        in a separate process and the corresponding subprocess.
-
-        Popen object is returned.
-        """
-        if check_file_upload(file=file, output_dir=self.output_dir):
-            logging.info("File '%s' has already been uploaded: skipping.", file.alias)
-            return None
-
-        command_line = prepare_upload_command_line(
-            file=file,
-            output_dir=self.output_dir,
-            config_path=self.config_path,
-            legacy_mode=self.legacy_mode,
-        )
-
-        if self.dry_run:
-            logging.info("Would execute: %s", command_line)
-            return None
-
-        logging.info("The upload of the file with alias '%s' has started.", file.alias)
-
-        return subprocess.Popen(  # noqa: S602
-            command_line,
-            shell=True,
-            executable="/bin/bash",
-        )
-
-    def _redeem_retry(self) -> bool:
-        """Returns True if allowed to retry, else False.
-
-        If `retries_remaining` is `None`, infinite retries are allowed.
-        Otherwise, `retries_remaining` is decremented by 1.
-        """
-        if self.retries_remaining is None:
-            return True
-
-        if self.retries_remaining > 0:
-            self.retries_remaining -= 1
-            return True
-        return False
-
-    def _retry_failed(self):
-        """Retry upload process but only attempt the failed files from a previous run"""
-        logging.info("Retrying failed and/or remaining files...")
-        self.files_to_do.extend(reversed(self.files_failed))
-        self.files_failed.clear()
-        sleep(2)
-        new_file_list = list(reversed(self.files_to_do))
-        self.handle_file_uploads(new_file_list)
-
-    def _start_next_file(self):
-        """Triggers a file upload process for the next file and tracks the process.
-
-        If an error occurs during the call to `trigger_file_upload`, the file will
-        be placed in the list of failed files.
-        """
-        next_file = self.files_to_do.pop()
-        try:
-            process = self.trigger_file_upload(file=next_file)
-        except:
-            self.files_failed.append(next_file)
-        else:
-            if process:
-                self.in_progress[next_file] = process
-            else:
-                self.files_skipped.append(next_file)
-
-    def _poll_uploads(self):
-        """Check ongoing uploads. Log and remove completed or errored uploads."""
-        for file, process in copy(self.in_progress).items():
-            status = process.poll()
-
-            # If file upload is ongoing, just continue
-            if status is None:
-                continue
-
-            if status == 0 and check_file_upload(file=file, output_dir=self.output_dir):
-                logging.info("Successfully uploaded file with alias '%s'.", file.alias)
-                self.files_succeeded.append(file)
-            else:
-                logging.error("Failed to upload file with alias '%s'.", file.alias)
-                self.files_failed.append(file)
-
-            del self.in_progress[file]
-
     def handle_file_uploads(self, files: list[FileMetadata]):
         """Handles the upload of multiple files in parallel."""
         self.files_to_do = copy(files)
@@ -253,6 +165,94 @@ class BatchUploadManager:
         self._log_upload_stats()
         if (self.files_failed or self.files_to_do) and self._redeem_retry():
             self._retry_failed()
+
+    def _start_next_file(self):
+        """Triggers a file upload process for the next file and tracks the process.
+
+        If an error occurs during the call to `trigger_file_upload`, the file will
+        be placed in the list of failed files.
+        """
+        next_file = self.files_to_do.pop()
+        try:
+            process = self.trigger_file_upload(file=next_file)
+        except:
+            self.files_failed.append(next_file)
+        else:
+            if process:
+                self.in_progress[next_file] = process
+            else:
+                self.files_skipped.append(next_file)
+
+    def trigger_file_upload(self, file: FileMetadata) -> subprocess.Popen | None:
+        """
+        Checks whether the file was already uploaded, if not, the upload is triggered
+        in a separate process and the corresponding subprocess.
+
+        Popen object is returned.
+        """
+        if check_file_upload(file=file, output_dir=self.output_dir):
+            logging.info("File '%s' has already been uploaded: skipping.", file.alias)
+            return None
+
+        command_line = prepare_upload_command_line(
+            file=file,
+            output_dir=self.output_dir,
+            config_path=self.config_path,
+            legacy_mode=self.legacy_mode,
+        )
+
+        if self.dry_run:
+            logging.info("Would execute: %s", command_line)
+            return None
+
+        logging.info("The upload of the file with alias '%s' has started.", file.alias)
+
+        return subprocess.Popen(  # noqa: S602
+            command_line,
+            shell=True,
+            executable="/bin/bash",
+        )
+
+    def _poll_uploads(self):
+        """Check ongoing uploads. Log and remove completed or errored uploads."""
+        for file, process in copy(self.in_progress).items():
+            status = process.poll()
+
+            # If file upload is ongoing, just continue
+            if status is None:
+                continue
+
+            if status == 0 and check_file_upload(file=file, output_dir=self.output_dir):
+                logging.info("Successfully uploaded file with alias '%s'.", file.alias)
+                self.files_succeeded.append(file)
+            else:
+                logging.error("Failed to upload file with alias '%s'.", file.alias)
+                self.files_failed.append(file)
+
+            del self.in_progress[file]
+
+    def _redeem_retry(self) -> bool:
+        """Returns True if allowed to retry, else False.
+
+        If `retries_remaining` is `None`, infinite retries are allowed.
+        Otherwise, `retries_remaining` is decremented by 1.
+        """
+        if self.retries_remaining is None:
+            return True
+
+        if self.retries_remaining > 0:
+            self.retries_remaining -= 1
+            return True
+        return False
+
+    def _retry_failed(self):
+        """Retry upload process but only attempt the failed files from a previous run"""
+        logging.info("Retrying failed and/or remaining files...")
+        self.files_to_do.extend(reversed(self.files_failed))
+        self.files_failed.clear()
+        sleep(2)
+        new_file_list = list(reversed(self.files_to_do))
+        self.handle_file_uploads(new_file_list)
 
     def _log_upload_stats(self):
         succeeded = len(self.files_succeeded)
