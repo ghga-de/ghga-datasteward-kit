@@ -105,4 +105,4 @@ def steward_token_fixture():
     # Clean up by removing the test file and renaming the og file if applicable
     TOKEN_PATH.unlink()
     if token_file_exists:
-        _ = existing_token_path.rename(existing_token_path)
+        _ = existing_token_path.rename(TOKEN_PATH)
