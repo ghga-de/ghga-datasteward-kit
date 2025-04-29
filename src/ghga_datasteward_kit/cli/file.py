@@ -62,6 +62,9 @@ def legacy_batch_upload(
         False,
         help=("Only print commands for each file. No uploads are performed."),
     ),
+    max_retries: int | None = typer.Option(
+        None, help="Maximum number of automatic retries."
+    ),
 ):
     """Upload multiple files to S3."""
     batch_s3_upload.main(
@@ -70,6 +73,7 @@ def legacy_batch_upload(
         parallel_processes=parallel_processes,
         dry_run=dry_run,
         legacy_mode=True,
+        max_retries=max_retries,
     )
 
 
@@ -88,6 +92,9 @@ def batch_upload(
         False,
         help=("Only print commands for each file. No uploads are performed."),
     ),
+    max_retries: int | None = typer.Option(
+        None, help="Maximum number of automatic retries."
+    ),
 ):
     """Upload multiple files to S3."""
     batch_s3_upload.main(
@@ -96,6 +103,7 @@ def batch_upload(
         parallel_processes=parallel_processes,
         dry_run=dry_run,
         legacy_mode=False,
+        max_retries=max_retries,
     )
 
 
