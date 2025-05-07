@@ -91,3 +91,34 @@ def transform(
     """Run transformation workflow on submitted metadata to produce artifacts."""
     logging.basicConfig(level=logging.CRITICAL)
     metadata.transform_metadata_from_path(config_path=config_path)
+
+
+@cli.command()
+def compare_aliases(
+    metadata_path: Path = typer.Argument(
+        ...,
+        help="The path to the metadata JSON file.",
+        exists=True,
+        dir_okay=False,
+        file_okay=True,
+        readable=True,
+    ),
+    tsv: Path = typer.Argument(
+        ...,
+        help=(
+            "Path to a tsv file with the first column containing the file path and the"
+            + " second column containing the file alias."
+        ),
+        exists=True,
+        dir_okay=False,
+        file_okay=True,
+        readable=True,
+    ),
+):
+    """Compare the file aliases contained in the transpiled metadata JSON file with
+    those in the file upload TSV file.
+
+    Any aliases from the file upload TSV file which are absent in the metadata
+    JSON file will be reported.
+    """
+    metadata.compare_aliases(metadata_path=metadata_path, file_overview_tsv=tsv)

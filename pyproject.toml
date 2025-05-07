@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=78.1",
+    "setuptools>=80.3",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -11,7 +11,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 5 - Production/Stable",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -21,7 +21,7 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 name = "ghga_datasteward_kit"
-version = "4.6.0"
+version = "4.7.0"
 description = "GHGA Data Steward Kit - A utils package for GHGA data stewards."
 dependencies = [
     "crypt4gh >=1.6, <2",
