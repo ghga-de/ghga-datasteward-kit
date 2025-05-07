@@ -236,12 +236,12 @@ def compare_aliases(*, metadata_path: Path, file_overview_tsv: Path):
     Any aliases from the file upload TSV file which are absent in the metadata
     JSON file will be reported.
     """
-    with open(file_overview_tsv) as tsv_file:
+    with file_overview_tsv.open() as tsv_file:
         file_aliases = [
             line.split("\t")[1].strip() for line in tsv_file.readlines() if line != ""
         ]
 
-    with open(metadata_path, "rb") as metadata_file:
+    with metadata_path.open("rb") as metadata_file:
         metadata = json.load(metadata_file)
 
     fields_with_files = [
