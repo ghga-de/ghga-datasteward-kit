@@ -227,3 +227,42 @@ def transform_metadata_from_path(*, config_path: Path) -> None:
     config = load_config_yaml(path=config_path, config_cls=MetadataConfig)
 
     transform_metadata(config=config)
+
+
+def compare_aliases(*, metadata_path: Path, file_overview_tsv: Path):
+    """Compare the file aliases contained in the transpiled metadata JSON file with
+    those in the file upload TSV file.
+
+    Any aliases from the file upload TSV file which are absent in the metadata
+    JSON file will be reported.
+    """
+    with open(file_overview_tsv) as tsv_file:
+        file_aliases = [
+            line.split("\t")[1].strip() for line in tsv_file.readlines() if line != ""
+        ]
+
+    with open(metadata_path, "rb") as metadata_file:
+        metadata = json.load(metadata_file)
+
+    fields_with_files = [
+        "analysis_method_supporting_files",
+        "individual_supporting_files",
+        "experiment_method_supporting_files",
+        "research_data_files",
+        "process_data_files",
+    ]
+
+    accounted_for = []
+    for field in fields_with_files:
+        accounted_for.extend([entry["alias"] for entry in metadata[field]])
+
+    absent: list[str] = [alias for alias in file_aliases if alias not in accounted_for]
+
+    if absent:
+        print(f"The following file aliases are missing from {metadata_path.name}:")
+        for absent_file in absent:
+            print(f"- {absent_file}")
+    else:
+        print(
+            f"Success: All files in {file_overview_tsv.name} are accounted for in {metadata_path.name}"
+        )

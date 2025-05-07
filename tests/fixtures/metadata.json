@@ -1,0 +1,481 @@
+{
+  "analyses": [
+    {
+      "alias": "ANALYSIS_1",
+      "analysis_method": "ANALYSIS_METHOD_1",
+      "description": "Analysis 1 is done like this. ",
+      "ega_accession": "EGAANALYSIS12345",
+      "research_data_files": [
+        "RESEARCH_DATA_FILE_1",
+        "RESEARCH_DATA_FILE_2"
+      ],
+      "title": "Analysis 1",
+      "type": "Sequence Variation"
+    },
+    {
+      "alias": "ANALYSIS_2",
+      "analysis_method": "ANALYSIS_METHOD_1",
+      "description": "Analysis 2 is done like this. ",
+      "ega_accession": "EGAANALYSIS12346",
+      "research_data_files": [
+        "RESEARCH_DATA_FILE_3"
+      ],
+      "title": "Analysis 2",
+      "type": "Sequence Variation"
+    }
+  ],
+  "analysis_method_supporting_files": [
+    {
+      "alias": "ANALYSIS_METHOD_SF_1",
+      "analysis_method": "ANALYSIS_METHOD_1",
+      "dataset": "DS_B",
+      "ega_accession": "EGAANALYSISMETHOD123456",
+      "format": "TXT",
+      "included_in_submission": true,
+      "name": "analysis_method_1_parameters.txt"
+    }
+  ],
+  "analysis_methods": [
+    {
+      "alias": "ANALYSIS_METHOD_1",
+      "description": "Analysis 1 is done like this.",
+      "name": "Analysis 1",
+      "parameters": [
+        {
+          "key": "output-format",
+          "value": "VCF"
+        },
+        {
+          "key": "threads",
+          "value": "8"
+        }
+      ],
+      "software_versions": [
+        {
+          "key": "GATK",
+          "value": "4.5.0"
+        }
+      ],
+      "type": "Sequence Variation",
+      "workflow_doi": "10.1234/fake.doi.2024.56789",
+      "workflow_name": "workflow 1",
+      "workflow_repository": "https://github.com/WF1/tree/1.0.0",
+      "workflow_tasks": "Variant Calling",
+      "workflow_version": "1.0.0"
+    }
+  ],
+  "data_access_committees": [
+    {
+      "alias": "DAC_1",
+      "ega_accession": "EGADAC12345",
+      "email": "dac_institute_a@dac.dac",
+      "institute": "institute_a"
+    }
+  ],
+  "data_access_policies": [
+    {
+      "alias": "DAP_1",
+      "data_access_committee": "DAC_1",
+      "data_use_modifier_ids": [
+        "DUO:0000043"
+      ],
+      "data_use_modifier_terms": [
+        "CLINICAL_CARE_USE"
+      ],
+      "data_use_permission_id": "DUO:0000007",
+      "data_use_permission_term": "DISEASE_SPECIFIC_RESEARCH",
+      "description": "A Data Access Policy 1",
+      "ega_accession": "EGADAP12345",
+      "name": "DAP 1",
+      "policy_text": "This is a very permissible DAP",
+      "policy_url": "http://some/policy"
+    },
+    {
+      "alias": "DAP_2",
+      "data_access_committee": "DAC_1",
+      "data_use_modifier_ids": [
+        "DUO:0000026"
+      ],
+      "data_use_modifier_terms": [
+        "USER_SPECIFIC_RESTRICTION"
+      ],
+      "data_use_permission_id": "DUO:0000004",
+      "data_use_permission_term": "NO_RESTRICTION",
+      "description": "A Data Access Policy 2",
+      "ega_accession": "EGADAP12346",
+      "name": "DAP 2",
+      "policy_text": "This is a very strict DAP",
+      "policy_url": "http://some/other/policy"
+    }
+  ],
+  "datasets": [
+    {
+      "alias": "DS_A",
+      "data_access_policy": "DAP_1",
+      "description": "An interesting dataset A of complete example set",
+      "ega_accession": "EGADATASET12345",
+      "study": "STUDY_A",
+      "title": "The complete-A dataset",
+      "types": [
+        "A Type",
+        "Another Type"
+      ]
+    },
+    {
+      "alias": "DS_B",
+      "data_access_policy": "DAP_2",
+      "description": "An interesting dataset B of complete example set",
+      "ega_accession": "EGADATASET12346",
+      "study": "STUDY_B",
+      "title": "The complete-B dataset",
+      "types": [
+        "And another Type"
+      ]
+    }
+  ],
+  "experiment_method_supporting_files": [
+    {
+      "alias": "EXP_METHOD_SF_1",
+      "dataset": "DS_A",
+      "ega_accession": "EGAEXPERIMENTMETHOD123456",
+      "experiment_method": "EXP_METHOD_1",
+      "format": "TXT",
+      "included_in_submission": true,
+      "name": "exp_method_1_protocol.txt"
+    }
+  ],
+  "experiment_methods": [
+    {
+      "alias": "EXP_METHOD_1",
+      "description": "Experiment method 1 is conducted like this.",
+      "ega_accession": "EGAEXPERIMENTMETHOD12345",
+      "end_bias": "FULL_LENGTH",
+      "flow_cell_id": "ID_Cell 1_Lane_1",
+      "flow_cell_type": "ILLUMINA_NOVA_SEQ_S4",
+      "instrument_model": "454_GS",
+      "library_preparation": "PCR-amplification",
+      "library_preparation_kit_manufacturer": "Illumina",
+      "library_preparation_kit_retail_name": "10X_GENOMICS_CHROMIUM_SINGLE_CELL_3_V2",
+      "library_selection_methods": [
+        "UNSPECIFIED"
+      ],
+      "library_type": "WGS",
+      "name": "Experiment Method 1",
+      "primer": "GENE_SPECIFIC",
+      "sample_barcode_read": "INDEX1",
+      "sequencing_center": "Center A",
+      "sequencing_layout": "SE",
+      "sequencing_read_length": "long",
+      "target_coverage": "x50",
+      "target_regions": [
+        "chr6:123456-12345678"
+      ],
+      "type": "DNA-seq"
+    }
+  ],
+  "experiments": [
+    {
+      "alias": "EXP_1",
+      "description": "Experiment 1 is done like this.",
+      "ega_accession": "EGAEXP12345",
+      "experiment_method": "EXP_METHOD_1",
+      "sample": "SAMPLE_1",
+      "title": "Experiment 1",
+      "type": "Experiment Type 1"
+    },
+    {
+      "alias": "EXP_2",
+      "description": "Experiment 2 is done like this.",
+      "ega_accession": "EGAEXP12346",
+      "experiment_method": "EXP_METHOD_1",
+      "sample": "SAMPLE_2",
+      "title": "Experiment 2",
+      "type": "Experiment Type 2"
+    }
+  ],
+  "individual_supporting_files": [
+    {
+      "alias": "INDV_SF_1",
+      "dataset": "DS_A",
+      "format": "JSON",
+      "included_in_submission": true,
+      "individual": "INDV_1",
+      "name": "indv_1_phenopackage.json"
+    }
+  ],
+  "individuals": [
+    {
+      "alias": "INDV_1",
+      "ancestry_ids": [
+        "HANCESTRO:0005"
+      ],
+      "ancestry_terms": [
+        "European"
+      ],
+      "diagnosis_ids": [
+        "ICD-10:C92"
+      ],
+      "diagnosis_terms": [
+        "Myeloid leukaemia"
+      ],
+      "geographical_region_id": "NCIT:C16761",
+      "geographical_region_term": "Italy",
+      "phenotypic_features_ids": [
+        "HP:0001909"
+      ],
+      "phenotypic_features_terms": [
+        "Leukemia"
+      ],
+      "sex": "MALE"
+    }
+  ],
+  "process_data_files": [
+    {
+      "alias": "PROCESSED_DATA_FILE_1",
+      "analysis": "ANALYSIS_1",
+      "dataset": "DS_A",
+      "ega_accession": "EGAPROCESSED12345",
+      "format": "VCF",
+      "included_in_submission": true,
+      "name": "SAMPLE_1_SPECIMEN_FILE_1_2.vcf.gz"
+    },
+    {
+      "alias": "PROCESSED_DATA_FILE_2",
+      "analysis": "ANALYSIS_2",
+      "dataset": "DS_A",
+      "format": "VCF",
+      "included_in_submission": true,
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_3.vcf.gz"
+    }
+  ],
+  "publications": [
+    {
+      "abstract": "This study aims finding findings.",
+      "alias": "PUB_1",
+      "author": "John Doe",
+      "doi": "10.1234/abcd.5678",
+      "journal": "Journal of Studies",
+      "study": "STUDY_A",
+      "title": "A paper of a study",
+      "xref": [
+        "abcd_pubmed_link.pubmed"
+      ],
+      "year": 1965
+    },
+    {
+      "abstract": "This study aims finding more findings.",
+      "alias": "PUB_2",
+      "author": "John Doe",
+      "doi": "10.9876/efgh.5432",
+      "journal": "Journal of Studies",
+      "study": "STUDY_A",
+      "title": "Another paper of the same study",
+      "xref": [
+        "efgh_pubmed_link.pubmed"
+      ],
+      "year": 1967
+    }
+  ],
+  "research_data_files": [
+    {
+      "alias": "RESEARCH_DATA_FILE_1",
+      "dataset": "DS_A",
+      "ega_accession": "EGAFILE12346",
+      "experiments": [
+        "EXP_1",
+        "EXP_2"
+      ],
+      "format": "FASTQ",
+      "included_in_submission": true,
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_1.fastq.gz",
+      "sequencing_lane_id": "LANE_123",
+      "technical_replicate": 1
+    },
+    {
+      "alias": "RESEARCH_DATA_FILE_2",
+      "dataset": "DS_A",
+      "ega_accession": "EGAFILE12347",
+      "experiments": [
+        "EXP_1"
+      ],
+      "format": "FASTQ",
+      "included_in_submission": true,
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_2.fastq.gz",
+      "sequencing_lane_id": "LANE_124",
+      "technical_replicate": 2
+    },
+    {
+      "alias": "RESEARCH_DATA_FILE_3",
+      "dataset": "DS_A",
+      "ega_accession": "EGAFILE12348",
+      "experiments": [
+        "EXP_1"
+      ],
+      "format": "FASTQ",
+      "included_in_submission": true,
+      "name": "SAMPLE_1_SPECIMEN_1_FILE_3.fastq.gz",
+      "sequencing_lane_id": "LANE_125",
+      "technical_replicate": 3
+    },
+    {
+      "alias": "RESEARCH_DATA_FILE_4",
+      "dataset": "DS_B",
+      "ega_accession": "EGAFILE12349",
+      "experiments": [
+        "EXP_2"
+      ],
+      "format": "FASTQ",
+      "included_in_submission": true,
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_4.fastq.gz",
+      "sequencing_lane_id": "LANE_126",
+      "technical_replicate": 1
+    },
+    {
+      "alias": "RESEARCH_DATA_FILE_5",
+      "dataset": "DS_B",
+      "ega_accession": "EGAFILE12350",
+      "experiments": [
+        "EXP_2"
+      ],
+      "format": "FASTQ",
+      "included_in_submission": true,
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_5.fastq.gz",
+      "sequencing_lane_id": "LANE_127",
+      "technical_replicate": 2
+    },
+    {
+      "alias": "RESEARCH_DATA_FILE_6",
+      "dataset": "DS_B",
+      "ega_accession": "EGAFILE12351",
+      "experiments": [
+        "EXP_2"
+      ],
+      "format": "FASTQ",
+      "included_in_submission": true,
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_6.fastq.gz",
+      "sequencing_lane_id": "LANE_128",
+      "technical_replicate": 3
+    },
+    {
+      "alias": "RESEARCH_DATA_FILE_7",
+      "dataset": "DS_B",
+      "ega_accession": "EGAFILE12352",
+      "experiments": [
+        "EXP_2"
+      ],
+      "format": "FASTQ",
+      "included_in_submission": true,
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_7.fastq.gz",
+      "sequencing_lane_id": "LANE_129",
+      "technical_replicate": 4
+    },
+    {
+      "alias": "RESEARCH_DATA_FILE_8",
+      "dataset": "DS_B",
+      "ega_accession": "EGAFILE12353",
+      "experiments": [
+        "EXP_2"
+      ],
+      "format": "FASTQ",
+      "included_in_submission": true,
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_8.fastq.gz",
+      "sequencing_lane_id": "LANE_130",
+      "technical_replicate": 5
+    },
+    {
+      "alias": "RESEARCH_DATA_FILE_9",
+      "dataset": "DS_B",
+      "ega_accession": "EGAFILE12354",
+      "experiments": [
+        "EXP_2"
+      ],
+      "format": "FASTQ",
+      "included_in_submission": true,
+      "name": "SAMPLE_2_SPECIMEN_1_FILE_9.fastq.gz",
+      "sequencing_lane_id": "LANE_131",
+      "technical_replicate": 6
+    }
+  ],
+  "samples": [
+    {
+      "alias": "SAMPLE_1",
+      "biological_replicate": 1,
+      "biospecimen_age_at_sampling": "66_TO_70",
+      "biospecimen_description": "Blood biospecimen",
+      "biospecimen_isolation": "BLOOD_DRAW",
+      "biospecimen_name": "Biospecmen material",
+      "biospecimen_storage": "REFRIGERATOR",
+      "biospecimen_tissue_id": "BTO:0000089",
+      "biospecimen_tissue_term": "blood",
+      "biospecimen_type": "Blood",
+      "biospecimen_vital_status_at_sampling": "ALIVE",
+      "case_control_status": "CASE",
+      "description": "Arterial blood sample 1",
+      "disease_or_healthy": "DISEASE",
+      "ega_accession": "EGASAMPLE12345",
+      "individual": "INDV_1",
+      "name": "GHGAS_blood_sample1",
+      "storage": "FREEZER",
+      "type": "CF_DNA"
+    },
+    {
+      "alias": "SAMPLE_2",
+      "biological_replicate": 1,
+      "biospecimen_age_at_sampling": "66_TO_70",
+      "biospecimen_description": "Subcutaneous fat biospecimen",
+      "biospecimen_isolation": "SURGICAL_REMOVAL",
+      "biospecimen_name": "Another biospecimen material",
+      "biospecimen_storage": "REFRIGERATOR",
+      "biospecimen_tissue_id": "BTO:0004042",
+      "biospecimen_tissue_term": "subcutaneous adipose tissue",
+      "biospecimen_type": "Subcutaneous fat",
+      "biospecimen_vital_status_at_sampling": "ALIVE",
+      "case_control_status": "CONTROL",
+      "description": "white adipose tissue sample 1",
+      "disease_or_healthy": "HEALTHY",
+      "ega_accession": "EGASAMPLE12346",
+      "individual": "INDV_1",
+      "name": "GHGAS_tissue_sample1",
+      "storage": "ULTRA_LOW_FREEZER",
+      "type": "CF_DNA"
+    }
+  ],
+  "studies": [
+    {
+      "affiliations": [
+        "Some Institute",
+        "Some other Institute"
+      ],
+      "alias": "STUDY_A",
+      "attributes": [
+        {
+          "key": "budget",
+          "value": "3.5M"
+        },
+        {
+          "key": "funding",
+          "value": "EU"
+        }
+      ],
+      "description": "A study that is the A study",
+      "ega_accession": "EGASTUDY12345",
+      "title": "The A Study",
+      "types": [
+        "SYNTHETIC_GENOMICS",
+        "WHOLE_GENOME_SEQUENCING"
+      ]
+    },
+    {
+      "affiliations": [
+        "Some Institute"
+      ],
+      "alias": "STUDY_B",
+      "description": "A study that is the B study",
+      "ega_accession": "EGASTUDY12346",
+      "title": "The B Study",
+      "types": [
+        "WHOLE_GENOME_SEQUENCING"
+      ]
+    }
+  ]
+}
