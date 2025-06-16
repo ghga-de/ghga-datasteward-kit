@@ -21,7 +21,7 @@ import subprocess  # nosec
 import sys
 from copy import copy
 from pathlib import Path
-from time import sleep
+from time import monotonic, sleep
 
 from pydantic import BaseModel
 
@@ -112,10 +112,36 @@ class BatchUploadManager:
         self.files_to_do: list[FileMetadata] = []
         self.in_progress: dict[FileMetadata, subprocess.Popen] = {}
 
+        # Values to help calculate estimated time remaining
+        self.total_initial_bytes: int = 0
+        self.file_start_times: dict[FileMetadata, float] = {}
+        self.cumulative_processing_time_seconds: float = 0.0
+        self.batch_size: int = 0
+        self.file_sizes: dict[FileMetadata, int] = {}
+        self.total_bytes_processed: int = 0
+
+    def _record_file_sizes(self, files: list[FileMetadata]):
+        """Record the sizes of files to be uploaded."""
+        self.batch_size = len(files)
+        for file_metadata in files:
+            try:
+                size = (
+                    file_metadata.path.stat().st_size
+                    if file_metadata.path.exists()
+                    else 0
+                )
+            except FileNotFoundError:
+                size = 0
+            self.file_sizes[file_metadata] = size
+            self.total_initial_bytes += size
+
     def handle_file_uploads(self, files: list[FileMetadata]):
         """Handles the upload of multiple files in parallel."""
         self.files_to_do = copy(files)
         self.files_to_do.reverse()
+
+        # Populate file sizes and total initial bytes
+        self._record_file_sizes(self.files_to_do)
 
         # The outer while loop runs while there is still any work to do
         while self.files_to_do or self.in_progress:
@@ -135,7 +161,7 @@ class BatchUploadManager:
                     "Unhandled error during file upload, canceling in-progress uploads."
                 )
                 # Cancel in-progress uploads and list them as failed
-                for file, process in self.in_progress.items():
+                for file, process in list(self.in_progress.items()):
                     try:
                         # Attempt to do one last check for completed uploads
                         status = process.poll()
@@ -193,6 +219,7 @@ class BatchUploadManager:
         if check_file_upload(file=file, output_dir=self.output_dir):
             logging.info("File '%s' has already been uploaded: skipping.", file.alias)
             return None
+        self.file_start_times[file] = monotonic()
 
         command_line = prepare_upload_command_line(
             file=file,
@@ -213,6 +240,85 @@ class BatchUploadManager:
             executable="/bin/bash",
         )
 
+    def _format_time(self, seconds: float) -> str:
+        """Formats seconds into a DD:HH:MM string."""
+        if (
+            not isinstance(seconds, int | float)
+            or seconds < 0
+            or seconds == float("inf")
+            or seconds == float("-inf")
+        ):
+            return "N/A"
+        if seconds == 0:
+            return "00d 00h 00m"
+
+        days = int(seconds // (3600 * 24))
+        remaining_seconds_after_days = seconds % (3600 * 24)
+        hours = int(remaining_seconds_after_days // 3600)
+        remaining_seconds_after_hours = remaining_seconds_after_days % 3600
+        minutes = int(remaining_seconds_after_hours // 60)
+        remaining_seconds_after_minutes = remaining_seconds_after_hours % 60
+
+        if remaining_seconds_after_minutes > 0 and minutes == 0:
+            # If there are remaining seconds but no full minutes, we set minutes to 1
+            minutes = 1
+        return f"{days:02}d {hours:02}h {minutes:02}m"
+
+    def _format_bytes(self, size_bytes: int) -> str:
+        """Formats bytes into a human-readable string (B, KB, MB, GB)."""
+        if not isinstance(size_bytes, int) or size_bytes < 0:
+            return "N/A"
+        if size_bytes == 0:
+            return "0 B"
+        suffixes = ["B", "KB", "MB", "GB", "TB", "PB"]
+        power = 0
+        # Determine the appropriate suffix by dividing by 1024
+        # Use a temporary variable for calculations to preserve original size_bytes for precision
+        num = float(size_bytes)
+        while num >= 1024 and power < len(suffixes) - 1:
+            num /= 1024
+            power += 1
+        return f"{num:.2f} {suffixes[power]}"
+
+    def _calc_and_display_eta(self, file: FileMetadata, success: bool) -> None:
+        """Calculate the estimated time remaining for the batch and print it to the terminal."""
+        current_time = monotonic()
+        upload_duration = current_time - self.file_start_times.pop(file)
+        file_size = self.file_sizes.pop(file, 0)
+        self.cumulative_processing_time_seconds += upload_duration
+        self.total_bytes_processed += file_size
+
+        completed_successfully_count = len(self.files_succeeded)
+
+        eta_str = "N/A"
+        if (
+            self.cumulative_processing_time_seconds > 0
+            and self.total_bytes_processed > 0
+        ):
+            average_upload_rate_bps = (
+                self.total_bytes_processed / self.cumulative_processing_time_seconds
+            )
+
+            if average_upload_rate_bps > 0:
+                bytes_left_to_process = sum(self.file_sizes.values())
+
+                if bytes_left_to_process > 0:
+                    estimated_remaining_seconds = (
+                        bytes_left_to_process / average_upload_rate_bps
+                    )
+                    eta_str = self._format_time(estimated_remaining_seconds)
+                else:  # No more bytes to process actively
+                    eta_str = self._format_time(0)
+
+        # Print the upload success message & ETA for the rest of the batch
+        bytes_processed = self._format_bytes(self.total_bytes_processed)
+        total_bytes = self._format_bytes(self.total_initial_bytes)
+        print(
+            f"{'✓' if success else '✗'} {file.alias} ({self._format_bytes(file_size)})"
+            f" ({completed_successfully_count}/{self.batch_size} files |"
+            f" {bytes_processed}/{total_bytes}). ETA: {eta_str}"
+        )
+
     def _poll_uploads(self):
         """Check ongoing uploads. Log and remove completed or errored uploads."""
         for file, process in copy(self.in_progress).items():
@@ -222,13 +328,16 @@ class BatchUploadManager:
             if status is None:
                 continue
 
+            success = True
             if status == 0 and check_file_upload(file=file, output_dir=self.output_dir):
                 logging.info("Successfully uploaded file with alias '%s'.", file.alias)
                 self.files_succeeded.append(file)
             else:
                 logging.error("Failed to upload file with alias '%s'.", file.alias)
                 self.files_failed.append(file)
+                success = False
 
+            self._calc_and_display_eta(file, success=success)
             del self.in_progress[file]
 
     def _redeem_retry(self) -> bool:
