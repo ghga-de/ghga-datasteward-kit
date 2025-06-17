@@ -28,6 +28,8 @@ from pydantic import BaseModel
 from ghga_datasteward_kit.s3_upload import Config, LegacyConfig, load_config_yaml
 
 HERE = Path(__file__).parent
+SEC_IN_HOUR = 60 * 60  # seconds in an hour
+SEC_IN_DAY = 24 * SEC_IN_HOUR  # seconds in a day
 
 
 class FileMetadata(BaseModel):
@@ -241,7 +243,8 @@ class BatchUploadManager:
         )
 
     def _format_time(self, seconds: float) -> str:
-        """Formats seconds into a DD:HH:MM string."""
+        """Formats seconds into a '00d 00h 00m' string."""
+        # Validate input
         if (
             not isinstance(seconds, int | float)
             or seconds < 0
@@ -252,11 +255,12 @@ class BatchUploadManager:
         if seconds == 0:
             return "00d 00h 00m"
 
-        days = int(seconds // (3600 * 24))
-        remaining_seconds_after_days = seconds % (3600 * 24)
-        hours = int(remaining_seconds_after_days // 3600)
-        remaining_seconds_after_hours = remaining_seconds_after_days % 3600
-        minutes = int(remaining_seconds_after_hours // 60)
+        # Calculate days, hours, and minutes
+        days = int(seconds / SEC_IN_DAY)
+        remaining_seconds_after_days = seconds % SEC_IN_DAY
+        hours = int(remaining_seconds_after_days / SEC_IN_HOUR)
+        remaining_seconds_after_hours = remaining_seconds_after_days % SEC_IN_HOUR
+        minutes = int(remaining_seconds_after_hours / 60)
         remaining_seconds_after_minutes = remaining_seconds_after_hours % 60
 
         if remaining_seconds_after_minutes > 0 and minutes == 0:
