@@ -5,3 +5,4 @@
 
 # additional requirements can be listed here
 testcontainers[kafka,mongo]>=3.4.1
+requests >= 2.32.4
