@@ -56,10 +56,13 @@ def load_file_metadata(file_overview_tsv: Path) -> list[FileMetadata]:
             if line != ""
         ]
 
-    non_existing_files = [file for file in files if not file.path.exists()]
+    # Check if the file paths exist
+    non_existing_files = [
+        file for file in files if not (file.path.is_file() and file.path.exists())
+    ]
     if non_existing_files:
         raise RuntimeError(
-            "The following paths do not exist:\n"
+            "The following paths do not exist or are not files:\n"
             + "\n".join([str(file.path) for file in non_existing_files])
         )
 
@@ -117,7 +120,7 @@ class BatchUploadManager:
         # Values to help calculate estimated time remaining
         self.total_initial_bytes: int = 0
         self.file_start_times: dict[FileMetadata, float] = {}
-        self.latest_upload_rate_bps: float = 0.0
+        self.latest_upload_rate_bps: int = 0
         self.batch_size: int = 0
         self.file_sizes: dict[FileMetadata, int] = {}
         self.total_bytes_processed: int = 0
@@ -128,20 +131,16 @@ class BatchUploadManager:
         Does not reset upload speed or file sizes since those can be reused
         from previous runs.
         """
+        self.files_failed.clear()
+        self.files_succeeded.clear()
+        self.files_skipped.clear()
         self.total_initial_bytes = 0
         self.total_bytes_processed = 0
         self.batch_size = len(files)
         for file_metadata in files:
             if file_metadata not in self.file_sizes:
-                try:
-                    size = (
-                        file_metadata.path.stat().st_size
-                        if file_metadata.path.exists()
-                        else 0
-                    )
-                except FileNotFoundError:
-                    size = 0
-                self.file_sizes[file_metadata] = size
+                # Get file size. Existence as a file is checked in `load_file_metadata`
+                self.file_sizes[file_metadata] = file_metadata.path.stat().st_size
             self.total_initial_bytes += self.file_sizes[file_metadata]
 
     def handle_file_uploads(self, files: list[FileMetadata]):
@@ -173,7 +172,7 @@ class BatchUploadManager:
                     "Unhandled error during file upload, canceling in-progress uploads."
                 )
                 # Cancel in-progress uploads and list them as failed
-                for file, process in list(self.in_progress.items()):
+                for file, process in self.in_progress.items():
                     try:
                         # Attempt to do one last check for completed uploads
                         status = process.poll()
@@ -185,7 +184,7 @@ class BatchUploadManager:
                             self.files_failed.append(file)
                     finally:
                         process.terminate()
-                        del self.in_progress[file]
+                self.in_progress.clear()  # Clear in-progress uploads
 
                 # If able, immediately retry any failed files. Otherwise, re-raise.
                 self._log_upload_stats()
@@ -252,26 +251,19 @@ class BatchUploadManager:
             executable="/bin/bash",
         )
 
-    def _format_time(self, seconds: float) -> str:
+    def _format_time(self, seconds: int) -> str:
         """Formats seconds into a '00d 00h 00m' string."""
-        # Validate input
-        if (
-            not isinstance(seconds, int | float)
-            or seconds < 0
-            or seconds == float("inf")
-            or seconds == float("-inf")
-        ):
-            return "N/A"
         if seconds == 0:
             return "00d 00h 00m"
 
         # Calculate days, hours, and minutes
-        days = int(seconds / SEC_IN_DAY)
-        remaining_seconds_after_days = seconds % SEC_IN_DAY
-        hours = int(remaining_seconds_after_days / SEC_IN_HOUR)
-        remaining_seconds_after_hours = remaining_seconds_after_days % SEC_IN_HOUR
-        minutes = int(remaining_seconds_after_hours / 60)
-        remaining_seconds_after_minutes = remaining_seconds_after_hours % 60
+        days, remaining_seconds_after_days = divmod(seconds, SEC_IN_DAY)
+        hours, remaining_seconds_after_hours = divmod(
+            remaining_seconds_after_days, SEC_IN_HOUR
+        )
+        minutes, remaining_seconds_after_minutes = divmod(
+            remaining_seconds_after_hours, 60
+        )
 
         if remaining_seconds_after_minutes > 0 and minutes == 0:
             # If there are remaining seconds but no full minutes, we set minutes to 1
@@ -280,8 +272,6 @@ class BatchUploadManager:
 
     def _format_bytes(self, size_bytes: int) -> str:
         """Formats bytes into a human-readable string (B, KB, MB, GB)."""
-        if not isinstance(size_bytes, int) or size_bytes < 0:
-            return "N/A"
         if size_bytes == 0:
             return "0 B"
         suffixes = ["B", "KB", "MB", "GB", "TB", "PB"]
@@ -300,7 +290,7 @@ class BatchUploadManager:
         If `recalc_speed` is True, the upload rate is recalculated and stored.
         If `recalc_speed` is False, the previously stored upload rate is used.
         """
-        # Get time elapsed since the file upload started and remove it from tracking
+        # Get time elapsed since the file upload started
         file_size = self.file_sizes.get(file, 0)
 
         # Update total bytes processed
@@ -309,16 +299,16 @@ class BatchUploadManager:
         # If required, update the stored upload rate
         if recalc_speed and self.total_bytes_processed > 0:
             current_time = monotonic()
-            upload_duration = max(current_time - self.file_start_times.pop(file), 1)
+            upload_duration = max(current_time - self.file_start_times.get(file, 1), 1)
             # Calculate average rate of most recent upload in bytes per second
-            self.latest_upload_rate_bps = file_size / upload_duration
+            self.latest_upload_rate_bps = int(file_size / upload_duration)
 
         eta = "N/A"
 
         # If the stored upload rate is available, estimate the remaining time
         if self.latest_upload_rate_bps:
             bytes_left = self.total_initial_bytes - self.total_bytes_processed
-            estimated_remaining_seconds = bytes_left / self.latest_upload_rate_bps
+            estimated_remaining_seconds = bytes_left // self.latest_upload_rate_bps
             eta = self._format_time(estimated_remaining_seconds)
 
         return eta
@@ -387,9 +377,6 @@ class BatchUploadManager:
         """Retry upload process but only attempt the failed files from a previous run"""
         logging.info("Retrying failed and/or remaining files...")
         self.files_to_do.extend(reversed(self.files_failed))
-        self.files_failed.clear()
-        self.files_succeeded.clear()
-        self.files_skipped.clear()
         sleep(2)
         new_file_list = list(reversed(self.files_to_do))
         self.handle_file_uploads(new_file_list)
