@@ -63,7 +63,9 @@ class AuthorizationToken:
         return token, hash_
 
 
-def load_config_yaml(path: Path, config_cls: type[ConfigType]) -> ConfigType:
+def load_config_yaml[ConfigType: BaseSettings](
+    path: Path, config_cls: type[ConfigType]
+) -> ConfigType:
     """Load config parameters from the specified YAML file."""
     with open(path, encoding="utf-8") as config_file:
         config_dict = yaml.safe_load(config_file)
