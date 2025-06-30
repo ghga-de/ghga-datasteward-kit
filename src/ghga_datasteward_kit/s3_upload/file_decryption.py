@@ -17,7 +17,7 @@
 
 import hashlib
 
-import crypt4gh.lib  # type: ignore
+import crypt4gh.lib
 
 from ghga_datasteward_kit.s3_upload.exceptions import ChecksumValidationError
 from ghga_datasteward_kit.s3_upload.utils import get_segments
