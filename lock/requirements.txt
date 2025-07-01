@@ -932,9 +932,9 @@ mdurl==0.1.2 \
     # via
     #   -c lock/requirements-dev.txt
     #   markdown-it-py
-metldata==3.2.0 \
-    --hash=sha256:b1f79317907e8091ca3866870ee5974e71516b27df89c4aba8c22e10ce83c0f2 \
-    --hash=sha256:d2cec494449fba01ff99a2e4acec16f5310ac5aa071c270114ac95cab10fd565
+metldata==4.0.0 \
+    --hash=sha256:01c50cc236a5327c081fdd94797182fdc4e1d4f96758c177ad2b2c9ca2c2c3c4 \
+    --hash=sha256:a99b6a44f03f1d683a6c31a77c1bbb53b5ca24921f79a13705e20c0e63fd6dcb
     # via
     #   -c lock/requirements-dev.txt
     #   ghga-datasteward-kit (pyproject.toml)
