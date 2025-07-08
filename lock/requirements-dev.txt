@@ -941,9 +941,9 @@ mdurl==0.1.2 \
     --hash=sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8 \
     --hash=sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba
     # via markdown-it-py
-metldata==4.0.0 \
-    --hash=sha256:01c50cc236a5327c081fdd94797182fdc4e1d4f96758c177ad2b2c9ca2c2c3c4 \
-    --hash=sha256:a99b6a44f03f1d683a6c31a77c1bbb53b5ca24921f79a13705e20c0e63fd6dcb
+metldata==4.0.1 \
+    --hash=sha256:7d0e24d41ed2af02850f08b5e3429ea435e75945f2d4f05df629f82599e86533 \
+    --hash=sha256:b22a119f59751f100b5057a7fe9a18f2c128b26a345714f55ecec223f19af095
     # via ghga-datasteward-kit (pyproject.toml)
 motor==3.7.1 \
     --hash=sha256:27b4d46625c87928f331a6ca9d7c51c2f518ba0e270939d395bc1ddc89d64526 \
