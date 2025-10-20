@@ -99,7 +99,7 @@ async def test_legacy_ingest_directly(
         json={"detail": "Not authorized to access ingest endpoint."},
         status_code=403,
     )
-    with pytest.raises(ValueError, match="Not authorized to access ingest endpoint."):
+    with pytest.raises(ValueError, match=r"Not authorized to access ingest endpoint."):
         file_ingest(
             in_path=legacy_ingest_fixture.file_path,
             token=token,
@@ -111,7 +111,7 @@ async def test_legacy_ingest_directly(
         json={"detail": "Could not decrypt received payload."},
         status_code=422,
     )
-    with pytest.raises(ValueError, match="Could not decrypt received payload."):
+    with pytest.raises(ValueError, match=r"Could not decrypt received payload."):
         file_ingest(
             in_path=legacy_ingest_fixture.file_path,
             token=token,
@@ -143,7 +143,7 @@ async def test_ingest_directly(
         json={"detail": "Not authorized to access ingest endpoint."},
         status_code=403,
     )
-    with pytest.raises(ValueError, match="Not authorized to access ingest endpoint."):
+    with pytest.raises(ValueError, match=r"Not authorized to access ingest endpoint."):
         file_ingest(
             in_path=ingest_fixture.file_path,
             token=token,
@@ -155,7 +155,7 @@ async def test_ingest_directly(
         json={"detail": "Could not decrypt received payload."},
         status_code=422,
     )
-    with pytest.raises(ValueError, match="Could not decrypt received payload."):
+    with pytest.raises(ValueError, match=r"Could not decrypt received payload."):
         file_ingest(
             in_path=ingest_fixture.file_path,
             token=token,
