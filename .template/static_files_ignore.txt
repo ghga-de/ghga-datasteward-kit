@@ -1,10 +1,16 @@
 # Optional list of files which are actually static in the template
 # but are allowed to have different content in the current repository
 
+.devcontainer/Dockerfile
 .github/workflows/check_config_docs.yaml
 .github/workflows/check_openapi_spec.yaml
 .github/workflows/check_readme.yaml
+.github/workflows/check_pyproject.yaml
+.github/workflows/check_template_files.yaml
 .github/workflows/ci_release.yaml
+.github/workflows/static_code_analysis.yaml
+.github/workflows/tests.yaml
+.pyproject_generation/pyproject_template.toml
 .readme_generation/readme_template.md
 .readme_generation/README.md
 scripts/update_config_docs.py

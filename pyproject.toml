@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=80.3",
+    "setuptools>=80.9",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -9,7 +9,7 @@ readme = "README.md"
 authors = [
     { name = "German Human Genome Phenome Archive (GHGA)", email = "contact@ghga.de" },
 ]
-requires-python = ">=3.12"
+requires-python = "~=3.12"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Operating System :: POSIX :: Linux",
@@ -21,13 +21,13 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 name = "ghga_datasteward_kit"
-version = "5.0.1"
+version = "5.0.2"
 description = "GHGA Data Steward Kit - A utils package for GHGA data stewards."
 dependencies = [
     "crypt4gh >=1.6, <2",
     "hexkit[s3] >=5.3",
     "ghga-transpiler >=2.1.2, <3",
-    "metldata >=4.0.1, <5",
+    "metldata >=4.0.3, <5",
     "tenacity >=9.0.0, <10",
 ]
 
@@ -147,7 +147,7 @@ check_untyped_defs = true
 no_site_packages = false
 
 [tool.pytest.ini_options]
-minversion = "8.3"
+minversion = "8.4"
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 

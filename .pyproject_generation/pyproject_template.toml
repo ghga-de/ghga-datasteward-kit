@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=80.3"]
+requires = ["setuptools>=80.9"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ readme = "README.md"
 authors = [
     { name = "German Human Genome Phenome Archive (GHGA)", email = "contact@ghga.de" },
 ]
-requires-python = ">=3.12"
+requires-python = "~=3.12"
 license = { text = "Apache 2.0" }
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -101,7 +101,7 @@ check_untyped_defs = true
 no_site_packages = false
 
 [tool.pytest.ini_options]
-minversion = "8.3"
+minversion = "8.4"
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 
