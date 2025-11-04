@@ -21,6 +21,8 @@ from pathlib import Path
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, field_validator
 from pydantic_settings import BaseSettings
 
+from ghga_datasteward_kit import __version__
+
 
 def expand_env_vars_in_path(path: Path) -> Path:
     """Expand environment variables in a Path."""
@@ -75,7 +77,16 @@ class S3ObjectStoragesConfig(BaseSettings):
     object_storages: dict[str, S3ObjectStorageNodeConfig]
 
 
-class LegacyConfig(S3ObjectStoragesConfig):
+class UserAgentConfig(BaseSettings):
+    """Config for a custom user_agent for httpx requests."""
+
+    user_agent: str = Field(
+        default=f"GHGA Datasteward Kit ({__version__})",
+        description="Custom user agent string to use for requests in the client.",
+    )
+
+
+class LegacyConfig(S3ObjectStoragesConfig, UserAgentConfig):
     """Required options for legacy file uploads."""
 
     part_size: int = Field(

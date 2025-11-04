@@ -34,10 +34,12 @@ class RequestConfigurator:
 
     timeout: int | None
     max_connections: int
+    user_agent: str
 
     @classmethod
     def configure(cls, config: LegacyConfig):
         """Set timeout in seconds"""
+        cls.user_agent = config.user_agent
         cls.timeout = config.client_timeout
         cls.max_connections = config.client_max_parallel_transfers
         # silence httpx messages on each request due to setting global level info before
@@ -48,6 +50,7 @@ class RequestConfigurator:
 async def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
     async with httpx.AsyncClient(
+        headers=httpx.Headers(),
         timeout=RequestConfigurator.timeout,
         limits=httpx.Limits(
             max_connections=RequestConfigurator.max_connections,
