@@ -50,7 +50,7 @@ class RequestConfigurator:
 async def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
     async with httpx.AsyncClient(
-        headers=httpx.Headers(),
+        headers=httpx.Headers({"User-Agent": RequestConfigurator.user_agent}),
         timeout=RequestConfigurator.timeout,
         limits=httpx.Limits(
             max_connections=RequestConfigurator.max_connections,
