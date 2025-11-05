@@ -26,7 +26,10 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
+from ghga_datasteward_kit import __version__
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
+
+USER_AGENT = f"GHGADatastewardKit/{__version__}"
 
 
 class RequestConfigurator:
@@ -48,6 +51,7 @@ class RequestConfigurator:
 async def httpx_client():
     """Yields a context manager httpx client and closes it afterward"""
     async with httpx.AsyncClient(
+        headers=httpx.Headers({"User-Agent": USER_AGENT}),
         timeout=RequestConfigurator.timeout,
         limits=httpx.Limits(
             max_connections=RequestConfigurator.max_connections,

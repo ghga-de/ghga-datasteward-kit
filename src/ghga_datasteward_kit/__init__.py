@@ -15,4 +15,6 @@
 
 """A utils package for GHGA data stewards."""
 
-__version__ = "1.1.0"
+from importlib.metadata import version
+
+__version__ = version(__package__)
