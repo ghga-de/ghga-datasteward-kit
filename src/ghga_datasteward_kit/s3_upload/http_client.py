@@ -18,8 +18,10 @@ import logging
 from contextlib import asynccontextmanager
 
 import httpx
-from ghga_service_commons.transports.factory import CompositeTransportFactory
-from ghga_service_commons.transports.retry import AsyncRetryTransport
+from ghga_service_commons.transports import (
+    AsyncRetryTransport,
+    CompositeTransportFactory,
+)
 
 from ghga_datasteward_kit import __version__
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig

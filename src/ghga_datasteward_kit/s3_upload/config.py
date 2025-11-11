@@ -18,7 +18,7 @@
 import subprocess  # nosec
 from pathlib import Path
 
-from ghga_service_commons.transports.config import CompositeConfig
+from ghga_service_commons.transports import CompositeConfig
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, field_validator
 from pydantic_settings import BaseSettings
 
