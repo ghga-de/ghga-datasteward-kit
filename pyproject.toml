@@ -27,8 +27,8 @@ dependencies = [
     "crypt4gh >=1.6, <2",
     "hexkit[s3] >=5.3",
     "ghga-transpiler >=2.1.2, <3",
-    "metldata >=4.0.3, <5",
-    "ghga-service-commons[transports] >=5.3.0, <6",
+    "metldata >=4.0.4, <5",
+    "ghga-service-commons[transports] >=6.0.0, <7",
 ]
 
 [project.license]
