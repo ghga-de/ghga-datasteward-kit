@@ -48,9 +48,8 @@ async def test_retry_handling_retryable_status_codes(
         await _run_request()
 
 
-@pytest.mark.parametrize(
-    "exception,should_reraise", [*product(EXCEPTIONS, [True, False])]
-)
+@pytest.mark.parametrize("exception", EXCEPTIONS)
+@pytest.mark.parametrize("should_reraise", [True, False])
 @pytest.mark.httpx_mock(
     assert_all_responses_were_requested=False, can_send_already_matched_responses=True
 )
