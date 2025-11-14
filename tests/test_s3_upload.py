@@ -650,7 +650,7 @@ output_dir: {config.output_dir}
 selected_storage_alias: "{config.selected_storage_alias}"
 wkvs_api_url: "{wkvs_url}"
 client_exponential_backoff_max: 10
-client_retry_status_codes: [408, 500, 502, 503, 504]
+client_retry_status_codes: [408, 429, 500, 502, 503, 504]
 client_timeout: 5
 client_max_parallel_transfers: 10
 client_num_retries: 5

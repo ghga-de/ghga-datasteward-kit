@@ -33,7 +33,7 @@ from .config import LegacyConfig
 from .exceptions import PartUploadError
 from .file_decryption import Decryptor
 from .file_encryption import Encryptor
-from .http_client import configure_retries, httpx_client
+from .http_client import httpx_client
 from .utils import LOG
 
 
@@ -76,7 +76,6 @@ class ChunkedUploader:
         self.decryptor = decryptor
         self.storage = storage
         self.upload_params = upload_params
-        self.retry_handler = configure_retries(config)
         self._in_sequence_part_number = 1
         self._semaphore = asyncio.Semaphore(config.client_max_parallel_transfers)
 
@@ -187,8 +186,7 @@ class ChunkedUploader:
             part_number=part_number,
             part_md5=encoded_part_md5,
         )
-        response: Response = await self.retry_handler(
-            fn=client.put,
+        response: Response = await client.put(
             url=upload_url,
             content=part,
             headers=httpx.Headers({"Content-MD5": encoded_part_md5}),

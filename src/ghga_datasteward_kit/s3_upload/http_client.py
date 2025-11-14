@@ -18,12 +18,9 @@ import logging
 from contextlib import asynccontextmanager
 
 import httpx
-from tenacity import (
-    AsyncRetrying,
-    retry_if_exception_type,
-    retry_if_result,
-    stop_after_attempt,
-    wait_exponential_jitter,
+from ghga_service_commons.transports import (
+    AsyncRetryTransport,
+    CompositeTransportFactory,
 )
 
 from ghga_datasteward_kit import __version__
@@ -36,13 +33,19 @@ class RequestConfigurator:
     """Helper for user configurable httpx request parameters."""
 
     timeout: int | None
-    max_connections: int
+    transport: AsyncRetryTransport
 
     @classmethod
     def configure(cls, config: LegacyConfig):
         """Set timeout in seconds"""
         cls.timeout = config.client_timeout
-        cls.max_connections = config.client_max_parallel_transfers
+        cls.transport = CompositeTransportFactory.create_ratelimiting_retry_transport(
+            config,
+            limits=httpx.Limits(
+                max_connections=config.client_max_parallel_transfers,
+                max_keepalive_connections=config.client_max_parallel_transfers,
+            ),
+        )
         # silence httpx messages on each request due to setting global level info before
         logging.getLogger("httpx").setLevel(logging.WARNING)
 
@@ -53,31 +56,6 @@ async def httpx_client():
     async with httpx.AsyncClient(
         headers=httpx.Headers({"User-Agent": USER_AGENT}),
         timeout=RequestConfigurator.timeout,
-        limits=httpx.Limits(
-            max_connections=RequestConfigurator.max_connections,
-            max_keepalive_connections=RequestConfigurator.max_connections,
-        ),
+        transport=RequestConfigurator.transport,
     ) as client:
         yield client
-
-
-def configure_retries(config: LegacyConfig):
-    """Initialize retry handler from config"""
-    return AsyncRetrying(
-        retry=(
-            retry_if_exception_type(
-                (
-                    httpx.ConnectError,
-                    httpx.ConnectTimeout,
-                    httpx.ReadError,
-                    httpx.TimeoutException,
-                )
-            )
-            | retry_if_result(
-                lambda response: response.status_code
-                in config.client_retry_status_codes
-            )
-        ),
-        stop=stop_after_attempt(config.client_num_retries),
-        wait=wait_exponential_jitter(max=config.client_exponential_backoff_max),
-    )

@@ -18,6 +18,7 @@
 import subprocess  # nosec
 from pathlib import Path
 
+from ghga_service_commons.transports import CompositeConfig
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, field_validator
 from pydantic_settings import BaseSettings
 
@@ -75,7 +76,7 @@ class S3ObjectStoragesConfig(BaseSettings):
     object_storages: dict[str, S3ObjectStorageNodeConfig]
 
 
-class LegacyConfig(S3ObjectStoragesConfig):
+class LegacyConfig(S3ObjectStoragesConfig, CompositeConfig):
     """Required options for legacy file uploads."""
 
     part_size: int = Field(
@@ -103,21 +104,12 @@ class LegacyConfig(S3ObjectStoragesConfig):
         default="https://data.ghga.de/.well-known",
         description="URL to the root of the WKVS API. Should start with https://.",
     )
-    client_exponential_backoff_max: NonNegativeInt = Field(
-        default=60,
-        description="Maximum number of seconds to wait for when using exponential backoff retry strategies.",
-    )
-    client_retry_status_codes: list[int] = Field(default=[408, 500, 502, 503, 504])
     client_timeout: NonNegativeInt | None = Field(
         default=60, description="Timeout for client requests in seconds"
     )
     client_max_parallel_transfers: PositiveInt = Field(
         default=10,
         description="Maximum number of ongoing concurrent part uploads or downloads.",
-    )
-    client_num_retries: NonNegativeInt = Field(
-        default=5,
-        description="Number of times a request should be retried on non critical errors.",
     )
 
     @field_validator("output_dir")
