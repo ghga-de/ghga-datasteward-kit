@@ -25,6 +25,7 @@ from pytest_httpx import HTTPXMock
 
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.cli.file import ingest_upload_metadata
+from ghga_datasteward_kit.exceptions import UnknownStorageAliasError
 from ghga_datasteward_kit.file_ingest import alias_to_accession, file_ingest
 from ghga_datasteward_kit.utils import path_join
 from tests.fixtures.ingest import (  # noqa: F401
@@ -36,13 +37,25 @@ from tests.fixtures.ingest import (  # noqa: F401
 
 
 @pytest.mark.asyncio
-async def test_alias_to_accession(legacy_ingest_fixture: IngestFixture):  # noqa: F811
+async def test_alias_to_accession(
+    legacy_ingest_fixture: IngestFixture,  # noqa: F811
+    httpx_mock: HTTPXMock,
+):
     """Test alias->accession mapping"""
     submission_store = SubmissionStore(config=legacy_ingest_fixture.config)
+    httpx_mock.add_response(
+        url=path_join(
+            legacy_ingest_fixture.config.wkvs_api_url, "values/storage_aliases"
+        ),
+        json={"storage_aliases": {"test": "http://example.com"}},
+        status_code=200,
+    )
+
     metadata = models.LegacyOutputMetadata.load(
         input_path=legacy_ingest_fixture.file_path,
         selected_alias=legacy_ingest_fixture.config.selected_storage_alias,
         fallback_bucket=legacy_ingest_fixture.config.fallback_bucket_id,
+        wkvs_api_url=legacy_ingest_fixture.config.wkvs_api_url,
     )
 
     accession = alias_to_accession(
@@ -83,6 +96,15 @@ async def test_legacy_ingest_directly(
         legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
     )
     token = generate_token()
+
+    httpx_mock.add_response(
+        url=path_join(
+            legacy_ingest_fixture.config.wkvs_api_url, "values/storage_aliases"
+        ),
+        json={"storage_aliases": {"test": "http://example.com"}},
+        status_code=200,
+        is_reusable=True,
+    )
 
     httpx_mock.add_response(
         url=endpoint_url,
@@ -130,6 +152,13 @@ async def test_ingest_directly(
         ingest_fixture.config.file_ingest_federated_endpoint,
     )
     token = generate_token()
+
+    httpx_mock.add_response(
+        url=path_join(ingest_fixture.config.wkvs_api_url, "values/storage_aliases"),
+        json={"storage_aliases": {"test": "http://example.com"}},
+        status_code=200,
+        is_reusable=True,
+    )
 
     httpx_mock.add_response(url=endpoint_url, status_code=202)
     file_ingest(
@@ -190,6 +219,15 @@ async def test_legacy_main(
             lambda self: generate_token(),
         )
 
+        httpx_mock.add_response(
+            url=path_join(
+                legacy_ingest_fixture.config.wkvs_api_url, "values/storage_aliases"
+            ),
+            json={"storage_aliases": {"test": "http://example.com"}},
+            status_code=200,
+            is_reusable=True,
+        )
+
         httpx_mock.add_response(url=endpoint_url, status_code=202)
         ingest_upload_metadata(config_path=config_path)
         out, _ = capfd.readouterr()
@@ -211,6 +249,7 @@ def test_fallbacks(
     legacy_ingest_fixture: IngestFixture,  # noqa: F811
     ingest_fixture: IngestFixture,  # noqa: F811
     tmp_path,
+    httpx_mock: HTTPXMock,
 ):
     """Simulate loading old metadata files and test for newly populated fields"""
     bucket_id = ingest_fixture.config.fallback_bucket_id
@@ -231,10 +270,48 @@ def test_fallbacks(
         with modified_metadata_path.open("w") as target:
             json.dump(data, target)
 
+        httpx_mock.add_response(
+            url=path_join(ingest_fixture.config.wkvs_api_url, "values/storage_aliases"),
+            json={"storage_aliases": {"test": "http://example.com"}},
+            status_code=200,
+        )
+
         metadata = metadata_model.load(  # type: ignore[attr-defined]
             input_path=modified_metadata_path,
             selected_alias=storage_alias,
             fallback_bucket=bucket_id,
+            wkvs_api_url=ingest_fixture.config.wkvs_api_url,
         )
         assert metadata.bucket_id == bucket_id
         assert metadata.storage_alias == storage_alias
+
+
+def test_unknown_storage_alias(
+    legacy_ingest_fixture: IngestFixture,  # noqa: F811
+    ingest_fixture: IngestFixture,  # noqa: F811
+    tmp_path,
+    httpx_mock: HTTPXMock,
+):
+    """Simulate loading metadata with unknown storage alias and expect errors"""
+    # Prepare metadata with an unknown storage alias
+
+    token = generate_token()
+
+    httpx_mock.add_response(
+        url=path_join(
+            legacy_ingest_fixture.config.wkvs_api_url, "values/storage_aliases"
+        ),
+        json={"storage_aliases": {"fake": "http://example.com"}},
+        status_code=200,
+        is_reusable=True,
+    )
+
+    with pytest.raises(
+        UnknownStorageAliasError,
+        match=r"Unknown storage alias 'test'. Please check your configuration or contact support.",
+    ):
+        file_ingest(
+            in_path=legacy_ingest_fixture.file_path,
+            token=token,
+            config=legacy_ingest_fixture.config,
+        )

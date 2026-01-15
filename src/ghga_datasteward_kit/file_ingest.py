@@ -26,6 +26,7 @@ from metldata.submission_registry.submission_store import (
 from pydantic import Field, ValidationError
 
 from ghga_datasteward_kit import models, utils
+from ghga_datasteward_kit.exceptions import UnknownStorageAliasError
 
 LOG = logging.getLogger(__name__)
 
@@ -85,6 +86,11 @@ class IngestConfig(SubmissionStoreConfig):
         description="Fallback bucket_id for older output metadata files that don't contain a bucket ID.",
     )
 
+    wkvs_api_url: str = Field(
+        default="https://data.ghga.de/.well-known",
+        description="URL to the root of the WKVS API. Should start with https://.",
+    )
+
 
 def alias_to_accession(
     alias: str, map_fields: list[str], submission_store: SubmissionStore
@@ -126,7 +132,7 @@ def main(
             continue
         try:
             file_ingest(in_path=in_path, token=token, config=config)
-        except (ValidationError, ValueError) as error:
+        except (ValidationError, ValueError, UnknownStorageAliasError) as error:
             errors[in_path.resolve()] = str(error)
             continue
         else:
@@ -150,6 +156,7 @@ def file_ingest(
             input_path=in_path,
             selected_alias=config.selected_storage_alias,
             fallback_bucket=config.fallback_bucket_id,
+            wkvs_api_url=config.wkvs_api_url,
         )
         endpoint = config.file_ingest_federated_endpoint
         LOG.info("Selected non-legacy endpoint %s for file %s.", endpoint, in_path)
@@ -158,6 +165,7 @@ def file_ingest(
             input_path=in_path,
             selected_alias=config.selected_storage_alias,
             fallback_bucket=config.fallback_bucket_id,
+            wkvs_api_url=config.wkvs_api_url,
         )
         endpoint = config.file_ingest_legacy_endpoint
         LOG.info("Selected legacy endpoint %s for file %s.", endpoint, in_path)
