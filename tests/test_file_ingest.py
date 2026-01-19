@@ -39,23 +39,18 @@ from tests.fixtures.ingest import (  # noqa: F401
 @pytest.mark.asyncio
 async def test_alias_to_accession(
     legacy_ingest_fixture: IngestFixture,  # noqa: F811
-    httpx_mock: HTTPXMock,
 ):
     """Test alias->accession mapping"""
     submission_store = SubmissionStore(config=legacy_ingest_fixture.config)
-    httpx_mock.add_response(
-        url=path_join(
-            legacy_ingest_fixture.config.wkvs_api_url, "values/storage_aliases"
-        ),
-        json={"storage_aliases": {"test": "http://example.com"}},
-        status_code=200,
-    )
+    storage_aliases = {
+        legacy_ingest_fixture.config.selected_storage_alias: "http://example.com"
+    }
 
     metadata = models.LegacyOutputMetadata.load(
         input_path=legacy_ingest_fixture.file_path,
         selected_alias=legacy_ingest_fixture.config.selected_storage_alias,
         fallback_bucket=legacy_ingest_fixture.config.fallback_bucket_id,
-        wkvs_api_url=legacy_ingest_fixture.config.wkvs_api_url,
+        storage_aliases=storage_aliases,
     )
 
     accession = alias_to_accession(
@@ -249,11 +244,11 @@ def test_fallbacks(
     legacy_ingest_fixture: IngestFixture,  # noqa: F811
     ingest_fixture: IngestFixture,  # noqa: F811
     tmp_path,
-    httpx_mock: HTTPXMock,
 ):
     """Simulate loading old metadata files and test for newly populated fields"""
     bucket_id = ingest_fixture.config.fallback_bucket_id
     storage_alias = ingest_fixture.config.selected_storage_alias
+    storage_aliases = {storage_alias: "http://example.com"}
 
     for fixture, metadata_model in zip(
         (legacy_ingest_fixture, ingest_fixture),
@@ -270,17 +265,11 @@ def test_fallbacks(
         with modified_metadata_path.open("w") as target:
             json.dump(data, target)
 
-        httpx_mock.add_response(
-            url=path_join(ingest_fixture.config.wkvs_api_url, "values/storage_aliases"),
-            json={"storage_aliases": {"test": "http://example.com"}},
-            status_code=200,
-        )
-
         metadata = metadata_model.load(  # type: ignore[attr-defined]
             input_path=modified_metadata_path,
             selected_alias=storage_alias,
             fallback_bucket=bucket_id,
-            wkvs_api_url=ingest_fixture.config.wkvs_api_url,
+            storage_aliases=storage_aliases,
         )
         assert metadata.bucket_id == bucket_id
         assert metadata.storage_alias == storage_alias

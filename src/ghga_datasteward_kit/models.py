@@ -26,7 +26,6 @@ from ghga_service_commons.utils.crypt import encrypt
 from pydantic import BaseModel
 
 from ghga_datasteward_kit.exceptions import UnknownStorageAliasError
-from ghga_datasteward_kit.utils import retrieve_well_known_values
 
 LOG = logging.getLogger(__name__)
 
@@ -138,7 +137,7 @@ class OutputMetadata(Metadata):
         input_path: Path,
         selected_alias: str,
         fallback_bucket: str,
-        wkvs_api_url: str,
+        storage_aliases: dict[str, str],
     ):
         """Load metadata from serialized file and validate storage alias."""
         with input_path.open("r") as infile:
@@ -163,10 +162,7 @@ class OutputMetadata(Metadata):
             )
             bucket_id = fallback_bucket
 
-        # Validate storage_alias using WKVS
-        storage_aliases = retrieve_well_known_values(
-            wkvs_api_url=wkvs_api_url, value_name="storage_aliases"
-        )
+        # Validate storage_alias against known storage aliases
         if storage_alias not in storage_aliases:
             raise UnknownStorageAliasError(storage_alias=storage_alias)
 
@@ -247,7 +243,7 @@ class LegacyOutputMetadata(LegacyMetadata):
         input_path: Path,
         selected_alias: str,
         fallback_bucket: str,
-        wkvs_api_url: str,
+        storage_aliases: dict[str, str],
     ):
         """Load metadata from serialized file and validate storage alias."""
         with input_path.open("r") as infile:
@@ -272,10 +268,7 @@ class LegacyOutputMetadata(LegacyMetadata):
             )
             bucket_id = fallback_bucket
 
-        # Validate storage_alias using WKVS
-        storage_aliases = retrieve_well_known_values(
-            wkvs_api_url=wkvs_api_url, value_name="storage_aliases"
-        )
+        # Validate storage_alias against known storage aliases
         if storage_alias not in storage_aliases:
             raise UnknownStorageAliasError(storage_alias=storage_alias)
 

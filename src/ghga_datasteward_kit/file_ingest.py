@@ -151,12 +151,18 @@ def file_ingest(
     Transform from s3 upload output representation to what the file ingest service expects.
     Then call the ingest endpoint
     """
+    storage_aliases = utils.retrieve_well_known_values(
+        wkvs_api_url=config.wkvs_api_url, value_name="storage_aliases"
+    )
+    if not storage_aliases:
+        LOG.error(ValueError("No storage aliases could be retrieved from WKVS."))
+
     try:
         output_metadata = models.OutputMetadata.load(
             input_path=in_path,
             selected_alias=config.selected_storage_alias,
             fallback_bucket=config.fallback_bucket_id,
-            wkvs_api_url=config.wkvs_api_url,
+            storage_aliases=storage_aliases,
         )
         endpoint = config.file_ingest_federated_endpoint
         LOG.info("Selected non-legacy endpoint %s for file %s.", endpoint, in_path)
@@ -165,7 +171,7 @@ def file_ingest(
             input_path=in_path,
             selected_alias=config.selected_storage_alias,
             fallback_bucket=config.fallback_bucket_id,
-            wkvs_api_url=config.wkvs_api_url,
+            storage_aliases=storage_aliases,
         )
         endpoint = config.file_ingest_legacy_endpoint
         LOG.info("Selected legacy endpoint %s for file %s.", endpoint, in_path)
