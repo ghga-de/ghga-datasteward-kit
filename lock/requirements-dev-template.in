@@ -19,7 +19,7 @@ typer>=0.19.1
 httpx>=0.28.1
 pytest-httpx>=0.35
 
-urllib3>=2.5
+urllib3>=2.6.3
 requests>=2.32.5
 
 casefy>=1.1

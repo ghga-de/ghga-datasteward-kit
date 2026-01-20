@@ -26,3 +26,5 @@
 - **`selected_storage_alias`** *(string)*: Alias of the selected storage node/location. Has to match the backend configuration and must also be present in the local storage configuration. During the later ingest phase, the alias will be validated by the File Ingest Service.
 
 - **`fallback_bucket_id`** *(string)*: Fallback bucket_id for older output metadata files that don't contain a bucket ID.
+
+- **`wkvs_api_url`** *(string)*: URL to the root of the WKVS API. Should start with https://. Default: `https://data.ghga.de/.well-known`.

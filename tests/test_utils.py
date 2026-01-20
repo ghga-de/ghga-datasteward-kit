@@ -16,8 +16,10 @@
 """Test for utils package"""
 
 import pytest
+from pytest_httpx import HTTPXMock
 
-from ghga_datasteward_kit.utils import path_join
+from ghga_datasteward_kit.utils import path_join, retrieve_well_known_values
+from tests.fixtures.ingest import IngestFixture, legacy_ingest_fixture  # noqa: F401
 
 
 @pytest.mark.parametrize(
@@ -73,3 +75,25 @@ def test_path_join(base, paths, expected):
     """Test path_join function"""
     result = path_join(base, *paths)
     assert result == expected
+
+
+def test_retrieve_well_known_values(
+    legacy_ingest_fixture: IngestFixture,  # noqa: F811
+    httpx_mock: HTTPXMock,
+):
+    """Test retrieve_well_known_values function"""
+    wkvs_api_url = legacy_ingest_fixture.config.wkvs_api_url
+    value_name = "storage_aliases"
+    expected_values = {"test": "http://example.com"}
+
+    httpx_mock.add_response(
+        url=path_join(wkvs_api_url, f"values/{value_name}"),
+        json={"storage_aliases": expected_values},
+        status_code=200,
+    )
+
+    retrieved_values = retrieve_well_known_values(
+        wkvs_api_url=wkvs_api_url, value_name=value_name
+    )
+
+    assert retrieved_values == expected_values

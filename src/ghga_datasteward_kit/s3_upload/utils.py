@@ -23,11 +23,10 @@ from io import BufferedReader
 from pathlib import Path
 
 import crypt4gh.lib
-import httpx
 from hexkit.providers.s3 import S3Config, S3ObjectStorage
 
 from ghga_datasteward_kit.s3_upload.config import LegacyConfig
-from ghga_datasteward_kit.utils import path_join
+from ghga_datasteward_kit.utils import retrieve_well_known_values
 
 LOG = logging.getLogger("s3_upload")
 
@@ -73,7 +72,9 @@ def get_bucket_id(config: LegacyConfig):
 def get_object_storage(config: LegacyConfig):
     """Configure S3 and return S3 DAO"""
     storage_alias = config.selected_storage_alias
-    storage_endpoint_map = retrieve_endpoint_urls(config)
+    storage_endpoint_map = retrieve_well_known_values(
+        wkvs_api_url=config.wkvs_api_url, value_name="storage_aliases"
+    )
 
     # fetch correct config
     try:
@@ -92,27 +93,6 @@ def get_object_storage(config: LegacyConfig):
         aws_config_ini=None,
     )
     return S3ObjectStorage(config=s3_config)
-
-
-def retrieve_endpoint_urls(config: LegacyConfig, value_name: str = "storage_aliases"):
-    """Get S3 endpoint URLS from WKVS"""
-    url = path_join(config.wkvs_api_url, "values", value_name)
-
-    try:
-        response = httpx.get(url)
-    except httpx.RequestError:
-        LOG.error(f"Could not retrieve data from {url} due to connection issues.")
-        raise
-
-    status_code = response.status_code
-    if status_code != 200:
-        raise ValueError(f"Received unexpected response code {status_code} from {url}.")
-    try:
-        return response.json()[value_name]
-    except KeyError as err:
-        raise ValueError(
-            f"Response from {url} did not include expected field '{value_name}'"
-        ) from err
 
 
 def get_segments(part: bytes, segment_size: int):

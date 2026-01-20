@@ -25,6 +25,8 @@ from typing import Any
 from ghga_service_commons.utils.crypt import encrypt
 from pydantic import BaseModel
 
+from ghga_datasteward_kit.exceptions import UnknownStorageAliasError
+
 LOG = logging.getLogger(__name__)
 
 
@@ -130,8 +132,14 @@ class OutputMetadata(Metadata):
         os.chmod(path=output_path, mode=0o400)
 
     @classmethod
-    def load(cls, input_path: Path, selected_alias: str, fallback_bucket: str):
-        """Load metadata from serialized file"""
+    def load(
+        cls,
+        input_path: Path,
+        selected_alias: str,
+        fallback_bucket: str,
+        storage_aliases: dict[str, str],
+    ):
+        """Load metadata from serialized file and validate storage alias."""
         with input_path.open("r") as infile:
             data = json.load(infile)
 
@@ -153,6 +161,10 @@ class OutputMetadata(Metadata):
                 fallback_bucket,
             )
             bucket_id = fallback_bucket
+
+        # Validate storage_alias against known storage aliases
+        if storage_alias not in storage_aliases:
+            raise UnknownStorageAliasError(storage_alias=storage_alias)
 
         file_id = data["File UUID"]
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
@@ -226,8 +238,14 @@ class LegacyOutputMetadata(LegacyMetadata):
         os.chmod(path=output_path, mode=0o400)
 
     @classmethod
-    def load(cls, input_path: Path, selected_alias: str, fallback_bucket: str):
-        """Load metadata from serialized file"""
+    def load(
+        cls,
+        input_path: Path,
+        selected_alias: str,
+        fallback_bucket: str,
+        storage_aliases: dict[str, str],
+    ):
+        """Load metadata from serialized file and validate storage alias."""
         with input_path.open("r") as infile:
             data = json.load(infile)
 
@@ -249,6 +267,10 @@ class LegacyOutputMetadata(LegacyMetadata):
                 fallback_bucket,
             )
             bucket_id = fallback_bucket
+
+        # Validate storage_alias against known storage aliases
+        if storage_alias not in storage_aliases:
+            raise UnknownStorageAliasError(storage_alias=storage_alias)
 
         file_id = data["File UUID"]
         part_size = int(data["Part Size"].rpartition(" MiB")[0]) * 1024**2
