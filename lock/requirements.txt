@@ -154,15 +154,15 @@ bcrypt==5.0.0 \
     # via
     #   -c lock/requirements-dev.txt
     #   crypt4gh
-boto3==1.42.30 \
-    --hash=sha256:ba9cd2f7819637d15bfbeb63af4c567fcc8a7dcd7b93dd12734ec58601169538 \
-    --hash=sha256:d7e548bea65e0ae2c465c77de937bc686b591aee6a352d5a19a16bc751e591c1
+boto3==1.42.31 \
+    --hash=sha256:7f04b4cd7c375e4d88cc2cba3022c40805012ce8f57468b82cedb1bcd6b3a58a \
+    --hash=sha256:b2038fc5dbcd6746a16ada8d55fe73659b8cf95c7b6aeb63fe782e831485edaa
     # via
     #   -c lock/requirements-dev.txt
     #   hexkit
-botocore==1.42.30 \
-    --hash=sha256:97070a438cac92430bb7b65f8ebd7075224f4a289719da4ee293d22d1e98db02 \
-    --hash=sha256:9bf1662b8273d5cc3828a49f71ca85abf4e021011c1f0a71f41a2ea5769a5116
+botocore==1.42.31 \
+    --hash=sha256:021346ad57cc3018acf4a46edc1f649b9818b33c07a08674ce1c36e9edbb5859 \
+    --hash=sha256:62f2c31e229df625612dd4d7c72618948e4064436d71a647102f36fcddfa0f4d
     # via
     #   -c lock/requirements-dev.txt
     #   boto3
@@ -670,9 +670,9 @@ ghga-event-schemas==9.2.0 \
     # via
     #   -c lock/requirements-dev.txt
     #   metldata
-ghga-service-commons==6.0.2 \
-    --hash=sha256:db95792faf8268f31c1e4bd79d82a28c2a32e47141e276e4b32692ae957cbd0d \
-    --hash=sha256:de26a9c65a79f3e6727b6baa751a6447056c5c3d4d82a8c7cb4a92a9657df3d7
+ghga-service-commons==6.1.0 \
+    --hash=sha256:5ae3af599be98db35f2d4dad365eae3a850443598ba8f8e2bc270b27b5b9ef75 \
+    --hash=sha256:999d455696a9fb3e62ec0b46b6c667ac89c3c7293b82e72c87fef0675235cc5d
     # via
     #   -c lock/requirements-dev.txt
     #   ghga-datasteward-kit (pyproject.toml)
@@ -1470,9 +1470,9 @@ pynacl==1.6.2 \
     # via
     #   -c lock/requirements-dev.txt
     #   crypt4gh
-pyparsing==3.3.1 \
-    --hash=sha256:023b5e7e5520ad96642e2c6db4cb683d3970bd640cdf7115049a6e9c3682df82 \
-    --hash=sha256:47fad0f17ac1e2cad3de3b458570fbc9b03560aa029ed5e16ee5554da9a2251c
+pyparsing==3.3.2 \
+    --hash=sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d \
+    --hash=sha256:c777f4d763f140633dcb6d8a3eda953bf7a214dc4eff598413c070bcdc117cbc
     # via
     #   -c lock/requirements-dev.txt
     #   rdflib

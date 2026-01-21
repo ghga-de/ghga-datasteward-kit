@@ -21,6 +21,7 @@ import httpx
 from ghga_service_commons.transports import (
     AsyncRetryTransport,
     CompositeTransportFactory,
+    ratelimiting_retry_proxies,
 )
 
 from ghga_datasteward_kit import __version__
@@ -34,18 +35,20 @@ class RequestConfigurator:
 
     timeout: int | None
     transport: AsyncRetryTransport
+    mounts: dict | None
 
     @classmethod
     def configure(cls, config: LegacyConfig):
         """Set timeout in seconds"""
         cls.timeout = config.client_timeout
-        cls.transport = CompositeTransportFactory.create_ratelimiting_retry_transport(
-            config,
-            limits=httpx.Limits(
-                max_connections=config.client_max_parallel_transfers,
-                max_keepalive_connections=config.client_max_parallel_transfers,
-            ),
+        limits = httpx.Limits(
+            max_connections=config.client_max_parallel_transfers,
+            max_keepalive_connections=config.client_max_parallel_transfers,
         )
+        cls.transport = CompositeTransportFactory.create_ratelimiting_retry_transport(
+            config, limits=limits
+        )
+        cls.mounts = ratelimiting_retry_proxies(config, limits)
         # silence httpx messages on each request due to setting global level info before
         logging.getLogger("httpx").setLevel(logging.WARNING)
 
@@ -57,5 +60,6 @@ async def httpx_client():
         headers=httpx.Headers({"User-Agent": USER_AGENT}),
         timeout=RequestConfigurator.timeout,
         transport=RequestConfigurator.transport,
+        mounts=RequestConfigurator.mounts,
     ) as client:
         yield client
