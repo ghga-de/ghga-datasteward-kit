@@ -15,7 +15,6 @@
 """Interaction with file ingest service"""
 
 import logging
-from collections.abc import Callable
 from pathlib import Path
 
 import httpx
@@ -85,32 +84,43 @@ class IngestConfig(SubmissionStoreConfig):
         default=...,
         description="Fallback bucket_id for older output metadata files that don't contain a bucket ID.",
     )
-
     wkvs_api_url: str = Field(
         default="https://data.ghga.de/.well-known",
         description="URL to the root of the WKVS API. Should start with https://.",
     )
+    submission_id: str = Field(
+        default=...,
+        description="ID of the submission for which the accession map should be loaded "
+        + "from the submission store.",
+    )
 
 
 def alias_to_accession(
-    alias: str, map_fields: list[str], submission_store: SubmissionStore
+    alias: str,
+    map_fields: list[str],
+    submission_id: str,
+    submission_store: SubmissionStore,
 ) -> str:
     """Get all submissions to retrieve valid accessions from corresponding file aliases"""
-    submission_ids = submission_store.get_all_submission_ids()
+    submission_map: dict[str, str] = {}
+    submission = submission_store.get_by_id(submission_id=submission_id)
 
-    all_submission_map = {}
+    for field in map_fields:
+        if field not in submission.accession_map:
+            raise ValueError(f"Configured field {field} not found in accession map.")
+        # sanity check that this isn't overwriting anything and update
+        accessions_for_field = submission.accession_map[field]
+        existing_keys = set(submission_map.keys()).intersection(
+            accessions_for_field.keys()
+        )
+        if existing_keys:
+            raise ValueError(
+                f"Found aliases {','.join(existing_keys)} multiple times in "
+                f"accession map for submission {submission_id}."
+            )
+        submission_map.update(accessions_for_field)
 
-    for submission_id in submission_ids:
-        submission = submission_store.get_by_id(submission_id=submission_id)
-        for field in map_fields:
-            if field not in submission.accession_map:
-                raise ValueError(
-                    f"Configured field {field} not found in accession map."
-                )
-            all_submission_map.update(submission.accession_map[field])
-
-    accession = all_submission_map.get(alias)
-
+    accession = submission_map.get(alias)
     if accession is None:
         raise ValueError(f"No accession exists for file alias {alias}")
 
@@ -145,7 +155,6 @@ def file_ingest(
     in_path: Path,
     token: str,
     config: IngestConfig,
-    alias_to_id: Callable[[str, list[str], SubmissionStore], str] = alias_to_accession,
 ):
     """
     Transform from s3 upload output representation to what the file ingest service expects.
@@ -180,8 +189,11 @@ def file_ingest(
 
     submission_store = SubmissionStore(config=config)
 
-    file_id = alias_to_id(
-        output_metadata.alias, config.map_files_fields, submission_store
+    file_id = alias_to_accession(
+        alias=output_metadata.alias,
+        map_fields=config.map_files_fields,
+        submission_id=config.submission_id,
+        submission_store=submission_store,
     )
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
 
