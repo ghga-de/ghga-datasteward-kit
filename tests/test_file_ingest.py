@@ -187,6 +187,99 @@ async def test_alias_to_accession_no_accession_for_field(
 
 
 @pytest.mark.asyncio
+async def test_alias_to_accession_multiple_submissions_shared_fields(
+    legacy_ingest_fixture: IngestFixture,  # noqa: F811
+):
+    """Test correct accession retrieval when multiple submissions share field names with unique accessions"""
+    store = SubmissionStore(config=legacy_ingest_fixture.config)
+
+    # Create first submission with study_files
+    submission1 = Submission(
+        title="test_submission_1",
+        description="first submission",
+        content={"test_class": [{"alias": "alias_from_sub1"}]},
+        accession_map={
+            "study_files": {
+                "file_alias_1a": "accession_sub1_1a",
+                "file_alias_1b": "accession_sub1_1b",
+            },
+        },
+        id="submission_001",
+        status_history=(
+            StatusChange(
+                timestamp=now_as_utc(),
+                new_status=SubmissionStatus.COMPLETED,
+            ),
+        ),
+    )
+    store.insert_new(submission=submission1)
+
+    # Create second submission with same field name but different accessions
+    submission2 = Submission(
+        title="test_submission_2",
+        description="second submission",
+        content={"test_class": [{"alias": "alias_from_sub2"}]},
+        accession_map={
+            "study_files": {
+                "file_alias_2a": "accession_sub2_2a",
+                "file_alias_2b": "accession_sub2_2b",
+            },
+        },
+        id="submission_002",
+        status_history=(
+            StatusChange(
+                timestamp=now_as_utc(),
+                new_status=SubmissionStatus.COMPLETED,
+            ),
+        ),
+    )
+    store.insert_new(submission=submission2)
+
+    # Verify we get the correct accession for submission 1
+    accession_1a = alias_to_accession(
+        alias="file_alias_1a",
+        map_fields=["study_files"],
+        submission_id="submission_001",
+        submission_store=store,
+    )
+    assert accession_1a == "accession_sub1_1a"
+
+    accession_1b = alias_to_accession(
+        alias="file_alias_1b",
+        map_fields=["study_files"],
+        submission_id="submission_001",
+        submission_store=store,
+    )
+    assert accession_1b == "accession_sub1_1b"
+
+    # Verify we get the correct accession for submission 2
+    accession_2a = alias_to_accession(
+        alias="file_alias_2a",
+        map_fields=["study_files"],
+        submission_id="submission_002",
+        submission_store=store,
+    )
+    assert accession_2a == "accession_sub2_2a"
+
+    accession_2b = alias_to_accession(
+        alias="file_alias_2b",
+        map_fields=["study_files"],
+        submission_id="submission_002",
+        submission_store=store,
+    )
+    assert accession_2b == "accession_sub2_2b"
+
+    # Verify that aliases from submission 1 are not found in submission 2
+    with pytest.raises(ValueError, match=r"No accession exists for file alias"):
+        alias_to_accession(
+            alias="file_alias_1a",
+            map_fields=["study_files"],
+            submission_id="submission_002",
+            submission_store=store,
+        )
+
+
+@pytest.mark.asyncio
 async def test_legacy_ingest_directly(
     legacy_ingest_fixture: IngestFixture,  # noqa: F811
     httpx_mock: HTTPXMock,
