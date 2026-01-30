@@ -190,7 +190,7 @@ async def test_alias_to_accession_no_accession_for_field(
 async def test_alias_to_accession_multiple_submissions_shared_fields(
     legacy_ingest_fixture: IngestFixture,  # noqa: F811
 ):
-    """Test correct accession retrieval when multiple submissions share field names with unique accessions"""
+    """Test correct accession retrieval when multiple submissions share field names and some alias keys with unique accessions"""
     store = SubmissionStore(config=legacy_ingest_fixture.config)
 
     # Create first submission with study_files
@@ -201,7 +201,7 @@ async def test_alias_to_accession_multiple_submissions_shared_fields(
         accession_map={
             "study_files": {
                 "file_alias_1a": "accession_sub1_1a",
-                "file_alias_1b": "accession_sub1_1b",
+                "shared_alias": "accession_sub1_shared",
             },
         },
         id="submission_001",
@@ -214,7 +214,7 @@ async def test_alias_to_accession_multiple_submissions_shared_fields(
     )
     store.insert_new(submission=submission1)
 
-    # Create second submission with same field name but different accessions
+    # Create second submission with same field name and a shared alias key but different accession values
     submission2 = Submission(
         title="test_submission_2",
         description="second submission",
@@ -222,7 +222,7 @@ async def test_alias_to_accession_multiple_submissions_shared_fields(
         accession_map={
             "study_files": {
                 "file_alias_2a": "accession_sub2_2a",
-                "file_alias_2b": "accession_sub2_2b",
+                "shared_alias": "accession_sub2_shared",
             },
         },
         id="submission_002",
@@ -235,7 +235,7 @@ async def test_alias_to_accession_multiple_submissions_shared_fields(
     )
     store.insert_new(submission=submission2)
 
-    # Verify we get the correct accession for submission 1
+    # Verify we get the correct accession for submission 1's unique alias
     accession_1a = alias_to_accession(
         alias="file_alias_1a",
         map_fields=["study_files"],
@@ -244,15 +244,16 @@ async def test_alias_to_accession_multiple_submissions_shared_fields(
     )
     assert accession_1a == "accession_sub1_1a"
 
-    accession_1b = alias_to_accession(
-        alias="file_alias_1b",
+    # Verify we get the correct accession for submission 1's shared alias
+    accession_1_shared = alias_to_accession(
+        alias="shared_alias",
         map_fields=["study_files"],
         submission_id="submission_001",
         submission_store=store,
     )
-    assert accession_1b == "accession_sub1_1b"
+    assert accession_1_shared == "accession_sub1_shared"
 
-    # Verify we get the correct accession for submission 2
+    # Verify we get the correct accession for submission 2's unique alias
     accession_2a = alias_to_accession(
         alias="file_alias_2a",
         map_fields=["study_files"],
@@ -261,13 +262,17 @@ async def test_alias_to_accession_multiple_submissions_shared_fields(
     )
     assert accession_2a == "accession_sub2_2a"
 
-    accession_2b = alias_to_accession(
-        alias="file_alias_2b",
+    # Verify we get the correct accession for submission 2's shared alias (different from submission 1)
+    accession_2_shared = alias_to_accession(
+        alias="shared_alias",
         map_fields=["study_files"],
         submission_id="submission_002",
         submission_store=store,
     )
-    assert accession_2b == "accession_sub2_2b"
+    assert accession_2_shared == "accession_sub2_shared"
+
+    # Verify that the shared alias returns different accessions for different submissions
+    assert accession_1_shared != accession_2_shared
 
     # Verify that aliases from submission 1 are not found in submission 2
     with pytest.raises(ValueError, match=r"No accession exists for file alias"):
