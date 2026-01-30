@@ -88,11 +88,6 @@ class IngestConfig(SubmissionStoreConfig):
         default="https://data.ghga.de/.well-known",
         description="URL to the root of the WKVS API. Should start with https://.",
     )
-    submission_id: str = Field(
-        default=...,
-        description="ID of the submission for which the accession map should be loaded "
-        + "from the submission store.",
-    )
 
 
 def alias_to_accession(
@@ -127,9 +122,7 @@ def alias_to_accession(
     return accession
 
 
-def main(
-    config_path: Path,
-):
+def main(config_path: Path, submission_id: str):
     """Handle ingestion of a folder of s3 upload file metadata"""
     config = utils.load_config_yaml(path=config_path, config_cls=IngestConfig)
     token = utils.STEWARD_TOKEN.read_token()
@@ -141,7 +134,9 @@ def main(
         if in_path.suffix != ".json":
             continue
         try:
-            file_ingest(in_path=in_path, token=token, config=config)
+            file_ingest(
+                in_path=in_path, token=token, config=config, submission_id=submission_id
+            )
         except (ValidationError, ValueError, UnknownStorageAliasError) as error:
             errors[in_path.resolve()] = str(error)
             continue
@@ -155,6 +150,7 @@ def file_ingest(
     in_path: Path,
     token: str,
     config: IngestConfig,
+    submission_id: str,
 ):
     """
     Transform from s3 upload output representation to what the file ingest service expects.
@@ -192,7 +188,7 @@ def file_ingest(
     file_id = alias_to_accession(
         alias=output_metadata.alias,
         map_fields=config.map_files_fields,
-        submission_id=config.submission_id,
+        submission_id=submission_id,
         submission_store=submission_store,
     )
     upload_metadata = output_metadata.to_upload_metadata(file_id=file_id)
