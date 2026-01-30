@@ -56,6 +56,7 @@ async def test_alias_to_accession(
     accession = alias_to_accession(
         alias=metadata.alias,
         map_fields=legacy_ingest_fixture.config.map_files_fields,
+        submission_id=EXAMPLE_SUBMISSION.id,
         submission_store=submission_store,
     )
     example_accession = list(  # noqa: RUF015
@@ -69,6 +70,7 @@ async def test_alias_to_accession(
         alias_to_accession(
             alias="invalid_alias",
             map_fields=legacy_ingest_fixture.config.map_files_fields,
+            submission_id=EXAMPLE_SUBMISSION.id,
             submission_store=submission_store,
         )
 
@@ -76,6 +78,7 @@ async def test_alias_to_accession(
         alias_to_accession(
             alias=metadata.alias,
             map_fields=["study_files", "sample_files"],
+            submission_id=EXAMPLE_SUBMISSION.id,
             submission_store=submission_store,
         )
 
@@ -109,6 +112,7 @@ async def test_legacy_ingest_directly(
         in_path=legacy_ingest_fixture.file_path,
         token=token,
         config=legacy_ingest_fixture.config,
+        submission_id=EXAMPLE_SUBMISSION.id,
     )
 
     httpx_mock.add_response(
@@ -121,6 +125,7 @@ async def test_legacy_ingest_directly(
             in_path=legacy_ingest_fixture.file_path,
             token=token,
             config=legacy_ingest_fixture.config,
+            submission_id=EXAMPLE_SUBMISSION.id,
         )
 
     httpx_mock.add_response(
@@ -133,6 +138,7 @@ async def test_legacy_ingest_directly(
             in_path=legacy_ingest_fixture.file_path,
             token=token,
             config=legacy_ingest_fixture.config,
+            submission_id=EXAMPLE_SUBMISSION.id,
         )
 
 
@@ -160,6 +166,7 @@ async def test_ingest_directly(
         in_path=ingest_fixture.file_path,
         token=token,
         config=ingest_fixture.config,
+        submission_id=EXAMPLE_SUBMISSION.id,
     )
 
     httpx_mock.add_response(
@@ -172,6 +179,7 @@ async def test_ingest_directly(
             in_path=ingest_fixture.file_path,
             token=token,
             config=ingest_fixture.config,
+            submission_id=EXAMPLE_SUBMISSION.id,
         )
 
     httpx_mock.add_response(
@@ -184,6 +192,7 @@ async def test_ingest_directly(
             in_path=ingest_fixture.file_path,
             token=token,
             config=ingest_fixture.config,
+            submission_id=EXAMPLE_SUBMISSION.id,
         )
 
 
@@ -224,7 +233,9 @@ async def test_legacy_main(
         )
 
         httpx_mock.add_response(url=endpoint_url, status_code=202)
-        ingest_upload_metadata(config_path=config_path)
+        ingest_upload_metadata(
+            config_path=config_path, submission_id=EXAMPLE_SUBMISSION.id
+        )
         out, _ = capfd.readouterr()
 
         assert "Successfully sent all file upload metadata for ingest" in out
@@ -234,7 +245,9 @@ async def test_legacy_main(
             json={"detail": "Unauthorized"},
             status_code=403,
         )
-        ingest_upload_metadata(config_path=config_path)
+        ingest_upload_metadata(
+            config_path=config_path, submission_id=EXAMPLE_SUBMISSION.id
+        )
         out, _ = capfd.readouterr()
 
         assert "Encountered 1 errors during processing" in out
@@ -303,4 +316,5 @@ def test_unknown_storage_alias(
             in_path=legacy_ingest_fixture.file_path,
             token=token,
             config=legacy_ingest_fixture.config,
+            submission_id=EXAMPLE_SUBMISSION.id,
         )
