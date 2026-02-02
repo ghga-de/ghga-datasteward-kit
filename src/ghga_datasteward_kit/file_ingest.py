@@ -102,7 +102,9 @@ def alias_to_accession(
 
     for field in map_fields:
         if field not in submission.accession_map:
-            raise ValueError(f"Configured field {field} not found in accession map.")
+            raise ValueError(
+                f"Configured accession map field {field} is missing in submission."
+            )
         # sanity check that this isn't overwriting anything and update
         accessions_for_field = submission.accession_map[field]
         existing_keys = set(submission_map.keys()).intersection(
@@ -137,7 +139,12 @@ def main(config_path: Path, submission_id: str):
             file_ingest(
                 in_path=in_path, token=token, config=config, submission_id=submission_id
             )
-        except (ValidationError, ValueError, UnknownStorageAliasError) as error:
+        except (
+            ValidationError,
+            ValueError,
+            UnknownStorageAliasError,
+            SubmissionStore.SubmissionDoesNotExistError,
+        ) as error:
             errors[in_path.resolve()] = str(error)
             continue
         else:

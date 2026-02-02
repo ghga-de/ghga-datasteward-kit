@@ -142,7 +142,7 @@ async def test_alias_to_accession_missing_field(
 
     # Try to map accession with a field that doesn't exist in the submission
     with pytest.raises(
-        ValueError, match=r"Configured field .* not found in accession map"
+        ValueError, match=r"Configured accession map field .* is missing in submission"
     ):
         alias_to_accession(
             alias="alias1",
@@ -182,6 +182,40 @@ async def test_alias_to_accession_no_accession_for_field(
             alias="missing_alias",
             map_fields=["study_files"],
             submission_id="single_field_submission",
+            submission_store=store,
+        )
+
+
+@pytest.mark.asyncio
+async def test_alias_to_accession_duplicate_alias_across_fields(
+    legacy_ingest_fixture: IngestFixture,  # noqa: F811
+):
+    """Test alias->accession mapping when the same alias appears in multiple fields"""
+    store = SubmissionStore(config=legacy_ingest_fixture.config)
+    submission = Submission(
+        title="test",
+        description="test",
+        content={"test_class": [{"alias": "test_alias"}]},
+        accession_map={
+            "study_files": {"dup_alias": "accession_study"},
+            "sample_files": {"dup_alias": "accession_sample"},
+        },
+        id="duplicate_alias_submission",
+        status_history=(
+            StatusChange(
+                timestamp=now_as_utc(),
+                new_status=SubmissionStatus.COMPLETED,
+            ),
+        ),
+    )
+    store.insert_new(submission=submission)
+    with pytest.raises(
+        ValueError, match=r"Found aliases .* multiple times in accession map"
+    ):
+        alias_to_accession(
+            alias="dup_alias",
+            map_fields=["study_files", "sample_files"],
+            submission_id="duplicate_alias_submission",
             submission_store=store,
         )
 
