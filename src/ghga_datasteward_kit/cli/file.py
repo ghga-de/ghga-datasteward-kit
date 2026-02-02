@@ -110,9 +110,14 @@ def batch_upload(
 @cli.command(no_args_is_help=True)
 def ingest_upload_metadata(
     config_path: Path = typer.Option(..., help="Path to a config YAML."),
+    submission_id: str = typer.Option(
+        ..., help="ID of the submission for which the accession maps should be loaded"
+    ),
 ):
     """Upload all output metadata files from the given directory to the file ingest service."""
-    errors, successes = file_ingest.main(config_path=config_path)
+    errors, successes = file_ingest.main(
+        config_path=config_path, submission_id=submission_id
+    )
 
     if errors:
         print(f"Encountered {len(errors)} errors during processing.")
