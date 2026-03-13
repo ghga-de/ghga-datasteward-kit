@@ -29,12 +29,16 @@ EXCEPTIONS = [httpx.ConnectError, httpx.ConnectTimeout, httpx.TimeoutException]
 STATUS_CODES = [408, 429, 500, 502, 503, 504]
 URL = "http://not-a-real-url/test"
 
+pytestmark = [
+    pytest.mark.asyncio(),
+    pytest.mark.httpx_mock(
+        assert_all_responses_were_requested=False,
+        can_send_already_matched_responses=True,
+    ),
+]
+
 
 @pytest.mark.parametrize("status_code", STATUS_CODES)
-@pytest.mark.httpx_mock(
-    assert_all_responses_were_requested=False, can_send_already_matched_responses=True
-)
-@pytest.mark.asyncio
 async def test_retry_handling_retryable_status_codes(
     legacy_config_fixture: LegacyConfig,  # noqa: F811
     httpx_mock: HTTPXMock,
@@ -48,13 +52,8 @@ async def test_retry_handling_retryable_status_codes(
         await _run_request()
 
 
-@pytest.mark.parametrize(
-    "exception,should_reraise", [*product(EXCEPTIONS, [True, False])]
-)
-@pytest.mark.httpx_mock(
-    assert_all_responses_were_requested=False, can_send_already_matched_responses=True
-)
-@pytest.mark.asyncio
+@pytest.mark.parametrize("exception", EXCEPTIONS)
+@pytest.mark.parametrize("should_reraise", [True, False])
 async def test_retry_handling_retryable_exceptions(
     legacy_config_fixture: LegacyConfig,  # noqa: F811
     httpx_mock: HTTPXMock,
@@ -70,18 +69,10 @@ async def test_retry_handling_retryable_exceptions(
 
     httpx_mock.reset()
     httpx_mock.add_exception(exception=exception("Expected exception"), url=URL)
-    if should_reraise:
-        with pytest.raises(exception):
-            await _run_request()
-    else:
-        with pytest.raises(RetryError):
-            await _run_request()
+    with pytest.raises(exception) if should_reraise else pytest.raises(RetryError):
+        await _run_request()
 
 
-@pytest.mark.httpx_mock(
-    assert_all_responses_were_requested=False, can_send_already_matched_responses=True
-)
-@pytest.mark.asyncio
 async def test_retry_handling_edge_cases(
     legacy_config_fixture: LegacyConfig,  # noqa: F811
     httpx_mock: HTTPXMock,
