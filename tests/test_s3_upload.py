@@ -1,4 +1,4 @@
-# Copyright 2021 - 2025 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
+# Copyright 2021 - 2026 Universität Tübingen, DKFZ, EMBL, and Universität zu Köln
 # for the German Human Genome-Phenome Archive (GHGA)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,8 +66,9 @@ pytestmark = [
     pytest.mark.httpx_mock(
         assert_all_responses_were_requested=False,
         can_send_already_matched_responses=True,
-        should_mock=lambda request: request.url.host
-        not in ("127.0.0.1", "localhost", "host.docker.internal"),
+        should_mock=lambda request: (
+            request.url.host not in ("127.0.0.1", "localhost", "host.docker.internal")
+        ),
     ),
 ]
 
