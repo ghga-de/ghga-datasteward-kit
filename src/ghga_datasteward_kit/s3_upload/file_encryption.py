@@ -59,10 +59,9 @@ class Encryptor:
         """Encrypt and upload file parts."""
         unprocessed_bytes = b""
         upload_buffer = b""
+        s3_part_number = 0
 
-        for part_number, file_part in enumerate(
-            read_file_parts(file=file, part_size=self.part_size), start=1
-        ):
+        for file_part in read_file_parts(file=file, part_size=self.part_size):
             # process unencrypted
             self.checksums.update_unencrypted(file_part)
             unprocessed_bytes += file_part
@@ -76,7 +75,8 @@ class Encryptor:
                 current_part = upload_buffer[: self.part_size]
                 self.checksums.update_encrypted(current_part)
                 self.encrypted_file_size += self.part_size
-                yield part_number, current_part
+                s3_part_number += 1
+                yield s3_part_number, current_part
                 upload_buffer = upload_buffer[self.part_size :]
 
         # process dangling bytes
@@ -87,12 +87,12 @@ class Encryptor:
             current_part = upload_buffer[: self.part_size]
             self.checksums.update_encrypted(current_part)
             self.encrypted_file_size += self.part_size
-            part_number += 1
-            yield part_number, current_part
+            s3_part_number += 1
+            yield s3_part_number, current_part
             upload_buffer = upload_buffer[self.part_size :]
 
         if upload_buffer:
             self.checksums.update_encrypted(upload_buffer)
             self.encrypted_file_size += len(upload_buffer)
-            part_number += 1
-            yield part_number, upload_buffer
+            s3_part_number += 1
+            yield s3_part_number, upload_buffer
