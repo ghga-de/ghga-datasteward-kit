@@ -40,11 +40,13 @@ class Decryptor:
         decrypted_segments = [self._decrypt_segment(segment) for segment in segments]
         self.unencrypted_sha256.update(b"".join(decrypted_segments))
 
-    def _decrypt_segment(self, segment: bytes):
+    def _decrypt_segment(self, ciphersegment: bytes):
         """Decrypt single ciphersegment"""
-        return crypt4gh.lib.decrypt_block(
-            ciphersegment=segment, session_keys=[self.file_secret]
+        segment = bytearray(crypt4gh.lib.SEGMENT_SIZE)
+        decrypted_length = crypt4gh.lib.decrypt_block(
+            segment, ciphersegment, [self.file_secret]
         )
+        return bytes(segment[:decrypted_length])
 
     def complete_processing(
         self, *, bucket_id: str, object_id: str, encryption_file_sha256: str

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/python:3.0.6-3.13-trixie
+FROM mcr.microsoft.com/devcontainers/python:3.0.6-3.12-trixie
 
 ENV PYTHONUNBUFFERED=1
 
