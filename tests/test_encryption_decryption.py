@@ -39,20 +39,20 @@ def test_process_file_yields_sequential_part_numbers():
 
     How to reproduce:
     - part_size = 2 * ENCRYPTED_SEGMENT_SIZE (131 128 bytes)
-    - file size  = part_size + 1            (131 129 bytes)
+    - file size = part_size + 1              (131 129 bytes)
 
     Trace through the original code:
-      Read 1 (131 128 bytes): 2 complete crypt4gh segments → 131 128 encrypted bytes
-        → upload_buffer == part_size → yield (part_number=1, …) ✓
-        → leftover buffer = 0 B, unprocessed remainder = 56 B
+      Read 1 (131 128 bytes): 2 complete crypt4gh segments -> 131 128 encrypted bytes
+        -> upload_buffer == part_size -> yield (part_number=1, …) ✓
+        -> leftover buffer = 0 B, unprocessed remainder = 56 B
       Read 2 (1 byte): combined with 56 B remainder = 57 B < SEGMENT_SIZE
-        → 0 complete segments → 0 encrypted bytes → buffer stays at 0
-        → 0 < part_size → NO yield  (but part_number advances to 2!)
-      Post-loop: encrypt the 57-B incomplete segment → 85 B
-        → part_number += 1 → part_number = 3 → yield (3, 85 B)  ← BUG
+        -> 0 complete segments -> 0 encrypted bytes -> buffer stays at 0
+        -> 0 < part_size -> NO yield  (but part_number advances to 2!)
+      Post-loop: encrypt the 57-B incomplete segment -> 85 B
+        -> part_number += 1 -> part_number = 3 -> yield (3, 85 B)  <-- BUG
 
     After the fix (sequential s3_part_number counter):
-      Same reads, but the post-loop yields (s3_part_number=2, 85 B)  ← CORRECT
+      Same reads, but the post-loop yields (s3_part_number=2, 85 B)  <-- CORRECT
     """
     encrypted_segment_size = crypt4gh.lib.SEGMENT_SIZE + 28  # 65 564 bytes
 
