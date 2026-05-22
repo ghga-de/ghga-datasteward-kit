@@ -266,7 +266,7 @@ async def test_error_handling_local_checksum_validation(
         assert not await storage.does_object_exist(
             bucket_id=BUCKET_ID, object_id=object_id
         )
-        assert not await storage._list_multipart_upload_for_object(
+        assert not await storage._list_multipart_uploads_for_object(
             bucket_id=BUCKET_ID, object_id=object_id
         )
 
@@ -330,7 +330,7 @@ async def test_error_handling_remote_checksum_validation(
         assert not await storage.does_object_exist(
             bucket_id=BUCKET_ID, object_id=object_id
         )
-        assert not await storage._list_multipart_upload_for_object(
+        assert not await storage._list_multipart_uploads_for_object(
             bucket_id=BUCKET_ID, object_id=object_id
         )
 
@@ -401,7 +401,7 @@ async def test_error_handling_upload_completion(
         assert not await storage.does_object_exist(
             bucket_id=BUCKET_ID, object_id=object_id
         )
-        assert not await storage._list_multipart_upload_for_object(
+        assert not await storage._list_multipart_uploads_for_object(
             bucket_id=BUCKET_ID, object_id=object_id
         )
 
@@ -473,7 +473,7 @@ async def test_error_handling_part_upload(
         assert not await storage.does_object_exist(
             bucket_id=BUCKET_ID, object_id=object_id
         )
-        assert not await storage._list_multipart_upload_for_object(
+        assert not await storage._list_multipart_uploads_for_object(
             bucket_id=BUCKET_ID, object_id=object_id
         )
 
