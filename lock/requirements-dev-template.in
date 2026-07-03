@@ -1,24 +1,25 @@
 # common requirements for development and testing of services
 
-pytest>=9.0
-pytest-asyncio>=1.3
+# special requirements (snakeviz, logot) for debugging and testing
+# should be added manually or per service if needed
+
+pytest>=9.1
+pytest-asyncio>=1.4
 pytest-cov>=7.1
-snakeviz>=2.2
-logot>=1.5
 
 pre-commit>=4.6
 
-mypy>=2.1.0
+mypy>=2.1
 
 ruff>=0.15.13
 
 click>=8.4
-typer>=0.25.1
+typer>=0.26
 
 httpx>=0.28.1
 pytest-httpx>=0.36
 
-urllib3>=2.7.0
+urllib3>=2.7
 requests>=2.34.2
 
 casefy>=1.1
@@ -28,4 +29,4 @@ setuptools>=82
 # required since switch to pyproject.toml and pip-tools
 tomli_w>=1.2
 
-uv>=0.11.14
+uv>=0.11.22
