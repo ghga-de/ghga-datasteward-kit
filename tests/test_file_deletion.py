@@ -23,12 +23,13 @@ import pytest
 from ghga_datasteward_kit.cli.file import delete_file
 from ghga_datasteward_kit.config import FileDeletionConfig
 from ghga_datasteward_kit.utils import DELETION_TOKEN, load_config_yaml
+from tests.fixtures.mock_api import ApiMock, respond
 
 CONFIG_PATH = Path(__file__).parent / "fixtures" / "file_deletion_config.yaml"
 
 
 @pytest.mark.parametrize("file_id", ["exists", "fake"])
-def test_pcs_call(caplog, monkeypatch, httpx_mock, tmp_path, file_id: str):
+def test_pcs_call(caplog, monkeypatch, tmp_path, file_id: str):
     """Call mock endpoint to validate client functionality."""
     # only capture file deletion logs
     caplog.set_level(logging.INFO, logger="ghga_datasteward_kit.file_deletion")
@@ -37,16 +38,23 @@ def test_pcs_call(caplog, monkeypatch, httpx_mock, tmp_path, file_id: str):
     endpoint = config.file_deletion_endpoint.strip("/")
     url = f"{base}/{endpoint}/{file_id}"
 
-    # mock endpoints
+    # mock endpoint
     if file_id == "exists":
-        httpx_mock.add_response(method="DELETE", url=url, status_code=202)
+        status_code = 202
         message = f"Successfully sent deletion request for file '{file_id}'."
     else:
         status_code = 404
-        httpx_mock.add_response(method="DELETE", url=url, status_code=status_code)
         message = (
             f"Deletion request to '{url}' failed with response code {status_code}."
         )
+
+    api_mock = ApiMock()
+    api_mock.add(
+        method="DELETE",
+        path=f"/{endpoint}/{file_id}",
+        handler=respond(status_code),
+    )
+    api_mock.patch_httpx(monkeypatch)
 
     caplog.clear()
     with monkeypatch.context() as patch:

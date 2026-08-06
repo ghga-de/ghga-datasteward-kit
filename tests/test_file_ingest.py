@@ -27,19 +27,56 @@ from metldata.submission_registry.models import (
     SubmissionStatus,
 )
 from metldata.submission_registry.submission_store import SubmissionStore
-from pytest_httpx import HTTPXMock
 
 from ghga_datasteward_kit import models
 from ghga_datasteward_kit.cli.file import ingest_upload_metadata
 from ghga_datasteward_kit.exceptions import UnknownStorageAliasError
-from ghga_datasteward_kit.file_ingest import alias_to_accession, file_ingest
-from ghga_datasteward_kit.utils import path_join
+from ghga_datasteward_kit.file_ingest import (
+    IngestConfig,
+    alias_to_accession,
+    file_ingest,
+)
 from tests.fixtures.ingest import (  # noqa: F401
     EXAMPLE_SUBMISSION,
     IngestFixture,
     ingest_fixture,
     legacy_ingest_fixture,
 )
+from tests.fixtures.mock_api import ApiMock, MockedEndpoint, respond
+
+DEFAULT_STORAGE_ALIASES = {"test": "http://example.com"}
+
+
+def mock_ingest_api(
+    monkeypatch: pytest.MonkeyPatch,
+    config: IngestConfig,
+    *,
+    endpoint_path: str,
+    storage_aliases: dict[str, str] | None = None,
+) -> MockedEndpoint:
+    """Mock the WKVS and file ingest endpoints used by an ingest run.
+
+    Returns the ingest endpoint, which starts out accepting everything with a 202.
+    Reassign its `handler` to make the calls that follow fail instead.
+    """
+    api_mock = ApiMock()
+    api_mock.add(
+        method="GET",
+        path="/values/storage_aliases",
+        handler=respond(
+            200,
+            json={
+                "storage_aliases": DEFAULT_STORAGE_ALIASES
+                if storage_aliases is None
+                else storage_aliases
+            },
+        ),
+    )
+    ingest_endpoint = api_mock.add(
+        method="POST", path=endpoint_path, handler=respond(202)
+    )
+    api_mock.patch_httpx(monkeypatch)
+    return ingest_endpoint
 
 
 @pytest.mark.asyncio
@@ -321,28 +358,17 @@ async def test_alias_to_accession_multiple_submissions_shared_fields(
 @pytest.mark.asyncio
 async def test_legacy_ingest_directly(
     legacy_ingest_fixture: IngestFixture,  # noqa: F811
-    httpx_mock: HTTPXMock,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = path_join(
-        legacy_ingest_fixture.config.file_ingest_baseurl,
-        legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
-    )
     token = generate_token()
 
-    httpx_mock.add_response(
-        url=path_join(
-            legacy_ingest_fixture.config.wkvs_api_url, "values/storage_aliases"
-        ),
-        json={"storage_aliases": {"test": "http://example.com"}},
-        status_code=200,
-        is_reusable=True,
+    ingest_endpoint = mock_ingest_api(
+        monkeypatch,
+        legacy_ingest_fixture.config,
+        endpoint_path=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
     )
 
-    httpx_mock.add_response(
-        url=endpoint_url,
-        status_code=202,
-    )
     file_ingest(
         in_path=legacy_ingest_fixture.file_path,
         token=token,
@@ -350,10 +376,8 @@ async def test_legacy_ingest_directly(
         submission_id=EXAMPLE_SUBMISSION.id,
     )
 
-    httpx_mock.add_response(
-        url=endpoint_url,
-        json={"detail": "Not authorized to access ingest endpoint."},
-        status_code=403,
+    ingest_endpoint.handler = respond(
+        403, json={"detail": "Not authorized to access ingest endpoint."}
     )
     with pytest.raises(ValueError, match=r"Not authorized to access ingest endpoint."):
         file_ingest(
@@ -363,10 +387,8 @@ async def test_legacy_ingest_directly(
             submission_id=EXAMPLE_SUBMISSION.id,
         )
 
-    httpx_mock.add_response(
-        url=endpoint_url,
-        json={"detail": "Could not decrypt received payload."},
-        status_code=422,
+    ingest_endpoint.handler = respond(
+        422, json={"detail": "Could not decrypt received payload."}
     )
     with pytest.raises(ValueError, match=r"Could not decrypt received payload."):
         file_ingest(
@@ -380,23 +402,17 @@ async def test_legacy_ingest_directly(
 @pytest.mark.asyncio
 async def test_ingest_directly(
     ingest_fixture: IngestFixture,  # noqa: F811
-    httpx_mock: HTTPXMock,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """Test file_ingest function directly"""
-    endpoint_url = path_join(
-        ingest_fixture.config.file_ingest_baseurl,
-        ingest_fixture.config.file_ingest_federated_endpoint,
-    )
     token = generate_token()
 
-    httpx_mock.add_response(
-        url=path_join(ingest_fixture.config.wkvs_api_url, "values/storage_aliases"),
-        json={"storage_aliases": {"test": "http://example.com"}},
-        status_code=200,
-        is_reusable=True,
+    ingest_endpoint = mock_ingest_api(
+        monkeypatch,
+        ingest_fixture.config,
+        endpoint_path=ingest_fixture.config.file_ingest_federated_endpoint,
     )
 
-    httpx_mock.add_response(url=endpoint_url, status_code=202)
     file_ingest(
         in_path=ingest_fixture.file_path,
         token=token,
@@ -404,10 +420,8 @@ async def test_ingest_directly(
         submission_id=EXAMPLE_SUBMISSION.id,
     )
 
-    httpx_mock.add_response(
-        url=endpoint_url,
-        json={"detail": "Not authorized to access ingest endpoint."},
-        status_code=403,
+    ingest_endpoint.handler = respond(
+        403, json={"detail": "Not authorized to access ingest endpoint."}
     )
     with pytest.raises(ValueError, match=r"Not authorized to access ingest endpoint."):
         file_ingest(
@@ -417,10 +431,8 @@ async def test_ingest_directly(
             submission_id=EXAMPLE_SUBMISSION.id,
         )
 
-    httpx_mock.add_response(
-        url=endpoint_url,
-        json={"detail": "Could not decrypt received payload."},
-        status_code=422,
+    ingest_endpoint.handler = respond(
+        422, json={"detail": "Could not decrypt received payload."}
     )
     with pytest.raises(ValueError, match=r"Could not decrypt received payload."):
         file_ingest(
@@ -436,13 +448,8 @@ async def test_legacy_main(
     capfd,
     monkeypatch,
     legacy_ingest_fixture: IngestFixture,  # noqa: F811
-    httpx_mock: HTTPXMock,
 ):
     """Test if main file ingest function works correctly"""
-    endpoint_url = path_join(
-        legacy_ingest_fixture.config.file_ingest_baseurl,
-        legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
-    )
     config_path = legacy_ingest_fixture.config.input_dir / "config.yaml"
 
     config = legacy_ingest_fixture.config.model_dump()
@@ -458,16 +465,12 @@ async def test_legacy_main(
             lambda self: generate_token(),
         )
 
-        httpx_mock.add_response(
-            url=path_join(
-                legacy_ingest_fixture.config.wkvs_api_url, "values/storage_aliases"
-            ),
-            json={"storage_aliases": {"test": "http://example.com"}},
-            status_code=200,
-            is_reusable=True,
+        ingest_endpoint = mock_ingest_api(
+            patch,
+            legacy_ingest_fixture.config,
+            endpoint_path=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
         )
 
-        httpx_mock.add_response(url=endpoint_url, status_code=202)
         ingest_upload_metadata(
             config_path=config_path, submission_id=EXAMPLE_SUBMISSION.id
         )
@@ -475,11 +478,7 @@ async def test_legacy_main(
 
         assert "Successfully sent all file upload metadata for ingest" in out
 
-        httpx_mock.add_response(
-            url=endpoint_url,
-            json={"detail": "Unauthorized"},
-            status_code=403,
-        )
+        ingest_endpoint.handler = respond(403, json={"detail": "Unauthorized"})
         ingest_upload_metadata(
             config_path=config_path, submission_id=EXAMPLE_SUBMISSION.id
         )
@@ -527,20 +526,18 @@ def test_unknown_storage_alias(
     legacy_ingest_fixture: IngestFixture,  # noqa: F811
     ingest_fixture: IngestFixture,  # noqa: F811
     tmp_path,
-    httpx_mock: HTTPXMock,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """Simulate loading metadata with unknown storage alias and expect errors"""
     # Prepare metadata with an unknown storage alias
 
     token = generate_token()
 
-    httpx_mock.add_response(
-        url=path_join(
-            legacy_ingest_fixture.config.wkvs_api_url, "values/storage_aliases"
-        ),
-        json={"storage_aliases": {"fake": "http://example.com"}},
-        status_code=200,
-        is_reusable=True,
+    mock_ingest_api(
+        monkeypatch,
+        legacy_ingest_fixture.config,
+        endpoint_path=legacy_ingest_fixture.config.file_ingest_legacy_endpoint,
+        storage_aliases={"fake": "http://example.com"},
     )
 
     with pytest.raises(

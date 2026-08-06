@@ -23,9 +23,9 @@ from pathlib import Path
 from time import time
 from typing import Any
 
-import httpx
+import httpx2
 from hexkit.providers.s3 import S3ObjectStorage
-from httpx import Response
+from httpx2 import Response
 
 from ghga_datasteward_kit.models import UploadParameters
 
@@ -111,7 +111,7 @@ class ChunkedUploader:
     async def send_part(
         self,
         *,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         file_processor: Generator[tuple[int, bytes], Any, None],
         start: float,
     ):
@@ -166,7 +166,7 @@ class ChunkedUploader:
     async def _prepare_and_send_request(
         self,
         *,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         part: bytes,
         part_number: int,
     ) -> Response:
@@ -189,6 +189,6 @@ class ChunkedUploader:
         response: Response = await client.put(
             url=upload_url,
             content=part,
-            headers=httpx.Headers({"Content-MD5": encoded_part_md5}),
+            headers=httpx2.Headers({"Content-MD5": encoded_part_md5}),
         )
         return response

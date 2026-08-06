@@ -17,7 +17,7 @@
 import logging
 from pathlib import Path
 
-import httpx
+import httpx2
 from metldata.submission_registry.submission_store import (
     SubmissionStore,
     SubmissionStoreConfig,
@@ -207,7 +207,7 @@ def file_ingest(
 
     headers = {"Authorization": f"Bearer {token}"}
 
-    with httpx.Client() as client:
+    with httpx2.Client() as client:
         response = client.post(
             f"{endpoint_url}",
             json=payload.model_dump(),

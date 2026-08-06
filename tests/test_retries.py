@@ -14,78 +14,90 @@
 # limitations under the License.
 """Test retry functionality for client requests in upload/download."""
 
-import httpx
+import httpx2
 import pytest
-from pytest_httpx import HTTPXMock
 from tenacity import RetryError
 
 from ghga_datasteward_kit.s3_upload import LegacyConfig
 from ghga_datasteward_kit.s3_upload.http_client import RequestConfigurator, httpx_client
 from tests.fixtures.config import legacy_config_fixture  # noqa: F401
+from tests.fixtures.mock_api import (
+    ApiMock,
+    MockedEndpoint,
+    ResponseHandler,
+    fail_with,
+    respond,
+)
 
-EXCEPTIONS = [httpx.ConnectError, httpx.ConnectTimeout, httpx.TimeoutException]
+EXCEPTIONS = [httpx2.ConnectError, httpx2.ConnectTimeout, httpx2.TimeoutException]
 STATUS_CODES = [408, 429, 500, 502, 503, 504]
-URL = "http://not-a-real-url/test"
+PATH = "/test"
+URL = f"http://not-a-real-url{PATH}"
 
 
-pytestmark = [
-    pytest.mark.asyncio(),
-    pytest.mark.httpx_mock(
-        assert_all_responses_were_requested=False,
-        can_send_already_matched_responses=True,
-    ),
-]
+pytestmark = pytest.mark.asyncio()
+
+
+def _configure_client(config: LegacyConfig, handler: ResponseHandler) -> MockedEndpoint:
+    """Point the client at a mocked endpoint answering with `handler`.
+
+    The mock replaces only the innermost transport, so requests still pass through the
+    rate limiting and retry layers under test.
+    """
+    api_mock = ApiMock()
+    endpoint = api_mock.add(method="GET", path=PATH, handler=handler)
+    RequestConfigurator.configure(config, base_transport=api_mock.as_transport())
+    return endpoint
 
 
 @pytest.mark.parametrize("status_code", STATUS_CODES)
 async def test_retry_handling_retryable_status_codes(
     legacy_config_fixture: LegacyConfig,  # noqa: F811
-    httpx_mock: HTTPXMock,
     status_code: int,
 ):
     """Test if configuration is correctly applied to retry handler"""
-    RequestConfigurator.configure(legacy_config_fixture)
+    endpoint = _configure_client(legacy_config_fixture, respond(status_code))
 
-    httpx_mock.add_response(url=URL, status_code=status_code)
     with pytest.raises(RetryError):
         await _run_request()
+
+    # the request was actually retried instead of failing on the first attempt
+    assert endpoint.call_count > 1
 
 
 @pytest.mark.parametrize("exception", EXCEPTIONS)
 @pytest.mark.parametrize("should_reraise", [True, False])
 async def test_retry_handling_retryable_exceptions(
     legacy_config_fixture: LegacyConfig,  # noqa: F811
-    httpx_mock: HTTPXMock,
     exception: type[Exception],
     should_reraise: bool,
 ):
     """Test if configuration is correctly applied to retry handler"""
-    RequestConfigurator.configure(
-        legacy_config_fixture.model_copy(
-            update={"client_reraise_from_retry_error": should_reraise}
-        )
+    config = legacy_config_fixture.model_copy(
+        update={"client_reraise_from_retry_error": should_reraise}
     )
+    _configure_client(config, fail_with(exception("Expected exception")))
 
-    httpx_mock.reset()
-    httpx_mock.add_exception(exception=exception("Expected exception"), url=URL)
     with pytest.raises(exception) if should_reraise else pytest.raises(RetryError):
         await _run_request()
 
 
 async def test_retry_handling_edge_cases(
     legacy_config_fixture: LegacyConfig,  # noqa: F811
-    httpx_mock: HTTPXMock,
 ):
     """Test if configuration is correctly applied to retry handler"""
-    RequestConfigurator.configure(legacy_config_fixture)
+    endpoint = _configure_client(
+        legacy_config_fixture, fail_with(ValueError("Expected exception"))
+    )
 
-    httpx_mock.add_exception(exception=ValueError("Expected exception"), url=URL)
+    # a non-retryable exception propagates on the first attempt
     with pytest.raises(ValueError):
         await _run_request()
 
-    httpx_mock.reset()
-    httpx_mock.add_response(url=URL, status_code=200)
-    await _run_request()
+    # a successful response is passed through untouched
+    endpoint.handler = respond(200)
+    response = await _run_request()
+    assert response.status_code == 200
 
 
 async def _run_request():
