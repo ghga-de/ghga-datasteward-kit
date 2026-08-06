@@ -95,7 +95,7 @@ def prepare_upload_command_line(
 class BatchUploadManager:
     """Class that manages batch uploads, retries, and associated logging."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         config_path: Path,
         output_dir: Path,
@@ -404,7 +404,7 @@ class BatchUploadManager:
             )
 
 
-def main(  # noqa: PLR0913
+def main(  # noqa: PLR0913, PLR0917
     file_overview_tsv: Path,
     config_path: Path,
     parallel_processes: int,
