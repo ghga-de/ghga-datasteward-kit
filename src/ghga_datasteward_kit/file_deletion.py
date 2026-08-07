@@ -18,7 +18,7 @@
 import logging
 from pathlib import Path
 
-import httpx
+import httpx2
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -56,9 +56,9 @@ def main(*, file_id: str, config_path: Path):
     )
 
     token = DELETION_TOKEN.read_token()
-    headers = httpx.Headers({"Authorization": f"Bearer {token}"})
+    headers = httpx2.Headers({"Authorization": f"Bearer {token}"})
 
-    with httpx.Client() as client:
+    with httpx2.Client() as client:
         response = client.delete(url=url, headers=headers, timeout=60)
 
         status_code = response.status_code

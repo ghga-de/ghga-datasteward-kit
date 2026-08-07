@@ -12,12 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""httpx client and retry functionality related code."""
+"""httpx2 client and retry functionality related code."""
 
 import logging
 from contextlib import asynccontextmanager
 
-import httpx
+import httpx2
 from ghga_service_commons.transports import (
     AsyncRetryTransport,
     CompositeTransportFactory,
@@ -31,33 +31,42 @@ USER_AGENT = f"GHGADatastewardKit/{__version__}"
 
 
 class RequestConfigurator:
-    """Helper for user configurable httpx request parameters."""
+    """Helper for user configurable httpx2 request parameters."""
 
     timeout: int | None
     transport: AsyncRetryTransport
     mounts: dict | None
 
     @classmethod
-    def configure(cls, config: LegacyConfig):
-        """Set timeout in seconds"""
+    def configure(
+        cls,
+        config: LegacyConfig,
+        base_transport: httpx2.AsyncBaseTransport | None = None,
+    ):
+        """Set timeout in seconds
+
+        `base_transport` replaces the innermost transport that actually performs the
+        request. It is meant for tests, which can supply a mock transport that still
+        gets exercised through the rate limiting and retry layers.
+        """
         cls.timeout = config.client_timeout
-        limits = httpx.Limits(
+        limits = httpx2.Limits(
             max_connections=config.client_max_parallel_transfers,
             max_keepalive_connections=config.client_max_parallel_transfers,
         )
         cls.transport = CompositeTransportFactory.create_ratelimiting_retry_transport(
-            config, limits=limits
+            config, base_transport=base_transport, limits=limits
         )
         cls.mounts = ratelimiting_retry_proxies(config, limits)
-        # silence httpx messages on each request due to setting global level info before
-        logging.getLogger("httpx").setLevel(logging.WARNING)
+        # silence httpx2 messages on each request due to setting global level info before
+        logging.getLogger("httpx2").setLevel(logging.WARNING)
 
 
 @asynccontextmanager
 async def httpx_client():
-    """Yields a context manager httpx client and closes it afterward"""
-    async with httpx.AsyncClient(
-        headers=httpx.Headers({"User-Agent": USER_AGENT}),
+    """Yields a context manager httpx2 client and closes it afterward"""
+    async with httpx2.AsyncClient(
+        headers=httpx2.Headers({"User-Agent": USER_AGENT}),
         timeout=RequestConfigurator.timeout,
         transport=RequestConfigurator.transport,
         mounts=RequestConfigurator.mounts,

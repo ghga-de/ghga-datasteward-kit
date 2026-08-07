@@ -5,3 +5,5 @@
 
 # additional requirements can be listed here
 testcontainers[kafka,mongo]>=3.4.1
+# the `api` extra provides the MockRouter used to mock HTTP endpoints in tests
+ghga-service-commons[api]

@@ -9,15 +9,14 @@ pytest-cov>=7.1
 
 pre-commit>=4.6
 
-mypy>=2.1
+mypy>=2.2
 
-ruff>=0.15.13
+ruff>=0.15.21
 
 click>=8.4
 typer>=0.26
 
-httpx>=0.28.1
-pytest-httpx>=0.36
+httpx2>=2.9.1
 
 urllib3>=2.7
 requests>=2.34.2
@@ -29,4 +28,4 @@ setuptools>=82
 # required since switch to pyproject.toml and pip-tools
 tomli_w>=1.2
 
-uv>=0.11.22
+uv>=0.11.28

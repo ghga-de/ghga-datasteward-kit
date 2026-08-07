@@ -21,14 +21,14 @@ classifiers = [
     "Intended Audience :: Developers",
 ]
 name = "ghga_datasteward_kit"
-version = "5.4.1"
+version = "5.4.2"
 description = "GHGA Data Steward Kit - A utils package for GHGA data stewards."
 dependencies = [
     "crypt4gh >=1.8.6, <2",
-    "hexkit[s3] >=8.2.1",
+    "hexkit[s3] >=9.0.0",
     "ghga-transpiler >=2.1.2, <3",
-    "metldata >=4.2, <5",
-    "ghga-service-commons[transports,crypt] >=7, <8",
+    "metldata >=4.2.1, <5",
+    "ghga-service-commons[transports,crypt] >=8.0.0, <9",
 ]
 
 [project.license]
