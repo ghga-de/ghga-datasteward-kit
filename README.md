@@ -5,6 +5,19 @@
 
 Utilities for data stewards interacting with GHGA infrastructure.
 
+> **⚠️ Deprecated on PyPI: development has moved.**
+>
+> `ghga-datasteward-kit` is now developed in the
+> [GHGA monorepo](https://github.com/ghga-de/ghga) at
+> [`tools/ghga-datasteward-kit`](https://github.com/ghga-de/ghga/tree/main/tools/ghga-datasteward-kit),
+> where it is tested against the exact service and library versions it is
+> deployed with.
+>
+> **This is the last release published to PyPI.** Future versions are not
+> installed with `pip`: the kit ships as part of the monorepo and is run from a
+> checkout at a release tag, so the pinned lockfile reproduces the tested
+> combination. Installation instructions will be published in the monorepo.
+
 ## Installation:
 
 This package can be installed using pip:
@@ -173,8 +186,8 @@ This command requires a configuration file as described [here](./ingest_config.m
 
 | Datasteward Kit Version | File Ingest Service Version |
 | :---------------------: | :-------------------------: |
-| >=4.5.0 | >=5.0.0 |
-| >=4.4.0, <4.5.0  | >=4.0.0, <5 |
+|         >=4.5.0         |           >=5.0.0           |
+|     >=4.4.0, <4.5.0     |         >=4.0.0, <5         |
 
 ### metadata
 
